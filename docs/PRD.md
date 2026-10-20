@@ -6,7 +6,7 @@
 ## Sections still to write
 1. Overview, problem, target users, and why AI
 2. **Accounts, access and payments** (below)
-3. Professor features (course setup, materials, guidelines, insights)
+3. **Professor features** (course setup, materials, guidelines, modes, insights) (below)
 4. Student features (tutor, chats, memory)
 5. Quality, errors and edge cases
 6. Success metrics, risks, milestones
@@ -93,3 +93,100 @@ UCLA SSO, Bruin Learn or any LMS sign-in, unique per-student codes, bulk email i
 | Frontend: sign-up, create-course, join, roster screens | M | the above |
 
 Rubric note: sign-up and login, and the Stripe checkout working in production, are listed must-haves in the course requirements.
+
+---
+
+## 3. Professor features
+
+Staff means the owner and staff accounts (§2.1). Everything below applies to one course.
+
+### 3.1 Setup flow
+After payment (§2.3) a checklist guides the owner through: **upload materials → set problem set modes → write guidelines → try it as a student → share the student code.** Each step can be revisited at any time. The tutor is not open to students until the course is active and has at least one ready document.
+
+### 3.2 Course materials
+**Upload.** The professor picks a **category first**, then uploads one or more files under it.
+
+| Category | Tutor treatment |
+|---|---|
+| Lecture notes, Readings, Other | Public and citable |
+| Problem set | Citable. Has a mode (§3.4). |
+| Solution | **Tutor-only**: never retrieved, cited or served to students, until its problem set is Released (§3.4) |
+
+- **Solution linking.** Choosing "Solution" shows a dropdown of the course's existing problem sets. More than one can be selected, because one file can cover several sets. "Link later" is allowed: an unlinked solution is still tutor-only and protected, it just can't help the answer checker until linked.
+- **Mismatch warning.** After upload a cheap model call checks each file and **warns only**, for example "this looks like a solution but is tagged as a reading." It never changes a category on its own. The human-picked category is the safety decision.
+- **File types:** PDF and plain text or Markdown. PowerPoint and Word if time allows.
+- **Limits:** a cap on files and pages per course, set by the plan.
+- **Processing** runs as a background job. Each file shows **processing, ready or failed**. PDFs with no extractable text show "no text found" (scanned PDFs; no OCR in v1).
+- **Rights.** The professor ticks a box confirming they have the right to use the materials.
+- **Library.** Staff see every file with its category, status and linked problem sets, and can replace, re-categorise or delete it. Deleting a file removes it from the tutor's knowledge and from future citations.
+
+### 3.3 Teaching guidelines
+Guidelines are instructions to the tutor. They are **kept separate from course materials**: not citable, not searchable by students.
+- **One general guideline** for the course: a text box (typed or pasted; a .txt or .md file can be uploaded), with starter prompts such as tone, tools and notation (for example "use R for simulations"), how to handle grading or admin questions, and what is in or out of scope.
+- **Optional additional guidelines**, each **tagged to one or more materials**, such as "Lecture 3" or "Problem Set 4" ("Q3 expects an R simulation"). A tagged guideline applies when the tagged material is among the sources used for the answer, or is the detected problem set. If it conflicts with the general guideline, the tagged one wins for that material.
+- Length caps apply to keep cost and prompt size bounded.
+- **Guidelines cannot override safety rules.** They cannot turn off citations, reveal solutions, or change a problem set's mode. Only §3.4 does that.
+
+### 3.4 Problem set modes and the exam pause
+Each problem set has a mode, shown to students as a one-line rule in the chat (for example "Pset 4: hints only"). **Every student in the course gets the same rules.** There are no per-student exceptions in v1.
+
+| Label | Tutor behaviour |
+|---|---|
+| **Graded: hints only** (default) | Hints and questions. No final answers or solution steps, however the request is phrased. Full solution protection and leak guard. |
+| **Practice: full help** | Guided help. A worked explanation after an attempt or on request. |
+| **After due date: solutions open** | Solutions become discussable and citable. Optional **release date** switches a set from Graded automatically. |
+
+- New problem sets default to **Graded**, so a forgotten setting fails safe.
+- Past exams are uploaded as Practice.
+- A per-set yes/no setting, **"tell students if their final answer is correct"**, default **off**.
+- **Pause tutor** is a course-wide, scheduled setting for exams. During the window students see a message that the tutor is paused, and no AI call is made. Exams are not a problem set mode, because detecting a pasted exam question is unreliable.
+
+### 3.5 Try it as a student
+Staff can open the student chat in their own course to test materials, guidelines and modes before sharing the code. Preview chats are labelled and **excluded from the dashboard**. Their token use still counts toward the course ceiling.
+
+### 3.6 Dashboard
+Staff see **aggregates, never individual students' chats.** Breakdowns are hidden when a group is very small (under 5 students). A time selector offers 7 days, 30 days and whole term.
+
+| Panel | Shows |
+|---|---|
+| **Usage overview** | Active students, questions per day, seats used, tokens used against the course ceiling |
+| **Most-asked materials** | Questions per cited document (lecture, reading, problem set), counted from the sources each answer used |
+| **Unanswered questions** | Anonymised list of questions where the tutor could not find the answer in the materials. A list only; there are no actions attached in v1. |
+| **Where students are stuck** | Per problem set: students asking, turns per student, and the answer checker's attempt results (correct, partial, incorrect) |
+| **Student usage table** | Questions and tokens per student, to manage caps and abuse. Numbers only. |
+
+**Demo data.** The demo course uses sample student questions so the dashboard has something to show. They are **labelled as sample data in the presentation**.
+
+### 3.7 Out of scope for v1
+Practice question generation, LMS sync, OCR, reading individual student chats, per-student exceptions, student feedback flags, model-clustered topic names, per-question stuck analysis, configurable hint intensity, actions on unanswered questions.
+
+### 3.8 Acceptance criteria
+1. A professor uploads files by category, links a solution to a problem set from the dropdown, sees processing status, and the new material is cited in tutor answers.
+2. A solution file is never retrieved, cited or served while its problem set is Graded or Practice, and a mislabelled-looking file triggers a warning.
+3. A failed or text-less PDF shows a clear status and does not break the course.
+4. A guideline written by the professor visibly changes tutor behaviour. A tagged guideline applies to its material and not to others. A guideline that says "give the answer" does not unlock a Graded problem set.
+5. In Graded mode the tutor refuses the answer under repeated and role-play pressure. Changing a set to After due date or Practice changes behaviour from the next message.
+6. During a pause window, students get the pause message and no AI call is made.
+7. Staff can preview as a student, and preview chats do not appear in the dashboard.
+8. The dashboard shows the five panels, hides small groups, and never exposes individual chat content or student names in the unanswered list.
+
+### 3.9 Effort (rough, on the existing codebase)
+| Item | Effort | Depends on |
+|---|---|---|
+| Per-course data model and retrieval (materials, chunks, index per course) | M–L | §2 course model |
+| Upload with category, solution dropdown, status, library | M | per-course model |
+| Background ingestion job, caps, no-text handling | M | upload |
+| Mismatch warning (one small model call) | S | upload |
+| Guidelines: general plus tagged entries, prompt assembly | S–M | per-course model |
+| Problem set modes, release date, confirm-answers setting, student-facing rule line | M | per-course model |
+| Pause window | S | course model |
+| Try as student (staff preview, excluded from stats) | S | per-course model |
+| Dashboard (five panels, time selector, small-group rule) | M | message tagging below |
+| Tag each question with cited documents, a not-covered flag, and course and student IDs | S | per-course model |
+| Leak check that works without solution text (AI strategy) | S–M | modes |
+
+### 3.10 Open questions
+- File and page caps, and guideline length caps (set with the plan sizes in §2.7).
+- If a problem set's mode changes mid-chat, does the new mode apply immediately? Proposed: yes, from the next message.
+- How does the tutor know a question is "not covered" in a way that is reliable enough for the dashboard list?
+- Solution PDFs have never been stored in the file bucket. Releasing a solution requires storing it privately and serving it only when Released.
