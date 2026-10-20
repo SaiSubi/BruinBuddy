@@ -2,7 +2,7 @@
 
 An AI-powered tutoring companion for UCLA students that complements Bruin Learn with personalized explanations, interactive Q&A, practice quizzes, and course-specific study support.
 
-**v0** is a local class-project demo: a course-grounded tutor for MIT OCW 18.05 (stand-in course) with citations, multiple persistent chats, per-student memory, and a professor dashboard that counts questions. See [docs/PRD.md](docs/PRD.md), [docs/DESIGN.md](docs/DESIGN.md), [docs/TECHNICAL.md](docs/TECHNICAL.md), [docs/AI_STRATEGY.md](docs/AI_STRATEGY.md).
+**v0** is a local class-project demo: a course-grounded tutor for MIT OCW 18.05 (stand-in course) with citations, multiple persistent chats, per-student memory, and a professor dashboard that counts questions. See [docs/PRD_v0.md](docs/PRD_v0.md), [docs/DESIGN.md](docs/DESIGN.md), [docs/TECHNICAL.md](docs/TECHNICAL.md), [docs/AI_STRATEGY.md](docs/AI_STRATEGY.md).
 
 ## Run it locally
 

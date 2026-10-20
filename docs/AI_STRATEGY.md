@@ -1,6 +1,6 @@
 # BruinBuddy — AI Strategy (v0)
 
-> Status: v0, built and deployed | Based on [PRD.md](PRD.md), [DESIGN.md](DESIGN.md), [TECHNICAL.md](TECHNICAL.md) | Last updated: 2026-10-20
+> Status: v0, built and deployed | Based on [PRD_v0.md](PRD_v0.md), [DESIGN.md](DESIGN.md), [TECHNICAL.md](TECHNICAL.md) | Last updated: 2026-10-20
 > Scope: how the AI parts of v0 behave and what they cost. Evaluation is deferred (§7). Cost figures in §6 are measured from the live site.
 
 ## 1. AI product objective
@@ -109,7 +109,7 @@ When we build the eval later, the dimensions to cover are:
 - Solution leakage and prompt-injection resistance
 - Cost and latency per turn
 
-Who writes the question set and what the targets are stay open (PRD §8).
+Who writes the question set and what the targets are stay open (PRD_v0 §8).
 
 **Issues seen in the first live tests** (to feed the evaluation set):
 - The retriever missed the definition when asked "What is variance?", so the tutor correctly declined to state the formula.

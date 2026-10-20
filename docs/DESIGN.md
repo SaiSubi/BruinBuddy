@@ -1,6 +1,6 @@
 # BruinBuddy — Product & UX Design (v0)
 
-> Status: v0, built and deployed | Based on [PRD.md](PRD.md) v0 | Last updated: 2026-10-20
+> Status: v0, built and deployed | Based on [PRD_v0.md](PRD_v0.md) v0 | Last updated: 2026-10-20
 > Scope: a web app with a sign-in, a chat screen, and a one-number professor dashboard. Text only, no wireframe tooling.
 
 ## 1. Design principles
@@ -105,7 +105,7 @@ One big number. No filters, no charts in v0.
 
 **Memory**
 - When a reply uses memory, a small line under it says what it drew on ("Used memory: you were reviewing conditional probability").
-- v0 does not let students view, edit, or clear memory (PRD §8).
+- v0 does not let students view, edit, or clear memory (PRD_v0 §8).
 
 **Loading and errors**
 - While the tutor responds, show a typing indicator and stream text as it arrives.

@@ -1,106 +1,95 @@
-# BruinBuddy — PRD (v0)
+# BruinBuddy — PRD (v1, in progress)
 
-> Status: v0, built and deployed | Scope: the smallest useful tutor, running locally and live | Last updated: 2026-10-20
-> Previous, larger draft kept in [PRD_draft_v1.md](PRD_draft_v1.md).
+> Status: draft, being written section by section | Last updated: 2026-10-20
+> v0 (the deployed class demo) is in [PRD_v0.md](PRD_v0.md). Course requirements and rubric: Capstone "Build an AI Startup" (sign-up and login, AI backend, Stripe sandbox payments, live URL, write-up).
 
-## 1. What we are building
-BruinBuddy is an AI tutor for one course. A student chats with it, and it answers from the course materials, cites its sources, and guides the student toward the answer instead of handing over solutions. It remembers the student across chats. A professor can see how much it is being used.
+## Sections still to write
+1. Overview, problem, target users, and why AI
+2. **Accounts, access and payments** (below)
+3. Professor features (course setup, materials, guidelines, insights)
+4. Student features (tutor, chats, memory)
+5. Quality, errors and edge cases
+6. Success metrics, risks, milestones
 
-- **v0 runs locally for development and is deployed** (frontend on Vercel, backend on Fly.io, data on Supabase). Sign-in is a demo login gated by access codes. There are no real accounts yet.
-- **Demo course:** MIT OCW 18.05 (Intro to Probability and Statistics, Spring 2022), standing in for a UCLA course. The materials are CC BY-NC-SA 4.0, so credit MIT OCW and keep it non-commercial.
-- It is a standalone web app with no Bruin Learn integration.
+Positioning against Bruin Learn and other LMSs is left open for the pitch. The product is the tutor, so v1 does not add LMS features such as rosters for grading, gradebooks or announcements.
 
-## 2. Problem
-Students get stuck between lecture and problem sets. General chatbots either give the answer away or ignore how this course teaches and notates things. v0 gives them a course-grounded tutor that teaches and does not just answer. This is a working hypothesis. We have not interviewed users.
+---
 
-## 3. Users
-| User | What they do in v0 |
-|---|---|
-| **Student** | Chats with the tutor, keeps several chats, returns later and is remembered. |
-| **Professor** | Opens a dashboard that shows how many questions students have asked. |
+## 2. Accounts, access and payments
 
-## 4. v0 scope
+### 2.1 Model
+A **professor or university pays per course. Students join free.** Each course is its own account with its own plan, materials, members and limits.
 
-### 4.1 Course materials (ingested ahead of time)
-We ingest these four types from the 18.05 materials with a script. There is no upload UI.
-- Lecture notes
-- Readings
-- Class prep
-- Problem sets
-- **Problem set solutions** are ingested but are **tutor-only**. See 4.3.
+| Role | Who | Can do |
+|---|---|---|
+| **Course owner** | The professor or admin who creates and pays for the course | Set up the course, manage members and limits, see the roster |
+| **Staff** | Additional professors or TAs, up to the plan's staff cap | Same as owner except billing and deleting the course |
+| **Student** | Joins with the course code, up to the plan's seat cap | Use the tutor; see only their own chats |
 
-### 4.2 Tutor chat
-- A student asks a question and the tutor answers from the ingested materials.
-- Every substantive claim carries a **citation** that names the source document and location, for example "Class 7 notes, p. 3". The citation links to the source file.
-- If the materials do not cover the question, the tutor says so and does not invent a source.
-- The tutor can suggest what to review next when asked ("what should I study for conditional probability?"). This is a chat behaviour, not a separate feature.
-- Tutor answers are labelled **AI-generated**.
+One login can hold several roles: an owner of one course, a student in another. Roles come from **course membership stored in the database**, never from a field on the sign-in form.
 
-### 4.3 Teaching behaviour and solutions
-- The tutor teaches Socratically. It asks about the student's approach, gives hints, and explains concepts.
-- The tutor **never reveals problem set solutions**. It does not quote them, state final answers to assigned problems, or reveal solution steps. It may use them privately to check whether a student's work is right.
-- There is **no escape hatch** in v0. Asking again, or asking "just show me", does not unlock the solution.
-- Because the tutor never reveals solutions, v0 has no professor toggle for this.
+### 2.2 Sign-up and login
+- **Supabase Auth** with self-serve sign-up: email and password, plus Google sign-in. Password reset is included.
+- The demo's name-and-access-code login is removed.
+- A person who signs up through **"Create a course"** becomes an owner once payment succeeds. A person who signs up with a **course code** becomes a student of that course. Payment is the gate for owners; there is no manual approval.
+- Email confirmation is on if a real email sender is configured, otherwise off for the demo (Supabase's default sender is rate-limited).
 
-### 4.4 Multiple chats
-- A student can start a new chat, switch between chats, and reopen old ones.
-- Chat history is stored in the database and persists across sessions and devices.
+### 2.3 Creating and paying for a course
+1. The owner signs up and chooses the plan: **number of staff accounts, number of student seats, and a per-student token cap**.
+2. The price is calculated from those choices (formula to be decided, §2.7).
+3. The owner pays with **Stripe Checkout in test mode** (sandbox card 4242 4242 4242 4242).
+4. The course becomes **active only after the Stripe webhook confirms payment**. Until then it is in a pending state and students cannot join.
+5. Production demo uses the Stripe sandbox only. No live payments in v1.
 
-### 4.5 Memory
-- The tutor keeps a persistent per-student **memory** that carries across chats. It holds things like topics the student is working on, where they struggled, and how they prefer to learn.
-- The tutor uses the memory in new chats, for example "last time you were stuck on conditional probability."
-- v0 assumption: memory is created automatically from chats and is not editable. Whether students can view or clear it is an open question (§8).
+### 2.4 Joining a course (route B)
+- Each course has **one common student code**, shared by the professor in class or on Bruin Learn.
+- A student signs up or logs in, enters the code, and becomes a member. If the seat cap is reached, they see a clear "course is full" message.
+- Course settings the owner controls:
+  - **Rotate the code.** Existing students keep access; only the old code stops working.
+  - **Email-domain restriction** (optional), for example `ucla.edu` only.
+  - **Code expiry date** (optional).
+- Staff join with a **separate staff code** (or by invitation), limited by the staff cap.
+- No approval queue in v1. An optional "require approval" toggle is a later addition (a pending state on the membership).
 
-### 4.6 Identity
-- Two roles, **student** and **professor**. Sign-in is a name, a role, and an **access code** (one code for students, a separate one for the professor). There is no password and no UCLA SSO.
-- Professor sign-in is off unless a professor code is configured.
-- Identity exists so history and memory belong to one student. It is demo-grade: anyone who knows the student code can sign in under any student's name and see that student's chats.
+### 2.5 Roster and removal
+- The owner and staff see a **roster**: name, email, joined date, token usage.
+- They can **remove** a student (access ends immediately and the seat is freed) or **block** them (they cannot rejoin with the code).
+- Removed students' chats are kept for the course but they can no longer sign in to it. Retention rules are an open question (§2.7).
 
-### 4.8 Usage limits
-- Each student can ask 40 questions per rolling 24 hours, and the whole app 200, to protect the API budget.
-- A student who hits a limit sees a plain message and can try again later.
+### 2.6 Usage limits
+- The owner sets a **per-student token cap** at setup and can change it later. It replaces the fixed 40-questions-a-day limit from v0. The cap covers a rolling period, with a default (period to be decided, §2.7).
+- The plan also sets a **course-wide ceiling**, so a course cannot exceed what it paid for.
+- A student at their cap sees a plain message and when it resets. Nothing is sent to the AI.
+- Token usage is already logged per call, and will be attributed to the course and student.
 
-### 4.7 Professor dashboard
-- v0 shows one number: the **total number of questions students have asked**.
+### 2.7 Open questions
+- **Pricing formula:** price per seat, per staff seat, per token cap, or a flat tier? Subscription per term, or one-time payment?
+- **Cap period:** per day, per week, or per term?
+- **Privacy:** can staff read an individual student's chats, or only aggregated insights? To be settled with the professor features (§3).
+- **Retention:** how long are chats kept after a student is removed or a course ends?
+- **Staff invitations:** a separate staff code (proposed) or invitations by email?
+- **What happens when payment lapses or the term ends:** read-only for students, or the course shuts off?
 
-## 5. Out of scope for v0
-- Practice questions and quizzes
-- Professor upload UI and tutor guidelines. Materials come from the ingestion script.
-- Any way to unlock solutions
-- Per-student or per-topic insights, and the unanswered-questions list
-- Evaluation and metrics. We will define these later (§8).
-- Real accounts (for example UCLA SSO or Supabase Auth), multiple courses, and privacy and compliance work
-- Bruin Learn or any LMS integration
-- Mobile optimization
-- Grading, or anything that counts toward a real grade
-- UCLA branding or marks
+### 2.8 Out of scope for v1
+UCLA SSO, Bruin Learn or any LMS sign-in, unique per-student codes, bulk email invites, an approval queue, live-mode payments, refunds, proration, taxes and invoices.
 
-## 6. User flows (acceptance for v0)
-1. **Concept question.** A student asks a concept question. The answer comes from the course materials, includes at least one citation, and does not contradict the notes.
-2. **Study suggestion.** A student asks what to review for a topic. The tutor lists topics and materials, each cited.
-3. **Assigned problem.** A student pastes a problem set problem and asks for the answer. The tutor does not give the answer. It asks about their approach and gives a hint, and it still refuses if they ask again.
-4. **Not in the materials.** A student asks something the materials do not cover. The tutor says so.
-5. **Multiple chats.** A student starts two chats, leaves, and comes back. Both chats are intact.
-6. **Memory.** A student discusses a topic in chat 1. In a new chat 2 the tutor shows it remembers the earlier context.
-7. **Dashboard.** After students ask questions, the professor sees the correct total count.
-8. **Access.** Without the right access code, sign-in fails. A student over the daily limit gets a clear message and no tutor reply.
+### 2.9 Acceptance criteria
+1. A new user can sign up, log in, and reset a password on the live site.
+2. An owner can create a course, pay with the Stripe test card, and see it become active. A failed or cancelled payment leaves it pending.
+3. A student can sign up, enter the course code, and use the tutor. A wrong, rotated or expired code is refused with a clear message.
+4. The seat cap is enforced: the (cap + 1)th student is refused. Removing a student frees a seat; a blocked student cannot rejoin.
+5. A student sees only their own chats, in their own courses. A user cannot reach another course's data or the owner screens by changing a request.
+6. A student past their token cap gets the limit message and no AI call is made.
 
-## 7. Constraints and risks
-- **Solutions are in the corpus.** The tutor-only rule is the main risk. We need to test flow 3 hard.
-- **Wrong or fake citations.** Citations must come from retrieved passages only.
-- **PDF and math extraction.** Notes are math-heavy and extraction may garble formulas. Start with the four material types above, not everything.
-- **Memory can be wrong or creepy.** It should record only study-relevant facts.
-- **API budget** is roughly $10–20. Use a cost-efficient model, cap tokens, and enforce the daily limits.
-- **Content rights.** Credit MIT OCW, non-commercial only.
-- **Shared access code.** Whoever has the student code can read any student's chats. Fine for a class demo, not for real students.
+### 2.10 Effort (rough, on the existing codebase)
+| Item | Effort | Depends on |
+|---|---|---|
+| Supabase Auth (sign-up, login, reset, token check in the backend) | M | none |
+| Course and membership data model (courses, members, roles) | M | none; also needed for per-course materials in §3 |
+| Course codes, seat cap, rotate, domain restriction, expiry | S | membership model |
+| Roster with remove and block | S | membership model |
+| Stripe Checkout, webhook, pending-to-active | M | course model |
+| Per-student and per-course token caps | S–M | usage logging (exists), membership model |
+| Frontend: sign-up, create-course, join, roster screens | M | the above |
 
-## 8. Open questions (not blocking v0)
-- Can students see, edit, or clear their memory?
-- How do we evaluate the tutor? Question set, metrics, and targets are deferred.
-- Do we replace the demo sign-in with real accounts, and when?
-- Who is allowed to change and deploy the code, and what review does a change need?
-- Do we later add practice questions, professor upload, guidelines, and richer insights?
-- Does the "no escape hatch" rule stay once we have real users?
-
-## 9. Next
-DESIGN.md, TECHNICAL.md and AI_STRATEGY.md describe how v0 is built and deployed. Next up, roughly: better retrieval, an evaluation set, real accounts, and a safer review-and-test process for changes (see AI_STRATEGY.md §10).
+Rubric note: sign-up and login, and the Stripe checkout working in production, are listed must-haves in the course requirements.
