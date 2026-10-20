@@ -8,11 +8,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import auth, config
+import httpx
+
+from . import auth, config, storage
 from .db import db, init_db, now
 from .guard import LeakGuard
 from .retrieval import Index
@@ -181,8 +183,16 @@ def get_file(doc_id: str, t: str = Query(default="")):
         raise HTTPException(403, "Link expired or invalid")
     with db() as conn:
         row = conn.execute("SELECT file_name FROM documents WHERE id=? AND tutor_only=0", (doc_id,)).fetchone()
-    path = config.PDF_DIR / row["file_name"] if row else None
-    if not path or not path.exists():
+    if not row:
+        raise HTTPException(404, "Not found")
+    if storage.configured():  # production: send the browser to a short-lived Supabase Storage link
+        try:
+            return RedirectResponse(storage.signed_url(row["file_name"]), status_code=302,
+                                    headers={"Cache-Control": "no-store"})
+        except (httpx.HTTPError, KeyError):
+            raise HTTPException(502, "File storage is unavailable")
+    path = config.PDF_DIR / row["file_name"]  # local dev
+    if not path.exists():
         raise HTTPException(404, "Not found")
     return FileResponse(path, media_type="application/pdf")
 

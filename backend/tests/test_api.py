@@ -224,3 +224,28 @@ def test_production_refuses_unsafe_config(monkeypatch):
     monkeypatch.setattr(config, "SECRET_KEY", "short")
     with pytest.raises(RuntimeError, match="SECRET_KEY"):
         config.check_production_settings()
+
+
+def test_files_redirect_to_signed_storage_url(client, monkeypatch):
+    from app import storage
+    doc = q1("SELECT id FROM documents WHERE tutor_only=0 LIMIT 1")["id"]
+    from app import auth
+    monkeypatch.setattr(storage, "configured", lambda: True)
+    monkeypatch.setattr(storage, "signed_url", lambda name: f"https://example.test/signed/{name}?token=x")
+    anon = TestClient(app)
+    r = anon.get(f"/files/{doc}?t={auth.make_file_token(doc)}", follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"].startswith("https://example.test/signed/")
+    assert r.headers["cache-control"] == "no-store"
+    # a solution document never gets a signed link, even with a valid file token
+    sol = q1("SELECT id FROM documents WHERE tutor_only=1 LIMIT 1")["id"]
+    assert anon.get(f"/files/{sol}?t={auth.make_file_token(sol)}", follow_redirects=False).status_code == 404
+
+
+def test_storage_outage_returns_502(client, monkeypatch):
+    import httpx
+    from app import storage, auth
+    doc = q1("SELECT id FROM documents WHERE tutor_only=0 LIMIT 1")["id"]
+    monkeypatch.setattr(storage, "configured", lambda: True)
+    def boom(name): raise httpx.ConnectError("down")
+    monkeypatch.setattr(storage, "signed_url", boom)
+    assert TestClient(app).get(f"/files/{doc}?t={auth.make_file_token(doc)}", follow_redirects=False).status_code == 502

@@ -169,7 +169,7 @@ Browser ──► Vercel (static React build)
    ▼
 Fly.io (FastAPI container, scale-to-zero) ──► Supabase Postgres (transaction pooler)
    │                                       └─► OpenRouter
-   └─ serves public PDFs from the image (solution PDFs are never in the image)
+   └─ signs short-lived links to public PDFs in Supabase Storage (solution PDFs are never uploaded)
 ```
 | Piece | Choice | Notes |
 |---|---|---|
@@ -177,8 +177,9 @@ Fly.io (FastAPI container, scale-to-zero) ──► Supabase Postgres (transacti
 | Backend | Fly.io, `Dockerfile` + `fly.toml` | 512 MB shared CPU, auto-stops when idle (the first request after idle is slow). Health check at `/api/health`. |
 | Database | Supabase Postgres | Connect with the **transaction pooler** URL. The schema is created on startup, with row-level security enabled and no policies, so Supabase's public REST API cannot read any table. The backend connects as a role that bypasses RLS. |
 | Course data | Ingested once from the local course folder into Supabase (`DATABASE_URL=… python -m app.ingest`) | The 18.05 folder never leaves this machine. |
-| PDFs | `deploy/make_pdfs.py` copies the 96 public PDFs (13.6 MB) into the image | Tutor-only solution text lives in the database only. |
-| Secrets | `fly secrets` for the backend, kept locally in `.env.production` (git-ignored) | `SECRET_KEY`, `DATABASE_URL`, `OPENROUTER_API_KEY`, access codes, `ALLOWED_ORIGINS`. |
+| PDFs | 96 public PDFs (13.6 MB) in a **private** Supabase Storage bucket `course-pdfs`, uploaded by `deploy/upload_pdfs.py`. `/files/{id}` redirects to a signed link that expires in 5 minutes. | Solution PDFs are never uploaded; solution text lives in the database only. |
+| Secrets | `fly secrets` for the backend, kept locally in `.env.production` (git-ignored) | `SECRET_KEY`, `DATABASE_URL`, `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (server-side only), access codes, `ALLOWED_ORIGINS`. |
+| CI/CD | GitHub Actions `.github/workflows/deploy-backend.yml`: on a push to `main` that touches backend files, check that the app imports, then `flyctl deploy` | Uses the repo secret `FLY_API_TOKEN` (a Fly deploy token for this app only). The image is built from git alone. |
 
 **Abuse and cost limits:** access codes gate sign-in, each student gets `DAILY_MESSAGE_LIMIT` questions per rolling 24 hours (default 40 in production), the whole app gets `GLOBAL_DAILY_LIMIT` (default 200, about $4 a day at $0.02 per turn), and CORS only allows `ALLOWED_ORIGINS`. Also set a credit limit on the OpenRouter key.
 
@@ -187,6 +188,6 @@ Fly.io (FastAPI container, scale-to-zero) ──► Supabase Postgres (transacti
 **Live (deployed 2026-10-19):** frontend https://bruinbuddy.vercel.app, backend https://bruinbuddy-api.fly.dev (region `sjc`; `sea` is deprecated), database on Supabase (us-west-2). The first Supabase load took about a minute from this machine.
 
 **Redeploying**
-- Backend: `backend/.venv/bin/python deploy/make_pdfs.py` (only if the PDF set changed), then `fly deploy --ha=false`. Change a secret with `fly secrets set KEY=value -a bruinbuddy-api` (this restarts the app).
+- Backend: push to `main` and GitHub Actions deploys it (or run `fly deploy --ha=false` by hand). Change a secret with `fly secrets set KEY=value -a bruinbuddy-api` (this restarts the app). If the PDF set changes, run `backend/.venv/bin/python deploy/upload_pdfs.py`.
 - Frontend: `VITE_API_BASE` is stored in the Vercel project for Production. Vercel blocked a CLI deploy run from inside this git repo ("commit author doesn't have permission"), so deploy from a copy of `frontend/` that has no git history: copy it (with its `.vercel` folder) to a temp directory and run `vercel deploy --prod --yes` there. Connecting the Vercel project to the GitHub repo would remove the need for this.
 - New course data: `DATABASE_URL=<supabase url> python -m app.ingest` (the URL must be percent-encoded if the password has special characters).

@@ -33,6 +33,6 @@ Open http://127.0.0.1:8000, sign in as a student (any name) or professor.
 
 ## Deploy
 
-Production layout: Vercel (frontend) + Fly.io (backend) + Supabase (Postgres). Live: https://bruinbuddy.vercel.app (frontend) and https://bruinbuddy-api.fly.dev (backend). Students need the access code from `.env.production`. See [docs/TECHNICAL.md](docs/TECHNICAL.md) §13 for how to redeploy. Production settings live in `.env.production` (git-ignored; create it with `backend/.venv/bin/python deploy/init_env.py`, template in `.env.production.example`).
+Production layout: Vercel (frontend) + Fly.io (backend) + Supabase (Postgres). Live: https://bruinbuddy.vercel.app (frontend) and https://bruinbuddy-api.fly.dev (backend). Students need the access code from `.env.production`. The backend redeploys automatically from GitHub Actions when backend files change on `main`. See [docs/TECHNICAL.md](docs/TECHNICAL.md) §13. Production settings live in `.env.production` (git-ignored; create it with `backend/.venv/bin/python deploy/init_env.py`, template in `.env.production.example`).
 
 Course content: MIT OpenCourseWare 18.05, Spring 2022, CC BY-NC-SA 4.0. Non-commercial use only. Not affiliated with MIT or UCLA.
