@@ -1,0 +1,17 @@
+# Course materials (MIT OCW 18.05, CC BY-NC-SA 4.0) - large, kept local only
+18.05-spring-2022/
+
+# macOS
+.DS_Store
+
+# BruinBuddy local build
+.env
+data/
+backend/.venv/
+__pycache__/
+*.pyc
+frontend/node_modules/
+frontend/dist/
+.env.production
+deploy/pdfs/
+.vercel/

@@ -1,0 +1,5 @@
+*
+!backend/requirements.txt
+!backend/app/
+!deploy/pdfs/
+**/__pycache__

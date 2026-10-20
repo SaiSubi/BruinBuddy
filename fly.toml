@@ -1,0 +1,27 @@
+app = "bruinbuddy-api"
+primary_region = "sjc"   # Fly region near the Supabase project (aws us-west-2, Oregon); sea is deprecated
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ENV = "production"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"     # scale to zero when idle (first request after idle takes a few seconds)
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "25s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
