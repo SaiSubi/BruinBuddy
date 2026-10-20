@@ -23,7 +23,7 @@ A **professor or university pays per course. Students join free.** Each course i
 | Role | Who | Can do |
 |---|---|---|
 | **Course owner** | The professor or admin who creates and pays for the course | Set up the course, manage members and limits, see the roster |
-| **Staff** | Additional professors or TAs, up to the plan's staff cap | Same as owner except billing and deleting the course |
+| **Staff** | Additional professors or TAs, up to the plan's staff cap | Same as owner except billing, deleting the course, and adding staff |
 | **Student** | Joins with the course code, up to the plan's seat cap | Use the tutor; see only their own chats |
 
 One login can hold several roles: an owner of one course, a student in another. Roles come from **course membership stored in the database**, never from a field on the sign-in form.
