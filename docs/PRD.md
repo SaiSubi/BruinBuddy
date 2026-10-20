@@ -48,7 +48,8 @@ One login can hold several roles: an owner of one course, a student in another. 
   - **Rotate the code.** Existing students keep access; only the old code stops working.
   - **Email-domain restriction** (optional), for example `ucla.edu` only.
   - **Code expiry date** (optional).
-- Staff join with a **separate staff code** (or by invitation), limited by the staff cap.
+- **Staff (extra professors or TAs) use a separate staff code**, shown only to the owner. A person signs up with their own email and password, enters the staff code, and gets **staff access automatically**, up to the plan's staff cap. The owner has full access from creation.
+- Because the staff code is more powerful than the student code: the owner can **rotate it, remove any staff member, and see who is staff**, and the staff cap limits how many can join. Staff cannot see or change the staff code, billing, or delete the course.
 - No approval queue in v1. An optional "require approval" toggle is a later addition (a pending state on the membership).
 
 ### 2.5 Roster and removal
@@ -67,7 +68,7 @@ One login can hold several roles: an owner of one course, a student in another. 
 - **Cap period:** per day, per week, or per term?
 - **Privacy:** can staff read an individual student's chats, or only aggregated insights? To be settled with the professor features (§3).
 - **Retention:** how long are chats kept after a student is removed or a course ends?
-- **Staff invitations:** a separate staff code (proposed) or invitations by email?
+- **Staff code strength:** should staff codes be single-use (one code creates one staff account) instead of a reusable code? Safer, slightly more work for the owner.
 - **What happens when payment lapses or the term ends:** read-only for students, or the course shuts off?
 
 ### 2.8 Out of scope for v1
