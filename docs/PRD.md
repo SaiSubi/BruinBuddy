@@ -7,7 +7,7 @@
 1. Overview, problem, target users, and why AI
 2. **Accounts, access and payments** (below)
 3. **Professor features** (course setup, materials, guidelines, modes, insights) (below)
-4. Student features (tutor, chats, memory)
+4. **Student features** (course home, tutor chat, memory) (below)
 5. Quality, errors and edge cases
 6. Success metrics, risks, milestones
 
@@ -190,3 +190,85 @@ Practice question generation, LMS sync, OCR, reading individual student chats, p
 - If a problem set's mode changes mid-chat, does the new mode apply immediately? Proposed: yes, from the next message.
 - How does the tutor know a question is "not covered" in a way that is reliable enough for the dashboard list?
 - Solution PDFs have never been stored in the file bucket. Releasing a solution requires storing it privately and serving it only when Released.
+
+---
+
+## 4. Student features
+
+### 4.1 Approach
+**Chat is the one place students get help.** A thin **course home** sits around it and launches chats with context attached. v1 adds no separate quiz, flashcard, planner or progress tools.
+
+### 4.2 Joining
+A student signs up or logs in, enters the course code (§2.4) and lands on that course's home. A wrong, expired or rotated code, a full course, and a removed or blocked student each get a clear message.
+
+### 4.3 Courses
+A student can be in several courses. A course switcher moves between them. **Chats and memory belong to one course.**
+
+### 4.4 Course home
+The home shows the course name, a banner if the tutor is paused (§3.4), the student's allowance meter (§2.6), and four entry points. Each ends in the same chat.
+
+| Entry point | What it does |
+|---|---|
+| **Help with a problem set** | The student picks a problem set from the list, each shown with its mode ("hints only", "full help", "solutions open"). A chat opens with that set attached, so **the right mode applies and the checker finds the right solution even if the student rewords the question.** Pasting a problem in any chat still works, using v0's detection as a fallback. |
+| **Review a topic** | Pick a lecture or reading. The chat starts with a request to review it, answered with ordered steps and cited materials. |
+| **Quiz me** | Starts a chat with a practice request. The tutor asks one question at a time, grounded in the materials with citations. Questions are drawn from lecture notes, readings and Practice or open problem sets, **never from Graded problem sets.** |
+| **Browse materials** | A read-only list of the course's documents by category. Opening one shows the source. Solutions are never listed unless their problem set is open. |
+
+If the course has no problem sets or materials yet, the home shows a plain empty state. Students never see the staff setup screens.
+
+### 4.5 Chat screen
+Carried over from v0:
+- A chat list in the sidebar, the conversation, and a source panel.
+- Streaming answers, numbered citation chips that open the source passage, and a link to the original document.
+- An **AI-generated** label on tutor messages, and math rendered with KaTeX.
+- A "Used memory" line when memory shaped a reply.
+
+New in v1:
+- A one-line **rule for the current problem set** ("Pset 4: hints only").
+- The pause message and the allowance limit message (§4.8).
+- The About page states that the tutor can make mistakes, credits the course content where required, and says staff see aggregate usage and not individual chats.
+
+### 4.6 Memory
+Memory works as in v0: short study notes written automatically after replies, kept **per course**, used in later chats in that course. Students cannot view, edit or delete it in v1.
+
+### 4.7 Responsive layout
+Usable on a phone: the sidebar collapses into a menu and the source panel becomes a sheet. Not otherwise optimised.
+
+### 4.8 Errors and limits
+Every failure leaves the student's message in the thread with a clear next step.
+- **AI failure or provider refusal:** a plain message with Retry.
+- **Allowance reached:** a message with when it resets, and no AI call is made (§2.6).
+- **Tutor paused:** the pause message, and no AI call is made (§3.4).
+- **Removed or blocked:** access ends immediately, with a message that says to contact the instructor.
+- **Session expired:** returns to login and keeps the draft where possible.
+- **Not in the materials:** the tutor says so and offers what it can help with (v0 behaviour).
+
+### 4.9 Out of scope for v1
+A dedicated practice-question interface, flashcards, study planners, progress tracking, photo or image upload of problems, voice, notifications, sharing chats, thumbs up/down on answers, generated starter questions, and student controls to view or delete memory, chats or data.
+
+### 4.10 Acceptance criteria
+1. A new student can sign up, enter a valid code and reach the course home. Bad codes give clear messages.
+2. "Help with a problem set" opens a chat with that set attached, and the set's mode applies even when the student rewords the problem. The rule line is shown.
+3. "Quiz me" asks cited questions from allowed materials and never from a Graded problem set.
+4. "Browse materials" never lists or opens a solution while its set is Graded or Practice.
+5. Chats and memory in one course are not visible in another. A student in two courses switches between them.
+6. An answer from the materials has working citations and an AI-generated label. A question the materials don't cover gets the "not in the materials" reply.
+7. A student at their allowance, in a paused course, or removed from the course gets the right message and no AI call is made.
+8. The core flow works on a phone-sized screen.
+
+### 4.11 Effort (rough, on the existing codebase)
+| Item | Effort | Depends on |
+|---|---|---|
+| Course home with the four entry points and empty state | M | per-course model (§3.9) |
+| Problem set picker that attaches the set to a chat | S–M | modes (§3.4) |
+| Quiz behaviour (prompt plus "never from Graded sets" filter) | S | modes |
+| Browse materials list and source viewing | S | per-course model |
+| Course switcher, per-course chats and memory | S–M | per-course model |
+| Rule line, pause banner and allowance meter | S | modes, caps (§2.6) |
+| Error and limit states, removal handling | S | §2 |
+| Responsive layout | S–M | none |
+
+### 4.12 Open questions
+- If a student is removed mid-chat, can they still see their old chats? Proposed: no, access to the course ends entirely.
+- When a problem set's mode changes (for example from Graded to open), do earlier messages in an attached chat stay as they were? Proposed: yes, the new mode applies from the next message.
+- What does Quiz me do when a course has only Graded problem sets and few lecture materials? Proposed: it asks conceptual questions from the lecture notes and readings, or says there's little to quiz on.
