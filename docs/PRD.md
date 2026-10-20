@@ -48,8 +48,8 @@ One login can hold several roles: an owner of one course, a student in another. 
   - **Rotate the code.** Existing students keep access; only the old code stops working.
   - **Email-domain restriction** (optional), for example `ucla.edu` only.
   - **Code expiry date** (optional).
-- **Staff (extra professors or TAs) use a separate staff code**, shown only to the owner. A person signs up with their own email and password, enters the staff code, and gets **staff access automatically**, up to the plan's staff cap. The owner has full access from creation.
-- Because the staff code is more powerful than the student code: the owner can **rotate it, remove any staff member, and see who is staff**, and the staff cap limits how many can join. Staff cannot see or change the staff code, billing, or delete the course.
+- **Staff (extra professors or TAs) join with single-use staff codes.** The owner clicks "Add staff" to generate a code, which expires after 7 days, and gives it to one person. That person signs up with their own email and password, enters the code, and gets **staff access automatically**. The code is then used up. Codes count against the plan's staff cap, and the owner can revoke an unused code. The owner has full access from creation.
+- The owner can **see who is staff and remove any staff member**. Staff cannot create staff codes, see billing, or delete the course.
 - No approval queue in v1. An optional "require approval" toggle is a later addition (a pending state on the membership).
 
 ### 2.5 Roster and removal
@@ -68,7 +68,6 @@ One login can hold several roles: an owner of one course, a student in another. 
 - **Cap period:** per day, per week, or per term?
 - **Privacy:** can staff read an individual student's chats, or only aggregated insights? To be settled with the professor features (§3).
 - **Retention:** how long are chats kept after a student is removed or a course ends?
-- **Staff code strength:** should staff codes be single-use (one code creates one staff account) instead of a reusable code? Safer, slightly more work for the owner.
 - **What happens when payment lapses or the term ends:** read-only for students, or the course shuts off?
 
 ### 2.8 Out of scope for v1
@@ -87,7 +86,7 @@ UCLA SSO, Bruin Learn or any LMS sign-in, unique per-student codes, bulk email i
 |---|---|---|
 | Supabase Auth (sign-up, login, reset, token check in the backend) | M | none |
 | Course and membership data model (courses, members, roles) | M | none; also needed for per-course materials in §3 |
-| Course codes, seat cap, rotate, domain restriction, expiry | S | membership model |
+| Student course code (seat cap, rotate, domain restriction, expiry) and single-use staff codes | S | membership model |
 | Roster with remove and block | S | membership model |
 | Stripe Checkout, webhook, pending-to-active | M | course model |
 | Per-student and per-course token caps | S–M | usage logging (exists), membership model |
