@@ -189,5 +189,5 @@ Fly.io (FastAPI container, scale-to-zero) ──► Supabase Postgres (transacti
 
 **Redeploying**
 - Backend: push to `main` and GitHub Actions deploys it (or run `fly deploy --ha=false` by hand). Change a secret with `fly secrets set KEY=value -a bruinbuddy-api` (this restarts the app). If the PDF set changes, run `backend/.venv/bin/python deploy/upload_pdfs.py`.
-- Frontend: `VITE_API_BASE` is stored in the Vercel project for Production. Vercel blocked a CLI deploy run from inside this git repo ("commit author doesn't have permission"), so deploy from a copy of `frontend/` that has no git history: copy it (with its `.vercel` folder) to a temp directory and run `vercel deploy --prod --yes` there. Connecting the Vercel project to the GitHub repo would remove the need for this.
+- Frontend: the Vercel project is connected to `SaiSubi/BruinBuddy` (Root Directory `frontend`, production branch `main`), so every push to `main` builds and deploys it, and other branches get preview URLs. `VITE_API_BASE` (the Fly URL) is stored in the Vercel project for Production. Because the Root Directory is `frontend`, run manual Vercel CLI deploys from the repo root, not from `frontend/`.
 - New course data: `DATABASE_URL=<supabase url> python -m app.ingest` (the URL must be percent-encoded if the password has special characters).
