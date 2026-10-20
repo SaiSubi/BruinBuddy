@@ -1,7 +1,7 @@
 # BruinBuddy — Product & UX Design (v0)
 
-> Status: v0 | Based on [PRD.md](PRD.md) v0 | Last updated: 2026-10-19
-> Scope: a local web app with a sign-in, a chat screen, and a one-number professor dashboard. Text only, no wireframe tooling.
+> Status: v0, built and deployed | Based on [PRD.md](PRD.md) v0 | Last updated: 2026-10-20
+> Scope: a web app with a sign-in, a chat screen, and a one-number professor dashboard. Text only, no wireframe tooling.
 
 ## 1. Design principles
 - **Teach, don't tell.** The tutor asks and hints. The interface never offers a "show answer" button, because v0 has no escape hatch.
@@ -14,7 +14,7 @@
 Sign-in  ──►  Student:    Chat screen (chat list + conversation + source panel)
          └─►  Professor:  Dashboard (question count)
 ```
-- **Sign-in** is a name and a role (student or professor). There is no password.
+- **Sign-in** is a name, a role (student or professor), and an access code. There is no password.
 - **Student** has one main screen. The chat list is a sidebar, not a separate page.
 - **Professor** has one page: the dashboard.
 - **Navigation** is just the signed-in name, a sign-out link, and an About link for MIT OCW attribution.
@@ -45,11 +45,12 @@ Sign-in  ──►  Student:    Chat screen (chat list + conversation + source p
 │                              │
 │  Name  [________________]    │
 │  I am  (•) Student ( ) Prof. │
+│  Access code [__________]    │
 │                              │
 │  [ Continue ]                │
 └──────────────────────────────┘
 ```
-Same name plus role returns to the same history and memory.
+Same name plus role returns to the same history and memory. The access-code field appears only when the server requires one. A wrong code shows an inline error. If professor sign-in is not enabled on the server, the professor option says so and the button is disabled.
 
 ### 4.2 Student chat screen
 ```
@@ -90,7 +91,7 @@ One big number. No filters, no charts in v0.
 **Citations**
 - Inline numbered chips such as [1] sit at the end of the claim they support.
 - Clicking a chip opens the source panel with the document name, location (page or section), and the passage the answer used.
-- "Open document" opens the full source file in a new tab.
+- "Open document" opens the source PDF in a new tab. The link is signed and expires quickly, so it can't be shared.
 - Solution documents never appear as a citation, a source, or a link.
 
 **Teaching responses**
@@ -108,14 +109,14 @@ One big number. No filters, no charts in v0.
 
 **Loading and errors**
 - While the tutor responds, show a typing indicator and stream text as it arrives.
-- If the request fails, show "Something went wrong. Try again" with a retry button, and keep the student's message in the box.
+- If the request fails, the student's message stays in the thread and the tutor's reply shows an error with a Retry link. A daily-limit message from the server is shown the same way.
 - If no relevant sources are found, show the "not in the materials" reply, with no citations.
 - Long pasted problems are accepted, and the input grows up to a limit and then scrolls.
 
 ## 6. Visual design system
 - **Type:** one system sans-serif font. Body text 16px with generous line height, because answers are long.
 - **Layout:** a centered chat column with a maximum width of about 720px so lines stay readable.
-- **Color:** a neutral light theme with one accent color for buttons and citation chips. Tutor messages sit on a faint tinted background to set them apart from student messages. Use no UCLA blue or gold, and no UCLA marks.
+- **Color:** a neutral theme (light and dark, following the system setting) with one accent color for buttons and citation chips. Tutor messages sit on a faint tinted background to set them apart from student messages. Use no UCLA blue or gold, and no UCLA marks.
 - **Components:** message bubble, citation chip, source panel, chat list item, primary and secondary buttons, text input.
 - **Math:** render formulas with KaTeX, both inline and block, in tutor answers and source excerpts.
 - **Responsive:** desktop first. On narrow screens the sidebar collapses to a menu and the source panel becomes a slide-up sheet. Not optimized beyond that.
@@ -139,8 +140,12 @@ One big number. No filters, no charts in v0.
 | Memory visibility | A one-line note only | A memory page with edit and delete | Out of v0 scope |
 | Dashboard | One number | Charts and a topic breakdown | PRD v0 |
 
+**Decided in v0**
+- Chats are titled with the first 48 characters of the first question (no model call).
+- The three suggested questions are fixed.
+- The source panel shows the extracted passage, with a link to the original PDF page.
+
 **Open questions**
-- Do we auto-title chats with the model or just use the first question's text? (Cheaper: first words of the first question.)
-- Should the suggested questions be fixed or drawn from the materials?
-- Does the source panel need to show the original PDF page, or is the extracted text enough? (Depends on how well math extracts; see TECHNICAL.md.)
+- Should suggested questions be drawn from the materials?
 - Do students need a way to report a wrong answer? Deferred.
+- Should students be able to see and clear their memory?

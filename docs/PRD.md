@@ -1,12 +1,12 @@
 # BruinBuddy — PRD (v0)
 
-> Status: v0 | Scope: smallest thing we can build and run locally | Last updated: 2026-10-19
+> Status: v0, built and deployed | Scope: the smallest useful tutor, running locally and live | Last updated: 2026-10-20
 > Previous, larger draft kept in [PRD_draft_v1.md](PRD_draft_v1.md).
 
 ## 1. What we are building
 BruinBuddy is an AI tutor for one course. A student chats with it, and it answers from the course materials, cites its sources, and guides the student toward the answer instead of handing over solutions. It remembers the student across chats. A professor can see how much it is being used.
 
-- **v0 runs locally** on one machine. No hosting, no real login.
+- **v0 runs locally for development and is deployed** (frontend on Vercel, backend on Fly.io, data on Supabase). Sign-in is a demo login gated by access codes. There are no real accounts yet.
 - **Demo course:** MIT OCW 18.05 (Intro to Probability and Statistics, Spring 2022), standing in for a UCLA course. The materials are CC BY-NC-SA 4.0, so credit MIT OCW and keep it non-commercial.
 - It is a standalone web app with no Bruin Learn integration.
 
@@ -44,7 +44,7 @@ We ingest these four types from the 18.05 materials with a script. There is no u
 
 ### 4.4 Multiple chats
 - A student can start a new chat, switch between chats, and reopen old ones.
-- Chat history is stored and persists across sessions on the local machine.
+- Chat history is stored in the database and persists across sessions and devices.
 
 ### 4.5 Memory
 - The tutor keeps a persistent per-student **memory** that carries across chats. It holds things like topics the student is working on, where they struggled, and how they prefer to learn.
@@ -52,8 +52,13 @@ We ingest these four types from the 18.05 materials with a script. There is no u
 - v0 assumption: memory is created automatically from chats and is not editable. Whether students can view or clear it is an open question (§8).
 
 ### 4.6 Identity
-- Two roles, **student** and **professor**, with a simple local sign-in (pick or enter a name, no password, no UCLA SSO).
-- Identity exists so history and memory belong to one student.
+- Two roles, **student** and **professor**. Sign-in is a name, a role, and an **access code** (one code for students, a separate one for the professor). There is no password and no UCLA SSO.
+- Professor sign-in is off unless a professor code is configured.
+- Identity exists so history and memory belong to one student. It is demo-grade: anyone who knows the student code can sign in under any student's name and see that student's chats.
+
+### 4.8 Usage limits
+- Each student can ask 40 questions per rolling 24 hours, and the whole app 200, to protect the API budget.
+- A student who hits a limit sees a plain message and can try again later.
 
 ### 4.7 Professor dashboard
 - v0 shows one number: the **total number of questions students have asked**.
@@ -64,7 +69,7 @@ We ingest these four types from the 18.05 materials with a script. There is no u
 - Any way to unlock solutions
 - Per-student or per-topic insights, and the unanswered-questions list
 - Evaluation and metrics. We will define these later (§8).
-- Hosting, real authentication, multiple courses, and privacy and compliance work
+- Real accounts (for example UCLA SSO or Supabase Auth), multiple courses, and privacy and compliance work
 - Bruin Learn or any LMS integration
 - Mobile optimization
 - Grading, or anything that counts toward a real grade
@@ -78,22 +83,24 @@ We ingest these four types from the 18.05 materials with a script. There is no u
 5. **Multiple chats.** A student starts two chats, leaves, and comes back. Both chats are intact.
 6. **Memory.** A student discusses a topic in chat 1. In a new chat 2 the tutor shows it remembers the earlier context.
 7. **Dashboard.** After students ask questions, the professor sees the correct total count.
+8. **Access.** Without the right access code, sign-in fails. A student over the daily limit gets a clear message and no tutor reply.
 
 ## 7. Constraints and risks
 - **Solutions are in the corpus.** The tutor-only rule is the main risk. We need to test flow 3 hard.
 - **Wrong or fake citations.** Citations must come from retrieved passages only.
 - **PDF and math extraction.** Notes are math-heavy and extraction may garble formulas. Start with the four material types above, not everything.
 - **Memory can be wrong or creepy.** It should record only study-relevant facts.
-- **API budget** is roughly $10–20. Use a cost-efficient model and cache embeddings.
+- **API budget** is roughly $10–20. Use a cost-efficient model, cap tokens, and enforce the daily limits.
 - **Content rights.** Credit MIT OCW, non-commercial only.
+- **Shared access code.** Whoever has the student code can read any student's chats. Fine for a class demo, not for real students.
 
 ## 8. Open questions (not blocking v0)
 - Can students see, edit, or clear their memory?
 - How do we evaluate the tutor? Question set, metrics, and targets are deferred.
-- Which model(s) fit the budget? (→ AI_STRATEGY.md)
+- Do we replace the demo sign-in with real accounts, and when?
+- Who is allowed to change and deploy the code, and what review does a change need?
 - Do we later add practice questions, professor upload, guidelines, and richer insights?
 - Does the "no escape hatch" rule stay once we have real users?
-- Hosting, if we move beyond local.
 
 ## 9. Next
-Use this PRD to write DESIGN.md: the student chat screen, chat list, professor dashboard, and the citation display. Then fill in TECHNICAL.md and AI_STRATEGY.md.
+DESIGN.md, TECHNICAL.md and AI_STRATEGY.md describe how v0 is built and deployed. Next up, roughly: better retrieval, an evaluation set, real accounts, and a safer review-and-test process for changes (see AI_STRATEGY.md §10).
