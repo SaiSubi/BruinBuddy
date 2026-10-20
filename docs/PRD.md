@@ -214,7 +214,9 @@ The home shows the course name, a banner if the tutor is paused (§3.4), the stu
 | **Quiz me** | Starts a chat with a practice request. The tutor asks one question at a time, grounded in the materials with citations. Questions are drawn from lecture notes, readings and Practice or open problem sets, **never from Graded problem sets.** |
 | **Browse materials** | A read-only list of the course's documents by category. Opening one shows the source. Solutions are never listed unless their problem set is open. |
 
-If the course has no problem sets or materials yet, the home shows a plain empty state. Students never see the staff setup screens.
+**Starter questions.** The home and every empty chat show three to four suggested questions, **generated from the course's materials** (one small model call per course after ingestion, regenerated when materials change). They are mostly concept and study-guidance questions drawn from lecture notes and readings, never the text of a Graded problem set. Clicking one sends it as the first message. Staff cannot edit them in v1.
+
+If the course has no materials yet, the home shows a plain empty state. Students never see the staff setup screens.
 
 ### 4.5 Chat screen
 Carried over from v0:
@@ -244,7 +246,7 @@ Every failure leaves the student's message in the thread with a clear next step.
 - **Not in the materials:** the tutor says so and offers what it can help with (v0 behaviour).
 
 ### 4.9 Out of scope for v1
-A dedicated practice-question interface, flashcards, study planners, progress tracking, photo or image upload of problems, voice, notifications, sharing chats, thumbs up/down on answers, generated starter questions, and student controls to view or delete memory, chats or data.
+A dedicated practice-question interface, flashcards, study planners, progress tracking, photo or image upload of problems, voice, notifications, sharing chats, thumbs up/down on answers, staff editing of starter questions, and student controls to view or delete memory, chats or data.
 
 ### 4.10 Acceptance criteria
 1. A new student can sign up, enter a valid code and reach the course home. Bad codes give clear messages.
@@ -255,11 +257,13 @@ A dedicated practice-question interface, flashcards, study planners, progress tr
 6. An answer from the materials has working citations and an AI-generated label. A question the materials don't cover gets the "not in the materials" reply.
 7. A student at their allowance, in a paused course, or removed from the course gets the right message and no AI call is made.
 8. The core flow works on a phone-sized screen.
+9. Starter questions are specific to the course's own materials, cite real topics from them, and are not copied from a Graded problem set. Clicking one starts a normal cited chat.
 
 ### 4.11 Effort (rough, on the existing codebase)
 | Item | Effort | Depends on |
 |---|---|---|
 | Course home with the four entry points and empty state | M | per-course model (§3.9) |
+| Generated starter questions (one model call per course, regenerated on material changes) | S | ingestion (§3.2) |
 | Problem set picker that attaches the set to a chat | S–M | modes (§3.4) |
 | Quiz behaviour (prompt plus "never from Graded sets" filter) | S | modes |
 | Browse materials list and source viewing | S | per-course model |
