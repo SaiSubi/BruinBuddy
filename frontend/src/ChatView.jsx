@@ -17,6 +17,13 @@ const takeFirstMessage = (id) => {
     return v
   } catch { return null }
 }
+const takeOpenIllustrate = (id) => {
+  try {
+    const v = sessionStorage.getItem(`bb_open_illustrate_${id}`)
+    sessionStorage.removeItem(`bb_open_illustrate_${id}`)
+    return v === '1'
+  } catch { return false }
+}
 
 const INTRO = {
   pset: 'Paste the problem you’re working on, or tell me where you’re stuck.',
@@ -120,6 +127,11 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
     loadChats()
     setSource(null)
     setIllustrateError(null)
+    const wantIllustrate = takeOpenIllustrate(chatId)
+    if (wantIllustrate) {
+      setRightMode('illustrate')
+      setRightOpen(true)
+    }
     api.chat(chatId).then((c) => {
       setChat(c)
       setMessages(c.messages)
@@ -127,7 +139,7 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
       const ills = c.illustrations || []
       setIllustrations(ills)
       setActiveIllustration(ills[0] || null)
-      if (ills.length > 0) setRightMode('illustrate')
+      if (ills.length > 0 || wantIllustrate) setRightMode('illustrate')
       const first = takeFirstMessage(chatId)
       if (first && !c.messages.length && !startedFirst.current) {
         startedFirst.current = true
