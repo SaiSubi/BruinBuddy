@@ -203,7 +203,7 @@ The empty chat shows the starter questions. On a phone the chat list is a menu a
 | Student surface | Course home that launches chats | Separate quiz, planner and flashcard tools | PRD §4.1: chat is the one place for help |
 | Staff surface | One console with tabs | A wizard only | The checklist guides setup; tabs make every step revisitable |
 | Code entry | One "Enter a course code" field for students and staff | Separate fields | Less to explain; the server knows which is which |
-| Price display | Server-computed breakdown that updates as the plan changes | A fixed price table | The formula is still open (PRD §2.7) and stays in one place |
+| Price display | Server-computed breakdown that updates as the plan changes | A fixed price table | The formula (PRD §2.7) lives in one place on the server, so it can change without a frontend release |
 | Problem set rule | Always-visible rule line | A tooltip | Students should never be surprised by a refusal |
 | Dashboard privacy | Small groups hidden, no names in unanswered list | Full per-student detail | PRD §3.6 |
 | Routing | Hash URLs | History API with rewrites | Works on Vercel and the local backend unchanged |

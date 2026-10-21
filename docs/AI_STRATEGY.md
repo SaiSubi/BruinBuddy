@@ -79,7 +79,7 @@ API settings as in v0: model IDs in config; `reasoning.effort` medium for the tu
 
 **Controls:** per-student token allowance per rolling period, a course ceiling from the plan, the app-wide daily question limit, `max_tokens` on every call, top-6 retrieval, 8 messages of history, and per-call cost with course and student in `usage_log`.
 
-**Plan pricing vs cost (build default, TECHNICAL.md §5):** a seat with 100k tokens a week costs the course $2 per term. If a student used all of it every week for 10 weeks that is 1M tokens ≈ $3.20 of model cost, so pricing assumes typical use well under the cap. This is a placeholder until the PRD settles pricing.
+**Plan pricing vs cost (build default, TECHNICAL.md §5):** a seat with 100k tokens a week costs the course $2 per term. If a student used all of it every week for 10 weeks that is 1M tokens ≈ $3.20 of model cost, so pricing assumes typical use well under the cap. The formula is agreed in PRD §2.7; revisit it with real usage from a pilot (PRD §6.2).
 
 ## 7. Evaluation
 Still mostly manual, now with more surface to cover.
@@ -141,4 +141,3 @@ As in v0, but **per course**: notes written by Haiku after each reply, kept for 
 - Sonnet vs Opus for the tutor, and whether the checker should move to Sonnet (it runs on Haiku).
 - How reliable the `[NC]` signal is for the dashboard's unanswered list; measure it on the eval set.
 - Whether Practice mode should let the checker show more of the solution's reasoning.
-- Pricing and cap period (PRD §2.7).

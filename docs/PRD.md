@@ -1,23 +1,23 @@
 # BruinBuddy — PRD (v1)
 
-> Status: v1 built and live at https://bruinbuddy.vercel.app (2026-10-20). Sections 2–4 are the agreed requirements. **Sections 1, 5 and 6, and every item marked "Proposal", were drafted by Claude from the build for the owner to review**; they are not agreed yet. | Last updated: 2026-10-20
+> Status: v1 built and live at https://bruinbuddy.vercel.app (2026-10-20). All sections are agreed. Sections 1, 5 and 6 and the decisions under the open questions were drafted by Claude from the build and agreed by the owner on 2026-10-20. | Last updated: 2026-10-20
 > v0 (the deployed class demo) is in [PRD_v0.md](PRD_v0.md). Course requirements and rubric: Capstone "Build an AI Startup" (sign-up and login, AI backend, Stripe sandbox payments, live URL, write-up).
 
 ## Sections
-1. Overview, problem, target users, and why AI (**proposal, to review**)
+1. Overview, problem, target users, and why AI
 2. Accounts, access and payments
 3. Professor features (course setup, materials, guidelines, modes, insights)
 4. Student features (course home, tutor chat, memory)
-5. Quality, errors and edge cases (**proposal, to review**)
-6. Success metrics, risks, milestones (**proposal, to review**)
+5. Quality, errors and edge cases
+6. Success metrics, risks, milestones
 
-Open questions in §2.7, §3.10 and §4.12 now carry a **Proposal** line: the default the build uses, for the owner to accept or change. TECHNICAL.md marks the same choices "(build default)".
+Open questions in §2.7, §3.10 and §4.12 now carry an **Agreed** line recording the decision; items marked "not built" are agreed but not implemented yet. TECHNICAL.md marks the same choices "(build default)".
 
 Positioning against Bruin Learn and other LMSs is left open for the pitch. The product is the tutor, so v1 does not add LMS features such as rosters for grading, gradebooks or announcements.
 
 ---
 
-## 1. Overview, problem, users and why AI (proposal, to review)
+## 1. Overview, problem, users and why AI
 
 ### 1.1 Product
 BruinBuddy is an AI tutor sold to a course, not to a student. A professor (or the department) creates a course, pays for it, uploads the course's own materials and sets the rules. Students join free with a code and get a tutor that answers from those materials, cites the page it used, and coaches them through problem sets without handing over graded answers.
@@ -41,7 +41,7 @@ The demo course is MIT OCW 18.05 standing in for a UCLA course; the first real c
 - The risks of AI here (made-up facts, handing out solutions, ignoring the professor) are handled by design rather than by prompt alone: answers are grounded in and cited to the course's materials, solution text is never shown to the tutor for Graded sets, replies are checked in code before students see them, and the professor sets per-set modes and guidelines (§3).
 
 ### 1.5 Business model
-The professor or department pays per course per term; students join free (§2). The price scales with seats and the per-student AI allowance, so revenue tracks model cost (§2.7 proposal, §6.2).
+The professor or department pays per course per term; students join free (§2). The price scales with seats and the per-student AI allowance, so revenue tracks model cost (§2.7, §6.2).
 
 ---
 
@@ -100,7 +100,7 @@ One login can hold several roles: an owner of one course, a student in another. 
 - **Retention:** how long are chats kept after a student is removed or a course ends?
 - **What happens when payment lapses or the term ends:** read-only for students, or the course shuts off?
 
-**Proposals (build defaults, for review):**
+**Agreed (2026-10-20):**
 - *Pricing (built):* one payment per course per 10-week term, no subscription: $19 base + $9 per staff account (owner free) + $2 per student seat for each 100k tokens of weekly allowance (minimum $0.50 per seat). Example: 40 students, 2 staff, 100k tokens a week = $117. The course's total AI budget is (students + staff + 1) × weekly allowance × 10 weeks. Details: TECHNICAL.md §5.
 - *Cap period (built):* a rolling week by default; the owner can choose day, week or term at setup and change it later.
 - *Privacy (built):* staff see aggregates only, never individual chats (as §3.6 says).
@@ -228,7 +228,7 @@ Practice question generation, LMS sync, OCR, reading individual student chats, p
 - How does the tutor know a question is "not covered" in a way that is reliable enough for the dashboard list?
 - Solution PDFs have never been stored in the file bucket. Releasing a solution requires storing it privately and serving it only when Released.
 
-**Proposals (build defaults, for review; all built):**
+**Agreed (2026-10-20; all built):**
 - *Caps:* 300 files and 4,000 pages per course, 20 MB per file; the general guideline up to 4,000 characters; up to 20 material-specific guidelines of 1,000 characters each. Not yet tied to plan size.
 - *Mode change mid-chat:* applies from the next message.
 - *"Not covered" signal:* the tutor starts such replies with a hidden `[NC]` marker (a phrase check is the fallback); turns about a problem set never count as unanswered. Measure its accuracy on the evaluation set before relying on the dashboard list.
@@ -320,11 +320,11 @@ A dedicated practice-question interface, flashcards, study planners, progress tr
 - When a problem set's mode changes (for example from Graded to open), do earlier messages in an attached chat stay as they were? Proposed: yes, the new mode applies from the next message.
 - What does Quiz me do when a course has only Graded problem sets and few lecture materials? Proposed: it asks conceptual questions from the lecture notes and readings, or says there's little to quiz on.
 
-**Proposals (build defaults, for review; all built as proposed above):** removal ends all access to the course, including old chats (rejoining with the code restores them unless blocked); a mode change applies from the next message and earlier replies stay as they were; Quiz me never retrieves Graded sets and draws on notes, readings and Practice or open sets.
+**Agreed (2026-10-20; all built as proposed above):** removal ends all access to the course, including old chats (rejoining with the code restores them unless blocked); a mode change applies from the next message and earlier replies stay as they were; Quiz me never retrieves Graded sets and draws on notes, readings and Practice or open sets.
 
 ---
 
-## 5. Quality, errors and edge cases (proposal, to review)
+## 5. Quality, errors and edge cases
 
 ### 5.1 Quality bar
 | Area | Requirement |
@@ -364,7 +364,7 @@ A dedicated practice-question interface, flashcards, study planners, progress tr
 
 ---
 
-## 6. Success metrics, risks and milestones (proposal, to review)
+## 6. Success metrics, risks and milestones
 
 ### 6.1 Quality metrics (measured on a fixed evaluation set)
 | Metric | Target |

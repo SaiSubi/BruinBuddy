@@ -2,7 +2,7 @@
 
 > Status: v1 live at https://bruinbuddy.vercel.app since 2026-10-20 (Vercel + Fly.io + Supabase + Stripe test mode) | Based on [PRD.md](PRD.md) (v1) and [DESIGN.md](DESIGN.md) | Last updated: 2026-10-20
 > v0 is described in [PRD_v0.md](PRD_v0.md) and in this file's git history. Model choice and prompts are in [AI_STRATEGY.md](AI_STRATEGY.md).
-> Where the PRD leaves a question open, this file records the default the build uses and marks it **(build default)** so it can be changed later.
+> Choices marked **(build default)** were made during the build and have since been agreed in the PRD (§2.7, §3.10, §4.12, 2026-10-20).
 
 ## 1. System overview
 ```
@@ -69,7 +69,7 @@ Unchanged: FastAPI + React/Vite, KaTeX, OpenRouter through the `openai` SDK, SSE
 ## 5. Payments
 **Plan.** The owner picks student seats, staff seats, and a per-student token allowance with its period.
 
-**Pricing (build default; PRD §2.7 is open).** One payment per course per 10-week term:
+**Pricing (build default, agreed in PRD §2.7).** One payment per course per 10-week term:
 ```
 weekly_allowance = token_cap × {day: 7, week: 1, term: 0.1}[cap_period]
 price  = $19 base
@@ -270,7 +270,7 @@ Same layout as v0: Vercel (frontend, builds from `main`), Fly.io (backend, GitHu
 | Uploads processing | Background thread in the API process | A job queue and worker |
 
 **Open questions**
-- Pricing, cap period, retention and what happens when a term ends (PRD §2.7).
+- Retention (chats kept for the term plus 30 days) and read-only courses after the term are agreed in PRD §2.7 but not built yet.
 - Background processing in the web process can be interrupted by a scale-to-zero stop; a real job queue is the upgrade if uploads grow.
 - BM25 still struggles with single-term questions; hybrid or embedding retrieval remains the main quality upgrade.
 - PyMuPDF flattens math; LaTeX-aware or page-image extraction is still open.
