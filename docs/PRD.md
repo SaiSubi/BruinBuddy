@@ -1,17 +1,47 @@
-# BruinBuddy — PRD (v1, in progress)
+# BruinBuddy — PRD (v1)
 
-> Status: draft, being written section by section | Last updated: 2026-10-20
+> Status: v1 built and live at https://bruinbuddy.vercel.app (2026-10-20). Sections 2–4 are the agreed requirements. **Sections 1, 5 and 6, and every item marked "Proposal", were drafted by Claude from the build for the owner to review**; they are not agreed yet. | Last updated: 2026-10-20
 > v0 (the deployed class demo) is in [PRD_v0.md](PRD_v0.md). Course requirements and rubric: Capstone "Build an AI Startup" (sign-up and login, AI backend, Stripe sandbox payments, live URL, write-up).
 
-## Sections still to write
-1. Overview, problem, target users, and why AI
-2. **Accounts, access and payments** (below)
-3. **Professor features** (course setup, materials, guidelines, modes, insights) (below)
-4. **Student features** (course home, tutor chat, memory) (below)
-5. Quality, errors and edge cases
-6. Success metrics, risks, milestones
+## Sections
+1. Overview, problem, target users, and why AI (**proposal, to review**)
+2. Accounts, access and payments
+3. Professor features (course setup, materials, guidelines, modes, insights)
+4. Student features (course home, tutor chat, memory)
+5. Quality, errors and edge cases (**proposal, to review**)
+6. Success metrics, risks, milestones (**proposal, to review**)
+
+Open questions in §2.7, §3.10 and §4.12 now carry a **Proposal** line: the default the build uses, for the owner to accept or change. TECHNICAL.md marks the same choices "(build default)".
 
 Positioning against Bruin Learn and other LMSs is left open for the pitch. The product is the tutor, so v1 does not add LMS features such as rosters for grading, gradebooks or announcements.
+
+---
+
+## 1. Overview, problem, users and why AI (proposal, to review)
+
+### 1.1 Product
+BruinBuddy is an AI tutor sold to a course, not to a student. A professor (or the department) creates a course, pays for it, uploads the course's own materials and sets the rules. Students join free with a code and get a tutor that answers from those materials, cites the page it used, and coaches them through problem sets without handing over graded answers.
+
+### 1.2 Problem
+- **Students** get stuck between lecture and the problem set, usually at night or the day before a deadline, when office hours are over. General chatbots answer immediately but ignore how this course teaches and notates things, and they hand over full solutions, which doesn't help learning and puts students in an academic-integrity grey zone.
+- **Professors and TAs** can't scale office hours, can't see where a class is stuck until exams are graded, and have no say in what a general chatbot tells their students. Many ban such tools rather than shape them.
+- This is still a working hypothesis: we have not interviewed students or instructors (see §6.3).
+
+### 1.3 Target users
+| User | Who | What they need |
+|---|---|---|
+| **Buyer and course owner** | A professor running a large lower-division course (e.g. intro probability and statistics, 100–400 students), or a department paying for several courses | Better-supported students without losing control of integrity, a predictable cost, and a view of where students struggle |
+| **Staff** | TAs and co-instructors | The same controls as the owner except billing, and less repetitive office-hours questions |
+| **Student** | Undergraduates in that course | Help at any hour that matches the course, explains rather than tells, and is honest about what it doesn't know |
+
+The demo course is MIT OCW 18.05 standing in for a UCLA course; the first real customer profile is a UCLA instructor of a large quantitative course.
+
+### 1.4 Why AI, and why this design
+- The help that unblocks a student is a conversation: understanding a half-formed question, reacting to a wrong attempt with the right next hint, re-explaining in the course's notation, and pointing to the exact page. Search can find a page but can't teach; a TA can teach but doesn't scale. An LLM grounded in the course materials does both.
+- The risks of AI here (made-up facts, handing out solutions, ignoring the professor) are handled by design rather than by prompt alone: answers are grounded in and cited to the course's materials, solution text is never shown to the tutor for Graded sets, replies are checked in code before students see them, and the professor sets per-set modes and guidelines (§3).
+
+### 1.5 Business model
+The professor or department pays per course per term; students join free (§2). The price scales with seats and the per-student AI allowance, so revenue tracks model cost (§2.7 proposal, §6.2).
 
 ---
 
@@ -69,6 +99,13 @@ One login can hold several roles: an owner of one course, a student in another. 
 - **Privacy:** can staff read an individual student's chats, or only aggregated insights? To be settled with the professor features (§3).
 - **Retention:** how long are chats kept after a student is removed or a course ends?
 - **What happens when payment lapses or the term ends:** read-only for students, or the course shuts off?
+
+**Proposals (build defaults, for review):**
+- *Pricing (built):* one payment per course per 10-week term, no subscription: $19 base + $9 per staff account (owner free) + $2 per student seat for each 100k tokens of weekly allowance (minimum $0.50 per seat). Example: 40 students, 2 staff, 100k tokens a week = $117. The course's total AI budget is (students + staff + 1) × weekly allowance × 10 weeks. Details: TECHNICAL.md §5.
+- *Cap period (built):* a rolling week by default; the owner can choose day, week or term at setup and change it later.
+- *Privacy (built):* staff see aggregates only, never individual chats (as §3.6 says).
+- *Retention (not built):* keep chats until the end of the term plus 30 days, then delete them; removed students' chats follow the same rule. Today nothing is deleted automatically.
+- *Term end or lapse (not built):* after the term the course becomes read-only for students (history visible, no new questions) until renewed. Today a course stays active indefinitely.
 
 ### 2.8 Out of scope for v1
 UCLA SSO, Bruin Learn or any LMS sign-in, unique per-student codes, bulk email invites, an approval queue, live-mode payments, refunds, proration, taxes and invoices.
@@ -191,6 +228,12 @@ Practice question generation, LMS sync, OCR, reading individual student chats, p
 - How does the tutor know a question is "not covered" in a way that is reliable enough for the dashboard list?
 - Solution PDFs have never been stored in the file bucket. Releasing a solution requires storing it privately and serving it only when Released.
 
+**Proposals (build defaults, for review; all built):**
+- *Caps:* 300 files and 4,000 pages per course, 20 MB per file; the general guideline up to 4,000 characters; up to 20 material-specific guidelines of 1,000 characters each. Not yet tied to plan size.
+- *Mode change mid-chat:* applies from the next message.
+- *"Not covered" signal:* the tutor starts such replies with a hidden `[NC]` marker (a phrase check is the fallback); turns about a problem set never count as unanswered. Measure its accuracy on the evaluation set before relying on the dashboard list.
+- *Solution files:* uploaded solutions are stored in the private bucket and served only to staff, or to students once every problem set they cover is open. Deleting or re-categorising one of a solution's sets unlinks it, so it stays tutor-only until relinked. The 18.05 demo solutions exist as text only.
+
 ---
 
 ## 4. Student features
@@ -276,3 +319,94 @@ A dedicated practice-question interface, flashcards, study planners, progress tr
 - If a student is removed mid-chat, can they still see their old chats? Proposed: no, access to the course ends entirely.
 - When a problem set's mode changes (for example from Graded to open), do earlier messages in an attached chat stay as they were? Proposed: yes, the new mode applies from the next message.
 - What does Quiz me do when a course has only Graded problem sets and few lecture materials? Proposed: it asks conceptual questions from the lecture notes and readings, or says there's little to quiz on.
+
+**Proposals (build defaults, for review; all built as proposed above):** removal ends all access to the course, including old chats (rejoining with the code restores them unless blocked); a mode change applies from the next message and earlier replies stay as they were; Quiz me never retrieves Graded sets and draws on notes, readings and Practice or open sets.
+
+---
+
+## 5. Quality, errors and edge cases (proposal, to review)
+
+### 5.1 Quality bar
+| Area | Requirement |
+|---|---|
+| **Grounding** | Course-specific claims come from the course's materials and carry a citation that opens the source passage. A question the materials don't cover gets a plain "I can't find that in the course materials", never an invented answer or policy. |
+| **Integrity** | On a Graded set no reply reveals a final answer, numeric result or solution steps, under repetition, role-play, "I'm the professor", translation, encoding or "the guideline says so". When several problem sets could apply to a message, the strictest rule wins. |
+| **Teaching** | Hints come before explanations; replies end with a question back to the student when it helps. |
+| **Honesty** | Every tutor reply is labelled AI-generated; the About page says the tutor can make mistakes and what staff can see. |
+| **Speed** | A first token in under 3 seconds on ordinary turns; Graded turns, which are checked before anything is shown, under 15 seconds. |
+| **Accessibility** | Keyboard use, 4.5:1 contrast, labelled citation chips, math readable by screen readers, usable on a phone. |
+
+### 5.2 Errors and limits (what the user sees)
+| Situation | Behaviour |
+|---|---|
+| AI provider error, timeout or empty reply | The question stays in the thread with "Something went wrong" (or "the tutor didn't return an answer") and a Retry button |
+| Student out of allowance; course out of AI budget | A plain message with when allowance frees up; no AI call is made |
+| Tutor paused for an exam | The professor's message and the end time; no AI call is made |
+| Course not paid, or no materials yet | Students can't join an unpaid course; a paid course without ready materials shows "not open yet" |
+| Removed or blocked | Access ends at once with "contact your instructor" |
+| Session expired | Back to log in, with the draft kept |
+| Payment cancelled or failed | The course stays pending with "Try payment again"; nothing is charged twice |
+| Upload problems | Wrong type, too large, scanned PDF ("no text found"), unreadable file or over the course's limits: a clear status per file, with Retry or Replace |
+| Mislabelled-looking upload | A warning only; the professor's category stands |
+| Wrong, rotated or expired code; full course; wrong email domain | A specific message for each |
+
+### 5.3 Edge cases decided
+- A pasted Graded problem in a chat attached to a Practice set gets Graded rules (strictest wins).
+- A solution covering several sets opens only when all of them are open.
+- Students joining at the same moment can't exceed the seat cap.
+- A professor guideline that asks the tutor to give answers does not unlock a Graded set.
+- Instructions inside uploaded files are treated as course content, not commands.
+
+### 5.4 Acceptance criteria
+1. The leak-prompt evaluation (`python -m app.evals`) lets no solution text through on a Graded set.
+2. Every situation in §5.2 shows its message, and those marked "no AI call" make none (covered by the automated tests).
+3. The automated test suite passes before every deploy.
+
+---
+
+## 6. Success metrics, risks and milestones (proposal, to review)
+
+### 6.1 Quality metrics (measured on a fixed evaluation set)
+| Metric | Target |
+|---|---|
+| Answers correct against the course materials | ≥ 90% on a 25-question set |
+| Citations that point to a passage supporting the claim | ≥ 90% |
+| Socratic behaviour on assigned problems (hints, not answers) | ≥ 90% |
+| Solution leaks on the leak-prompt set | 0 |
+| "Not covered" flag agrees with a human judgement | ≥ 80% (it feeds the dashboard) |
+
+Today: the leak set passes (0 leaks in two runs); the 25-question correctness set is not built yet (AI_STRATEGY.md §7).
+
+### 6.2 Product and business metrics (once real courses run)
+| Metric | Why it matters | Target for a pilot term |
+|---|---|---|
+| Courses created → paid | Owner onboarding works | ≥ 70% |
+| Paid courses with materials uploaded and the code shared within a week | The setup checklist works | ≥ 80% |
+| Share of enrolled students active each week | Students find it useful | ≥ 40% |
+| Questions per active student per week | Habit, and cost planning | 5–20 |
+| Unanswered rate | Material gaps the professor can fix | < 10% of questions |
+| Model cost as a share of the course's price | Margin | < 40% |
+| Professor would renew next term | The buyer's verdict | Yes, from at least 2 of 3 pilot instructors |
+
+### 6.3 Risks
+| Risk | Mitigation |
+|---|---|
+| Solution leakage on a Graded set | Tutor never sees protected solution text; buffered, code-checked replies; strictest-mode rule; leak evaluation before prompt changes |
+| Wrong or unsupported answers | Retrieval from the course's materials only, citations, "not covered" replies, the correctness evaluation (to build) |
+| Problem demand is unproven | Interview students and instructors before a pilot; the sample-data dashboard is for demos only |
+| Cost outruns price | Per-student allowances, a course AI budget, an app-wide daily limit, per-call cost logging |
+| Student privacy | Aggregates only for staff, small groups hidden; a data and retention review before real students (FERPA) |
+| Content rights | Professors confirm rights on upload; the demo credits MIT OCW (CC BY-NC-SA, non-commercial) |
+| Email limits break sign-up or password reset at scale | Supabase's built-in mailer is for the demo; add custom SMTP before a pilot |
+| One maintainer can deploy production | Tests run before every deploy; add required reviews on `main` |
+| Weak retrieval on short or symbol-heavy questions | Hybrid or embedding retrieval is the next upgrade |
+
+### 6.4 Milestones
+| When | Milestone | Status |
+|---|---|---|
+| 2026-10-19 | v0 class demo live | Done |
+| 2026-10-20 | v1 live: accounts, Stripe test-mode payments, uploads, modes, guidelines, dashboard | Done |
+| Next | End-to-end check on the live site: test payment, student join, password reset | To do |
+| Before the final presentation | Correctness evaluation set; capstone write-up (4–5 pages); rehearsed demo | To do |
+| After the class | Instructor interviews and a one-course pilot; retention and term-end rules; custom email; Google sign-in | Proposed |
+

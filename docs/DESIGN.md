@@ -1,6 +1,6 @@
 # BruinBuddy — Product & UX Design (v1)
 
-> Status: v1 built on branch `v1-build` and checked in a browser locally (desktop and phone width) | Based on [PRD.md](PRD.md) (v1) | Last updated: 2026-10-20
+> Status: v1 live at https://bruinbuddy.vercel.app since 2026-10-20; checked in a browser locally (desktop and phone width) | Based on [PRD.md](PRD.md) (v1) | Last updated: 2026-10-20
 > v0's design (sign-in, chat, one-number dashboard) is in this file's git history. Text only, no wireframe tooling.
 
 ## 1. Design principles

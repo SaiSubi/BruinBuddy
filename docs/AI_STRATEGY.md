@@ -1,6 +1,6 @@
 # BruinBuddy — AI Strategy (v1)
 
-> Status: v1 built on branch `v1-build`; prompts checked against the real model locally (§7) | Based on [PRD.md](PRD.md) (v1), [DESIGN.md](DESIGN.md), [TECHNICAL.md](TECHNICAL.md) | Last updated: 2026-10-20
+> Status: v1 live at https://bruinbuddy.vercel.app since 2026-10-20; prompts checked against the real model (§7) | Based on [PRD.md](PRD.md) (v1), [DESIGN.md](DESIGN.md), [TECHNICAL.md](TECHNICAL.md) | Last updated: 2026-10-20
 > Scope: how the AI parts behave, how professors shape them, what they cost, and how they fail. v0's strategy is in this file's git history; its measured costs (§6) still apply.
 
 ## 1. AI product objective
