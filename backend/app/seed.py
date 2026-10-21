@@ -45,6 +45,9 @@ def seed(course_id: int, rng: random.Random) -> None:
         if not readings:
             sys.exit("The course has no ready materials to cite. Run python -m app.ingest first.")
         t_end = now()
+        # sample questions go back 21 days: make sure the course's term (and its token total) covers them
+        conn.execute("UPDATE courses SET paid_at=? WHERE id=? AND (paid_at IS NULL OR paid_at>?)",
+                     (t_end - 28 * 86400, course_id, t_end - 28 * 86400))
         for i, name in enumerate(STUDENTS, start=1):
             uid = conn.execute("INSERT INTO users(auth_id,email,name,is_sample,created_at) VALUES(?,?,?,?,?) "
                                "ON CONFLICT(auth_id) DO UPDATE SET name=excluded.name RETURNING id",
@@ -64,7 +67,7 @@ def seed(course_id: int, rng: random.Random) -> None:
                     tags["not_covered"] = 1
                 elif roll < 0.42 and psets:
                     q = rng.choice(PSET)
-                    tags["problem_doc_id"] = rng.choice(psets)
+                    tags["problem_doc_id"] = psets[0] if rng.random() < 0.75 else rng.choice(psets)
                     tags["attempt_status"] = rng.choice(["none", "incorrect", "partially", "correct", "incorrect"])
                     tags["doc_ids"] = [tags["problem_doc_id"]]
                 else:

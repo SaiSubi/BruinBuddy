@@ -79,11 +79,12 @@ def ensure_course(owner_id: int) -> int:
         row = conn.execute("SELECT id, owner_id FROM courses WHERE slug=?", (DEMO_SLUG,)).fetchone()
         if not row:
             q = billing.quote(**DEMO_PLAN)
+            started = now() - 28 * 86400  # a term already under way, so sample data falls inside it
             cur = conn.execute(
                 "INSERT INTO courses(name,slug,owner_id,status,student_seats,staff_seats,token_cap,cap_period,token_ceiling,"
                 "price_cents,student_code,paid_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
                 (DEMO_NAME, DEMO_SLUG, owner_id, "active", DEMO_PLAN["student_seats"], DEMO_PLAN["staff_seats"],
-                 DEMO_PLAN["token_cap"], DEMO_PLAN["cap_period"], q["token_ceiling"], 0, new_student_code(), now(), now()))
+                 DEMO_PLAN["token_cap"], DEMO_PLAN["cap_period"], q["token_ceiling"], 0, new_student_code(), started, started))
             course_id = cur.fetchone()["id"]
             _set_role(conn, course_id, owner_id, "owner")
             return course_id

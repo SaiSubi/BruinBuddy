@@ -95,8 +95,13 @@ def _rewrite(history: list[dict], message: str, attr: dict) -> str:
     return out.strip() or message
 
 
-def _retrieve(kb: CourseKnowledge, chat: dict, query: str, problem_doc: str | None) -> list[Chunk]:
-    """Top chunks for this turn. Quizzes skip Graded sets; review/quiz topics and attached sets are favoured."""
+PROBLEM_NUMBER = re.compile(r"\b(?:problem|question|exercise|q)\s*#?\s*(\d{1,2})\b", re.I)
+
+
+def _retrieve(kb: CourseKnowledge, chat: dict, query: str, problem_doc: str | None,
+              recent: str = "") -> list[Chunk]:
+    """Top chunks for this turn. Quizzes skip Graded sets; review/quiz topics and attached sets are favoured, and
+    a problem the student names by number ("problem 2") brings in that problem's statement."""
     k, kind = config.TOP_K, chat["kind"]
     exclude = kb.graded_psets() if kind == "quiz" else set()
     focus, n_focus = None, 0
@@ -106,7 +111,12 @@ def _retrieve(kb: CourseKnowledge, chat: dict, query: str, problem_doc: str | No
         focus, n_focus = problem_doc, 2
     hits: list[Chunk] = []
     if focus:
-        hits = [c for s, c in kb.index.search(query, n_focus, only_docs={focus}) if s >= config.MIN_RETRIEVAL_SCORE]
+        if focus == problem_doc:
+            numbers = [int(n) for n in PROBLEM_NUMBER.findall(f"{query} {recent}")]
+            hits = kb.index.problem_chunks(focus, list(dict.fromkeys(numbers)))
+        seen_focus = {c.id for c in hits}
+        hits += [c for s, c in kb.index.search(query, n_focus, only_docs={focus})
+                 if s >= config.MIN_RETRIEVAL_SCORE and c.id not in seen_focus][:max(0, n_focus - len(hits))]
         hits = hits or kb.index.first_chunks(focus, 2)
     seen = {c.id for c in hits}
     for s, c in kb.index.search(query, k + len(hits), exclude_docs=exclude):
@@ -211,7 +221,7 @@ def _citations(text: str, sources: dict) -> tuple[str, list[dict]]:
             valid.add(n)
             citations.append({"n": n, "chunk_id": c.id, "doc_id": c.doc_id, "title": c.title, "kind": c.kind,
                               "page": c.page, "text": c.text})  # the signed file URL is added at response time
-    text = re.sub(r"\[S(\d+)\]", lambda m: m.group(0) if int(m.group(1)) in valid else "", text)
+    text = re.sub(r"\s*\[S(\d+)\]", lambda m: m.group(0) if int(m.group(1)) in valid else "", text)
     return text, citations
 
 
@@ -236,7 +246,7 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
         mode = rule["mode"] if rule else None
 
         query = _rewrite(history, message, attr)
-        sources = dict(enumerate(_retrieve(kb, t.chat, query, problem_doc), start=1))
+        sources = dict(enumerate(_retrieve(kb, t.chat, query, problem_doc, " ".join(prior_user[-2:])), start=1))
 
         verdict, solution_text = None, []
         if mode in ("graded", "practice"):
@@ -271,6 +281,7 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
         if not leaked:
             text, citations = _citations(text, sources)
             not_covered = not_covered or (not citations and bool(NC_PHRASES.search(text)))
+        not_covered = not_covered and not problem_doc  # "unanswered" is for course questions, not problem set help
 
         with db() as conn:
             msg_id = conn.execute(

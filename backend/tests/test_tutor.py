@@ -311,3 +311,24 @@ def test_starter_questions_come_from_lecture_notes_and_readings(app):
     assert any("Lecture 3 - Bayes" in q or "Reading - Variance" in q for q in starters)
     sent = [x for x in llm.MOCK_CALLS if x["purpose"] == "starters"][-1]["messages"][1]["content"]
     assert "Problem Set" not in sent
+
+
+def test_named_problem_brings_in_its_statement(app):
+    from app import knowledge
+    from app.tutor import _retrieve
+    owner = new_user(app)
+    c = setup_course(owner)
+    kb = knowledge.cache.get(c["id"])
+    hits = _retrieve(kb, {"kind": "pset", "doc_id": c["p1"]}, "how do I even start question 2", c["p1"])
+    assert hits[0].doc_id == c["p1"] and "Problem 2." in hits[0].text
+
+
+def test_problem_set_turns_are_not_counted_as_unanswered(app, monkeypatch):
+    owner = new_user(app)
+    c = setup_course(owner)
+    s = student_in(app, c)
+    monkeypatch.setattr(llm, "mock_tutor_text", lambda system: "[NC] I can't find that problem in the course materials.")
+    chat = new_chat(s, c["id"], "pset", c["p1"])
+    done = ask(s, chat, "help with problem 9")[-1]["message"]
+    assert not done["content"].startswith("[NC]")
+    assert q1("SELECT not_covered FROM messages WHERE chat_id=? AND role='user'", chat)["not_covered"] == 0

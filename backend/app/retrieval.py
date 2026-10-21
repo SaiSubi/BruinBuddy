@@ -81,6 +81,14 @@ class Index:
         """The opening chunks of one document (used when a query matches nothing in a focused material)."""
         return sorted((c for c in self.chunks if c.doc_id == doc_id), key=lambda c: (c.page, c.id))[:k]
 
+    def problem_chunks(self, doc_id: str, numbers: list[int], k: int = 2) -> list[Chunk]:
+        """Chunks of one problem set that contain the statement of "Problem N" for the numbers a student named."""
+        out = []
+        for n in numbers:
+            pat = re.compile(rf"(^|\n)\s*problem\s*0*{n}\b", re.I)
+            out += [c for c in self.first_chunks(doc_id, 50) if pat.search(c.text) and c not in out][:1]
+        return out[:k]
+
     def match_problem(self, message: str) -> tuple[Chunk | None, float]:
         """Best problem-set chunk whose text covers most of the message's content words."""
         q = set(tokens(message))
