@@ -16,21 +16,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  check:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Install runtime dependencies
-        run: pip install -r backend/requirements.txt
-      - name: App imports and routes load
+      - name: Install dependencies
+        run: pip install -r backend/requirements-dev.txt
+      - name: Run tests (mock model, temporary database, no keys)
         working-directory: backend
-        run: python -c "import app.main as m; print(len(m.app.routes), 'routes')"
+        run: python -m pytest -q
 
   deploy:
-    needs: check
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

@@ -5,3 +5,7 @@ openai>=1.50
 python-dotenv>=1.0
 psycopg[binary,pool]>=3.2
 httpx>=0.27
+pyjwt[crypto]>=2.8      # verifies Supabase Auth access tokens (ES256 via JWKS)
+stripe>=10              # Stripe Checkout (test mode) and webhook signatures
+python-multipart>=0.0.9 # course material uploads
+pymupdf>=1.24           # PDF text extraction for uploads (and the 18.05 seed)
