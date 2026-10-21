@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAccessibility } from './accessibility.jsx'
 import { api, fileUrl } from './api.js'
-import { courseCodeTag } from './CanvasShell.jsx'
+import { courseCodeTag, RailIcon } from './CanvasShell.jsx'
 import { day, when } from './format.js'
 import { navigate } from './router.js'
 import { Badge, Banner, ErrorText, Meter, Modal, useAction } from './ui.jsx'
@@ -175,7 +175,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                       <div className="accordion-panel">
                         <p className="small">
                           Use <strong>AI Tutor Notebook</strong> for Socratic Q&A with page-level source citations, or open the{' '}
-                          <strong>✨ Illustrate Studio</strong> to generate interactive Manim 3B1B math animations, Anatomy isometric
+                          <strong>Illustrate Studio</strong> to generate interactive Manim 3B1B math animations, Anatomy isometric
                           apparatus diagrams, and step-by-step explainer storyboards that you can watch and download right in the page.
                         </p>
                       </div>
@@ -203,7 +203,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                                 disabled={busy || !course.open}
                                 onClick={() => start('chat', null, q)}
                               >
-                                💬 {q}
+                                {q}
                               </button>
                             ))}
                           </div>
@@ -256,7 +256,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                       disabled={busy}
                       onClick={() => start('chat', null)}
                     >
-                      Getting Started — Start a New AI Tutor Chat
+                      Getting Started
                     </button>
                     <div className="ucla-module-pills">
                       <button
@@ -288,7 +288,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                         disabled={busy}
                         onClick={() => start('chat', null, null, true)}
                       >
-                        Module 4: ✨ Illustrate
+                        Module 4: Illustrate
                       </button>
                       <button
                         type="button"
@@ -317,7 +317,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                         disabled={busy}
                         onClick={() => start('chat', null, null, true)}
                       >
-                        ✨ Open Illustrate Studio
+                        Open Illustrate Studio
                       </button>
                     </div>
                   </div>
@@ -332,7 +332,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
               <div className="canvas-filter-search">
                 <input
                   type="search"
-                  placeholder="🔍 Search assignments, materials, or chats..."
+                  placeholder="Search assignments, materials, or chats..."
                   aria-label="Search assignments, materials, or chats"
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
@@ -372,7 +372,9 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                     {filteredPsets.length > 0 ? (
                       filteredPsets.map((p) => (
                         <div key={p.id} className="canvas-item-row">
-                          <span className="canvas-item-icon" aria-hidden="true">📝</span>
+                          <span className="canvas-item-icon" aria-hidden="true">
+                            <RailIcon name="assignment" size={18} />
+                          </span>
                           <div className="canvas-item-main">
                             <button
                               type="button"
@@ -425,7 +427,9 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                     {filteredTopics.length > 0 ? (
                       filteredTopics.map((t) => (
                         <div key={t.id} className="canvas-item-row">
-                          <span className="canvas-item-icon" aria-hidden="true">📄</span>
+                          <span className="canvas-item-icon" aria-hidden="true">
+                            <RailIcon name="doc" size={18} />
+                          </span>
                           <div className="canvas-item-main">
                             <button
                               type="button"
@@ -446,7 +450,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                               disabled={busy || !course.open}
                               onClick={() => start('review', t.id, `Illustrate the main concept of ${t.title}.`, true)}
                             >
-                              ✨ Illustrate
+                              Illustrate
                             </button>
                             <a
                               className="secondary small btnlink"
@@ -486,7 +490,9 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                       .slice(0, 12)
                       .map((c) => (
                         <li key={c.id} className="canvas-item-row">
-                          <span className="canvas-item-icon" aria-hidden="true">💬</span>
+                          <span className="canvas-item-icon" aria-hidden="true">
+                            <RailIcon name="chat" size={18} />
+                          </span>
                           <a href={`#/c/${course.id}/chat/${c.id}`} className="canvas-chat-link">
                             {c.title}
                           </a>
@@ -510,7 +516,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
               disabled={busy || !course.open}
               onClick={() => start('chat', null)}
             >
-              📊 Start AI Tutor Session
+              Start AI Tutor Session
             </button>
             <button
               type="button"
@@ -518,14 +524,14 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
               disabled={busy || !course.open}
               onClick={() => start('chat', null, null, true)}
             >
-              ✨ Open Illustrate Studio
+              Open Illustrate Studio
             </button>
             <button
               type="button"
               className="ucla-side-action-btn"
               onClick={() => openImmersiveReader()}
             >
-              📖 Open Immersive Reader
+              Open Immersive Reader
             </button>
           </div>
 
@@ -544,7 +550,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                   .map((m) => (
                     <li key={m.id} className="ucla-todo-item">
                       <span className="todo-icon" aria-hidden="true">
-                        {m.kind === 'problem_set' ? '📝' : '📄'}
+                        <RailIcon name={m.kind === 'problem_set' ? 'assignment' : 'doc'} size={16} />
                       </span>
                       <div className="todo-body">
                         <button
@@ -571,7 +577,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                         aria-label={`Dismiss ${m.title}`}
                         onClick={() => setDismissedTodo((prev) => [...prev, m.id])}
                       >
-                        ✕
+                        ×
                       </button>
                     </li>
                   ))}

@@ -180,22 +180,22 @@ export function AccessibilityPanel() {
         </div>
         <div className="a11y-preset-row">
           <button type="button" className="chip-btn" onClick={() => applyPreset('default')}>
-            ☀️ UCLA Default
+            UCLA Default
           </button>
           <button type="button" className="chip-btn" onClick={() => applyPreset('dark')}>
-            🌙 Westwood Night
+            Westwood Night
           </button>
           <button type="button" className="chip-btn" onClick={() => applyPreset('dyslexia')}>
-            📖 Dyslexia Friendly
+            Dyslexia Friendly
           </button>
           <button type="button" className="chip-btn" onClick={() => applyPreset('protanopia')}>
-            🎨 Red-Green Safe
+            Red-Green Safe
           </button>
           <button type="button" className="chip-btn" onClick={() => applyPreset('tritanopia')}>
-            🔷 Blue-Yellow Safe
+            Blue-Yellow Safe
           </button>
           <button type="button" className="chip-btn" onClick={() => applyPreset('high-contrast')}>
-            ⚡ High Contrast AAA
+            High Contrast AAA
           </button>
         </div>
       </div>
@@ -236,7 +236,7 @@ export function AccessibilityPanel() {
       <div className="a11y-section">
         <span className="a11y-label">2. Colorblind & Vision Palette</span>
         <p className="muted small">
-          Recalibrates semantic badges, meters, and charts using colorblind-safe Okabe-Ito tokens and shape indicators.
+          Recalibrates semantic badges, meters, and charts using colorblind-safe Okabe-Ito tokens and clear text labels.
         </p>
         <div className="a11y-choice-list">
           {[
@@ -258,7 +258,7 @@ export function AccessibilityPanel() {
             {
               id: 'monochrome',
               title: 'Monochromacy / Achromatopsia Safe',
-              desc: 'High-luminance grayscale separation with bold borders and explicit status symbols.',
+              desc: 'High-luminance grayscale separation with bold borders and explicit status labels.',
             },
           ].map((c) => (
             <button
@@ -272,16 +272,16 @@ export function AccessibilityPanel() {
                 <strong>{c.title}</strong>
                 <div className="muted small">{c.desc}</div>
               </div>
-              <span className="a11y-check">{prefs.colorblind === c.id ? '✓ Active' : 'Select'}</span>
+              <span className="a11y-check">{prefs.colorblind === c.id ? 'Active' : 'Select'}</span>
             </button>
           ))}
         </div>
         <div className="a11y-sample-badges" aria-label="Live colorblind badge preview">
           <span className="small muted">Live preview:</span>
-          <span className="badge good">✓ Open Practice</span>
-          <span className="badge warn">⚠ Graded Rule</span>
-          <span className="badge info">ℹ Course Note</span>
-          <span className="badge bad">◆ Limit Reached</span>
+          <span className="badge good">Open Practice</span>
+          <span className="badge warn">Graded Rule</span>
+          <span className="badge info">Course Note</span>
+          <span className="badge bad">Limit Reached</span>
         </div>
       </div>
 
@@ -292,7 +292,7 @@ export function AccessibilityPanel() {
           <div>
             <strong>Dyslexia-Friendly Typography & Spacing</strong>
             <div className="muted small">
-              Applies humanist bottom-weighted letterforms (Lexend / OpenDyslexic / Verdana), wider letter spacing (0.06em), word spacing (0.14em), 1.85 line height, and disables italics.
+              Applies Lexend and Atkinson Hyperlegible letterforms, wider letter spacing (0.055em), word spacing (0.14em), 1.82 line height, and disables italics.
             </div>
           </div>
           <input
@@ -303,7 +303,7 @@ export function AccessibilityPanel() {
         </label>
 
         <div className="a11y-subrow">
-          <span className="small"><strong>Reading Surface Tint</strong> (reduces visual stress / Irlen glare):</span>
+          <span className="small"><strong>Reading Surface Tint</strong> (reduces visual stress / glare):</span>
           <div className="segmented">
             {[
               ['none', 'White'],
@@ -462,12 +462,12 @@ function ImmersiveReaderModal({ custom, prefs, updatePref, onClose }) {
   }
 
   return (
-    <Modal title={`📖 Immersive Reader — ${content.title}`} wide onClose={onClose}>
+    <Modal title={`Immersive Reader — ${content.title}`} wide onClose={onClose}>
       <div className="immersive-reader">
         <div className="immersive-toolbar">
           <div className="inline wrap">
             <button type="button" className="primary small" onClick={toggleSpeak}>
-              {speaking ? '⏹ Stop Read Aloud' : '🔊 Read Aloud'}
+              {speaking ? 'Stop Read Aloud' : 'Read Aloud'}
             </button>
             <label className="small inline">
               Speed:
@@ -487,21 +487,21 @@ function ImmersiveReaderModal({ custom, prefs, updatePref, onClose }) {
               className={`secondary small ${lineFocus ? 'active-pill' : ''}`}
               onClick={() => setLineFocus((v) => !v)}
             >
-              {lineFocus ? '🎯 Line Focus: On' : '🎯 Line Focus: Off'}
+              {lineFocus ? 'Line Focus: On' : 'Line Focus: Off'}
             </button>
             <button
               type="button"
               className={`secondary small ${syllables ? 'active-pill' : ''}`}
               onClick={() => setSyllables((v) => !v)}
             >
-              {syllables ? 'ab·cd Syllables: On' : 'ab·cd Syllables: Off'}
+              {syllables ? 'Syllables: On' : 'Syllables: Off'}
             </button>
             <button
               type="button"
               className={`secondary small ${prefs.dyslexia ? 'active-pill' : ''}`}
               onClick={() => updatePref('dyslexia', !prefs.dyslexia)}
             >
-              {prefs.dyslexia ? 'Aa Dyslexia Font: On' : 'Aa Dyslexia Font: Off'}
+              {prefs.dyslexia ? 'Dyslexia Font: On' : 'Dyslexia Font: Off'}
             </button>
           </div>
           {lineFocus && (
@@ -512,7 +512,7 @@ function ImmersiveReaderModal({ custom, prefs, updatePref, onClose }) {
                 disabled={activeIndex <= 0}
                 onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
               >
-                ↑ Prev Paragraph
+                Previous
               </button>
               <span className="muted">
                 {activeIndex + 1} / {content.blocks.length}
@@ -523,7 +523,7 @@ function ImmersiveReaderModal({ custom, prefs, updatePref, onClose }) {
                 disabled={activeIndex >= content.blocks.length - 1}
                 onClick={() => setActiveIndex((i) => Math.min(content.blocks.length - 1, i + 1))}
               >
-                ↓ Next Paragraph
+                Next
               </button>
             </div>
           )}

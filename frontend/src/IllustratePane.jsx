@@ -116,9 +116,9 @@ export default function IllustratePane({
   return (
     <div className="illustrate-pane">
       <div className="srchead">
-        <strong>✨ Illustrate Concept</strong>
+        <strong>Illustrate Concept</strong>
         {onClose && (
-          <button className="link" onClick={onClose} aria-label="Close illustrate panel">✕</button>
+          <button className="link" onClick={onClose} aria-label="Close illustrate panel">×</button>
         )}
       </div>
 
@@ -147,7 +147,7 @@ export default function IllustratePane({
           type="submit"
           disabled={generating || paused || (!hasMessages && !customPrompt.trim())}
         >
-          {generating ? 'Building animation…' : (active ? '↻ Generate New Illustration' : '✨ Illustrate Current Concept')}
+          {generating ? 'Building animation…' : (active ? 'Generate New Illustration' : 'Illustrate Current Concept')}
         </button>
       </form>
 
@@ -186,7 +186,7 @@ export default function IllustratePane({
                 className="secondary small"
                 onClick={() => setExpanded(true)}
               >
-                ⤢ Expand Player
+                Expand Player
               </button>
               <button
                 type="button"
@@ -194,7 +194,7 @@ export default function IllustratePane({
                 onClick={downloadHtml}
                 title="Download self-contained interactive HTML animation"
               >
-                ⬇ HTML
+                Download HTML
               </button>
               <button
                 type="button"
@@ -203,7 +203,7 @@ export default function IllustratePane({
                 disabled={recordingVideo}
                 title="Record and download .webm video clip"
               >
-                {recordingVideo ? '⏺ Recording…' : '⬇ Video (.webm)'}
+                {recordingVideo ? 'Recording…' : 'Video (.webm)'}
               </button>
               <button
                 type="button"
@@ -211,7 +211,7 @@ export default function IllustratePane({
                 onClick={() => requestCanvasExport('bb_export_png')}
                 title="Download PNG snapshot"
               >
-                ⬇ PNG
+                PNG
               </button>
               <button
                 type="button"
@@ -219,7 +219,7 @@ export default function IllustratePane({
                 onClick={downloadSvg}
                 title="Download vector SVG summary"
               >
-                ⬇ SVG
+                SVG
               </button>
               {active.manim_code && (
                 <button
@@ -228,7 +228,7 @@ export default function IllustratePane({
                   onClick={downloadManim}
                   title="Download runnable Manim Community Edition Python script"
                 >
-                  ⬇ Manim (.py)
+                  Manim (.py)
                 </button>
               )}
             </div>
@@ -275,7 +275,7 @@ export default function IllustratePane({
           <div className="row-between" style={{ marginTop: 12 }}>
             <div className="inline wrap">
               <button type="button" className="primary small" onClick={downloadHtml}>
-                ⬇ Interactive HTML
+                Download Interactive HTML
               </button>
               <button
                 type="button"
@@ -283,17 +283,17 @@ export default function IllustratePane({
                 onClick={() => requestCanvasExport('bb_export_webm')}
                 disabled={recordingVideo}
               >
-                {recordingVideo ? '⏺ Recording 4.5s…' : '⬇ Video (.webm)'}
+                {recordingVideo ? 'Recording 4.5s…' : 'Download Video (.webm)'}
               </button>
               <button type="button" className="secondary small" onClick={() => requestCanvasExport('bb_export_png')}>
-                ⬇ Image (.png)
+                Download Image (.png)
               </button>
               <button type="button" className="secondary small" onClick={downloadSvg}>
-                ⬇ Vector (.svg)
+                Download Vector (.svg)
               </button>
               {active.manim_code && (
                 <button type="button" className="secondary small" onClick={downloadManim}>
-                  ⬇ Manim Script (.py)
+                  Download Manim Script (.py)
                 </button>
               )}
             </div>

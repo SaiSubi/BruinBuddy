@@ -44,7 +44,7 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
     <main className="signin">
       <div className="signin-top-a11y">
         <button type="button" className="canvas-a11y-pill" onClick={openA11yModal}>
-          ♿ Appearance & Accessibility{activeBadgeCount > 0 ? ` (${activeBadgeCount})` : ''}
+          Appearance & Accessibility{activeBadgeCount > 0 ? ` (${activeBadgeCount})` : ''}
         </button>
       </div>
       <form onSubmit={submit} className="card signin-ucla-card" noValidate>
