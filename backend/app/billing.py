@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 from . import auth, config
@@ -174,7 +175,10 @@ async def stripe_webhook(request: Request):
         stripe.Webhook.construct_event(payload, request.headers.get("stripe-signature"), config.STRIPE_WEBHOOK_SECRET)
     except (ValueError, stripe.SignatureVerificationError):
         raise HTTPException(400, "Invalid signature")
-    event = json.loads(payload)
+    return await run_in_threadpool(_handle_event, json.loads(payload))  # database work off the event loop
+
+
+def _handle_event(event: dict) -> dict:
     with db() as conn:
         fresh = conn.execute("INSERT INTO stripe_events(id,type,created_at) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING "
                              "RETURNING id", (event["id"], event.get("type", ""), now())).fetchone()

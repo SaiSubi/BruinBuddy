@@ -99,12 +99,13 @@ def post_message(chat_id: int, body: MessageIn, user: dict = Depends(current_use
         raise HTTPException(422, "Type a question first.")
     with db() as conn:
         chat, m = _own_chat(conn, chat_id, user)
-        c = m.course
-        if c["status"] != "active":
-            raise HTTPException(409, "This course isn't active yet.")
-        kb = knowledge.cache.get(c["id"])
-        if not kb.has_material:
-            raise HTTPException(409, "Your instructor hasn't added course materials yet, so the tutor isn't open.")
+    c = m.course
+    if c["status"] != "active":
+        raise HTTPException(409, "This course isn't active yet.")
+    kb = knowledge.cache.get(c["id"])  # outside the connection above: building an index opens its own
+    if not kb.has_material:
+        raise HTTPException(409, "Your instructor hasn't added course materials yet, so the tutor isn't open.")
+    with db() as conn:
         pause = pause_state(conn, c["id"])
         if pause["active"]:
             _limit(423, pause["message"] or "The tutor is paused by your instructor.", pause["until"])
