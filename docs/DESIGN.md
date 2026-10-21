@@ -1,6 +1,6 @@
 # BruinBuddy — Product & UX Design (v1)
 
-> Status: v1, being built on branch `v1-build` | Based on [PRD.md](PRD.md) (v1) | Last updated: 2026-10-20
+> Status: v1 built on branch `v1-build` and checked in a browser locally (desktop and phone width) | Based on [PRD.md](PRD.md) (v1) | Last updated: 2026-10-20
 > v0's design (sign-in, chat, one-number dashboard) is in this file's git history. Text only, no wireframe tooling.
 
 ## 1. Design principles
@@ -19,11 +19,12 @@ Log in / Sign up / Forgot password / Set new password
 Home ─┬─ no courses ─────────► Welcome: [Join a course] [Create a course]
       ├─ student in a course ► Course home ──► Chat (sidebar of chats + conversation + source panel)
       └─ owner or staff ─────► Staff console ─ Setup · Materials · Problem sets · Guidelines ·
-                                               Members · Dashboard · Pause · Plan (owner)
+                                               Members · Dashboard · Pause · Plan & limits
                                              └ Preview as student ──► Course home (preview) ──► Chat
 Top bar: course switcher · Join or create · name and Log out · About
 ```
 - The **course switcher** lists every course the person belongs to, with their role. The last course used opens by default.
+- **Plan & limits** shows seats, the course's token budget and the per-student allowance to all staff; the billing section is shown to the owner only (PRD §2.1: staff can't see billing).
 - Routes are hash URLs (`#/c/12`, `#/c/12/chat/40`, `#/c/12/staff/materials`) so links and the back button work.
 
 ## 3. Core user flows

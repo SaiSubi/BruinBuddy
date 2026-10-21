@@ -1,6 +1,6 @@
 # BruinBuddy — Technical Architecture (v1)
 
-> Status: v1, being built on branch `v1-build` | Based on [PRD.md](PRD.md) (v1) and [DESIGN.md](DESIGN.md) | Last updated: 2026-10-20
+> Status: v1 built on branch `v1-build` and verified locally; not deployed yet (README: go-live checklist) | Based on [PRD.md](PRD.md) (v1) and [DESIGN.md](DESIGN.md) | Last updated: 2026-10-20
 > v0 is described in [PRD_v0.md](PRD_v0.md) and in this file's git history. Model choice and prompts are in [AI_STRATEGY.md](AI_STRATEGY.md).
 > Where the PRD leaves a question open, this file records the default the build uses and marks it **(build default)** so it can be changed later.
 
@@ -42,6 +42,7 @@ Unchanged: FastAPI + React/Vite, KaTeX, OpenRouter through the `openai` SDK, SSE
 - **The frontend reads the Supabase URL and the public anon key from `GET /api/config`**, so the anon key is configured once, as a backend setting, rather than baked into the Vercel build. The anon key is public by design; all our tables have row-level security on with no policies, so it cannot read them.
 - **Local (`AUTH_PROVIDER=local`, the default when Supabase is not configured).** `POST /api/auth/signup` and `/api/auth/login` with email and password. Passwords are hashed with scrypt; the server returns an HMAC-signed session token (7 days). There is no email, so no password reset or Google in local mode. Production refuses to start with this provider.
 - **Email confirmation** is a Supabase setting. For the demo it is off (Supabase's built-in sender only mails project members and is rate-limited). If sign-up returns no session, the UI says "check your email to confirm".
+- **Redirects** (Google, password reset) come back with Supabase's `?code=`, which supabase-js exchanges on start; the app only consumes its own one-time parameters (`checkout`, `reset`, sign-in errors). With the PKCE flow a password-reset link must be opened in the same browser that asked for it.
 - **Roles come only from `memberships`** (PRD §2.1). There is no role on the user or the sign-in form. One login can own one course and be a student in another.
 - The demo's name-and-access-code sign-in is removed.
 
@@ -76,7 +77,7 @@ price  = $19 base
        + student seats × $2 × weekly_allowance / 100,000 tokens   (at least $0.50 per seat)
 course ceiling (tokens) = (student seats + staff seats + 1) × weekly_allowance × 10 weeks
 ```
-Example: 40 students, 2 staff, 100k tokens per week → $19 + $18 + $80 = **$117**. The formula lives in one function (`billing.quote`) and `POST /api/billing/quote` returns it, so the UI never computes a price itself.
+Example: 40 students, 2 staff, 100k tokens per week → $19 + $18 + $80 = **$117**; the course can use 43M tokens in the term. The formula lives in one function (`billing.quote`) and `POST /api/billing/quote` returns it, so the UI never computes a price itself.
 
 **Checkout.**
 1. `POST /api/courses` creates the course as `pending` with an owner membership and the quoted price.
@@ -113,7 +114,7 @@ Documents left in `processing` by a restart are marked `failed` on startup with 
 NFKC normalisation (math-italic letters become plain letters), folding table cells that PyMuPDF emits one per line, chunks of up to ~1,400 characters that never cross a page, each keeping its page number and document.
 
 ### 6.2 The 18.05 demo course
-`python -m app.ingest --owner-email <email>` creates (or updates) the demo course from the local MIT OCW export: lecture notes, readings and class prep, problem sets, and solutions linked to their problem sets by file name. It is `active` with no payment, its problem sets default to Graded, and it gets a generated student code. Solution PDFs are not uploaded to Storage (their text lives in the database only). `python -m app.seed sample-data` adds sample students and questions for the dashboard (PRD §3.6), all flagged `is_sample`.
+`python -m app.ingest --owner-email <email>` creates (or updates) the demo course from the local MIT OCW export: lecture notes, readings and class prep, problem sets, and solutions linked to their problem sets by file name. It is `active` with no payment, its term is dated to have started four weeks earlier (so sample data falls inside it), its problem sets default to Graded, and it gets a generated student code. Solution PDFs are not uploaded to Storage (their text lives in the database only). `python -m app.seed sample-data` adds sample students and questions for the dashboard (PRD §3.6), all flagged `is_sample`.
 
 ## 7. Knowledge per course
 `knowledge.py` keeps, per course, an in-memory **BM25 index of the chunks students may see** and a **leak guard** built from the solutions they may not see.
@@ -129,11 +130,11 @@ NFKC normalisation (math-italic letters become plain letters), folding table cel
 2. **Which problem set applies:** the chat's attached problem set if it was opened from "Help with a problem set"; otherwise v0's detection, now per course: a reference like "pset 4", "problem set 04", "homework 3" or "class 7 problems" matched against the course's problem set titles, or at least 8 content words of which 60% appear in one problem set chunk. The previous 3 student messages are checked too.
 3. **Mode** of that problem set: Graded (default), Practice or Open (§9).
 4. **Rewrite the query** for short follow-ups (cheap model, as in v0).
-5. **Retrieve** the top 6 public chunks of this course. Quiz chats exclude Graded problem sets. Review chats take up to 4 chunks from the chosen material and fill the rest from the whole course.
+5. **Retrieve** the top 6 public chunks of this course. Quiz chats exclude Graded problem sets. Review chats take up to 4 chunks from the chosen material and fill the rest from the whole course. When a problem set applies, up to 2 chunks come from that set, and a problem the student names ("problem 2", "question 3") brings in the chunk that states it, so hints are about the right problem even when the wording doesn't match.
 6. **Check the attempt** (Graded and Practice only): the checker sees the linked solution excerpts and returns `{attempt_status, feedback}`. The tutor never sees solution text.
 7. **Build the prompt:** core rules, the mode's rules and the "tell students if their final answer is correct" setting, the chat type (quiz, review), the professor's guidelines (general, plus tagged guidelines whose material is among the retrieved sources or is the problem set), memory notes, retrieved chunks `[S1]…[S6]`, the checker's note, history.
 8. **Generate.** Graded turns are buffered until the guard passes; other turns stream.
-9. **Guard** (§9), then **validate citations** (drop markers that don't match a retrieved chunk), then detect **not covered**: the tutor starts such replies with `[NC]`, which is stripped; a phrase check is the fallback.
+9. **Guard** (§9), then **validate citations** (drop markers that don't match a retrieved chunk), then detect **not covered**: the tutor starts such replies with `[NC]`, which is stripped; a phrase check is the fallback. Turns about a problem set are never counted as not covered: the dashboard's unanswered list is for course questions the materials don't answer.
 10. **Save** the reply, and tag the question with its cited documents, problem set, attempt result and not-covered flag for the dashboard.
 11. **Update memory** in a background thread, scoped to the course.
 
@@ -197,6 +198,7 @@ All routes except the public ones need `Authorization: Bearer <token>`. Course r
 | `POST /api/auth/signup`, `POST /api/auth/login` | public, local provider only | Email + password accounts for development |
 | `POST /api/stripe/webhook` | Stripe (signed) | Activate paid courses |
 | `GET /files/{doc_id}?t=` | signed link | Short-lived, document-bound link; redirects to Supabase Storage in production |
+| `GET`, `POST /api/billing/test-checkout/{id}` | signed link, development only | Stands in for Stripe Checkout when no Stripe keys are set; 404 in production |
 | `GET /api/me` | signed in | User and course memberships |
 | `POST /api/billing/quote` | signed in | Price and ceiling for a plan |
 | `POST /api/courses` | signed in | Create a pending course (caller becomes owner) |
@@ -231,8 +233,8 @@ Errors are `{detail}` with standard codes: 401 not signed in, 403 wrong role, 40
 - **Licensing:** the demo course credits MIT OCW 18.05 (CC BY-NC-SA 4.0); uploads require the professor to confirm they have the right to use the materials.
 
 ## 15. Testing
-- **Automated** (pytest, mock LLM, mock checkout, local auth): the suite builds its own small **synthetic course** (a few text documents: notes, a problem set and its solution) in a temporary database, so it needs neither the 18.05 export nor any key, and it runs in GitHub Actions before every deploy. It covers sign-up and login, course creation and the checkout and webhook path (with locally computed Stripe signatures), Supabase JWT verification (with a locally generated ES256 key), codes, seat caps, removal and blocking, tenancy, uploads and statuses, modes and release, solution protection, guidelines in the prompt, pause, token caps, starter questions, the dashboard rules and the v0 migration.
-- **By hand**, against a running server: the PRD acceptance criteria with the real model, and the Stripe test card in a browser.
+- **Automated** (76 pytest tests, mock LLM, mock checkout, local auth): the suite builds its own small **synthetic course** (a few text documents: notes, a problem set and its solution) in a temporary database, so it needs neither the 18.05 export nor any key, and it runs in GitHub Actions before every deploy. It covers sign-up and login, course creation and the checkout and webhook path (with locally computed Stripe signatures), Supabase JWT verification (with a locally generated ES256 key), codes, seat caps, removal and blocking, tenancy, uploads and statuses, modes and release, solution protection, guidelines in the prompt, pause, token caps, starter questions, the dashboard rules and the v0 migration. The same suite passes on SQLite and on Postgres (`TEST_DATABASE_URL`), and the v0 → v1 migration was rehearsed on a Postgres database built from v0's own schema code. GitHub Actions runs it on pull requests (`ci.yml`, which also builds the frontend) and before every deploy (`deploy-backend.yml`).
+- **By hand** (2026-10-20, local server): the owner flow in a browser (sign up, create a course, test checkout, upload notes, a problem set and a linked solution, modes, guidelines, preview, members, dashboard, pause, plan), the student flow (join with a code, course home, review and problem set chats, phone layout), and six turns with the real model (AI_STRATEGY.md §7). **Not yet checked by hand:** Supabase Auth and Stripe against the real services, because their keys aren't configured (README checklist).
 - **Not automated:** a leak-prompt set against the real model (AI_STRATEGY.md §7).
 
 ## 16. Configuration
@@ -249,7 +251,9 @@ New settings (see `.env.example` and `.env.production.example`):
 ## 17. Production deployment
 Same layout as v0: Vercel (frontend, builds from `main`), Fly.io (backend, GitHub Actions on `main`), Supabase (Postgres, Storage, now Auth). See the README for the v1 go-live checklist: Supabase Auth settings, Stripe keys and webhook endpoint, new Fly secrets, the demo course owner, and the first-start migration.
 
-**CI:** the deploy workflow now runs the test suite before `flyctl deploy`.
+**CI:** the deploy workflow now runs the test suite before `flyctl deploy`, and `ci.yml` runs the tests and the frontend build on pull requests.
+
+**First v1 deploy:** set the new Fly secrets first (`AUTH_PROVIDER`, `SUPABASE_ANON_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`); without them the app refuses to start. On first start the database is migrated (§12). The demo course is then claimed with `python -m app.ingest --owner-email …` run against the production database.
 
 ## 18. Decisions and open questions
 | Decision | Choice | Alternative |

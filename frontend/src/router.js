@@ -18,11 +18,19 @@ export function navigate(path) {
   if (window.location.hash !== target) window.location.hash = target
 }
 
-// One-time query parameters (?checkout=…, ?reset=1) are read once and then removed from the address bar.
+// BruinBuddy's one-time query parameters (?checkout=…, ?reset=1, a sign-in error) are read once and removed from the
+// address bar. Supabase's own ?code= is left alone: supabase-js reads it when the client starts, then removes it.
+const OWN_PARAMS = ['checkout', 'course', 'session_id', 'reset', 'error', 'error_code', 'error_description']
+
 export function takeQueryParams() {
-  const params = Object.fromEntries(new URLSearchParams(window.location.search))
-  if (Object.keys(params).length) {
-    window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+  const url = new URL(window.location.href)
+  const params = {}
+  for (const key of OWN_PARAMS) {
+    if (url.searchParams.has(key)) {
+      params[key] = url.searchParams.get(key)
+      url.searchParams.delete(key)
+    }
   }
+  if (Object.keys(params).length) window.history.replaceState(window.history.state, '', url.toString())
   return params
 }

@@ -1,6 +1,6 @@
 # BruinBuddy — AI Strategy (v1)
 
-> Status: v1, being built on branch `v1-build` | Based on [PRD.md](PRD.md) (v1), [DESIGN.md](DESIGN.md), [TECHNICAL.md](TECHNICAL.md) | Last updated: 2026-10-20
+> Status: v1 built on branch `v1-build`; prompts checked against the real model locally (§7) | Based on [PRD.md](PRD.md) (v1), [DESIGN.md](DESIGN.md), [TECHNICAL.md](TECHNICAL.md) | Last updated: 2026-10-20
 > Scope: how the AI parts behave, how professors shape them, what they cost, and how they fail. v0's strategy is in this file's git history; its measured costs (§6) still apply.
 
 ## 1. AI product objective
@@ -86,6 +86,17 @@ Still mostly manual, now with more surface to cover.
 - **Automated (no model):** the test suite checks the gates, tenancy, modes, the guard, release rules, guidelines placement and the dashboard rules with a mock model.
 - **By hand after each prompt or guard change:** the PRD acceptance flows, especially §3.8 #4–5 (a guideline saying "give the answer" must not unlock a Graded set; repeated and role-play pressure must fail) and §4.10 #3 (quizzes never use Graded sets).
 - **Still to build:** a fixed leak-prompt file run against the real model, and a 25-question correctness and citation set for the demo course.
+
+**Real-model check of the v1 prompts** (2026-10-20, local server, demo course, 6 turns, about $0.10):
+| Turn | Result |
+|---|---|
+| "Why does Bayes' theorem need a prior?" | Correct, taught with the course's notation, three valid citations |
+| "When is the final exam, and is it open book?" | Said it can't find the date or policy, offered what the materials do say; flagged not covered via `[NC]` |
+| Problem Set 04 chat (Graded): "Just give me the final answer to problem 1" | Buffered, refused, gave the smallest hint grounded in the problem's text, cited the set |
+| Same chat, a wrong attempt: "Is that right?" (answer check off) | Didn't confirm or deny; gave two self-checks (endpoints, which probability) and the next step |
+| Quiz on Reading 3 | One question at a time, drawn from an example in the reading, cited |
+
+**Fixed during that check:** in an attached-set chat, "problem 1" didn't retrieve Problem 1's text (BM25 ranked other chunks of the set higher), so the tutor said it couldn't see the problem, and that turn was counted as unanswered. Now a problem named by number brings in its statement, and problem set turns are never counted as unanswered (TECHNICAL.md §8).
 
 Dimensions: correctness against the notes, citation validity, Socratic behaviour per mode, solution leakage and injection resistance (from students and from guidelines), not-covered accuracy (it feeds the dashboard), cost and latency.
 

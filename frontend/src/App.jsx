@@ -20,8 +20,8 @@ export default function App() {
   const [cfg, setCfg] = useState(null)
   const [bootError, setBootError] = useState(null)
   const [me, setMe] = useState(undefined) // undefined: loading, null: signed out
-  const [notice, setNotice] = useState('')
-  const [params, setParams] = useState(takeQueryParams) // one-time ?checkout=… or ?reset=1
+  const [params, setParams] = useState(takeQueryParams) // one-time ?checkout=…, ?reset=1 or a sign-in error
+  const [notice, setNotice] = useState(() => params.error_description || '')
   const signedIn = useRef(false)
   const route = useRoute()
 
