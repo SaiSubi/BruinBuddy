@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { api, setOnExpired } from './api.js'
 import { getToken, initAuth, signOut } from './auth.js'
 import { navigate, takeQueryParams, useRoute } from './router.js'
@@ -9,7 +9,7 @@ import Welcome from './Welcome.jsx'
 import CreateCourse from './CreateCourse.jsx'
 import CourseHome from './CourseHome.jsx'
 import ChatView from './ChatView.jsx'
-import StaffConsole from './staff/StaffConsole.jsx'
+const StaffConsole = lazy(() => import('./staff/StaffConsole.jsx')) // students never load the staff screens
 import About from './About.jsx'
 
 const LAST_COURSE = 'bb_last_course'
@@ -173,7 +173,15 @@ function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
     return <div className="page chatpage">{top}<ChatView key={sub} course={course} chatId={Number(sub)} preview={staff} onCourseChange={load} /></div>
   }
   if (staff && view !== 'preview') {
-    return <div className="page">{top}<main className="content wide"><StaffConsole course={course} tab={view === 'staff' ? sub || 'setup' : 'setup'} reload={load} cfg={cfg} /></main></div>
+    return (
+      <div className="page">{top}
+        <main className="content wide">
+          <Suspense fallback={<Loading />}>
+            <StaffConsole course={course} tab={view === 'staff' ? sub || 'setup' : 'setup'} reload={load} cfg={cfg} />
+          </Suspense>
+        </main>
+      </div>
+    )
   }
   return <div className="page">{top}<main className="content"><CourseHome course={course} preview={staff} reload={load} /></main></div>
 }
