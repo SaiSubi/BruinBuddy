@@ -1,151 +1,213 @@
-# BruinBuddy — Product & UX Design (v0)
+# BruinBuddy — Product & UX Design (v1)
 
-> Status: v0, built and deployed | Based on [PRD_v0.md](PRD_v0.md) v0 | Last updated: 2026-10-20
-> Scope: a web app with a sign-in, a chat screen, and a one-number professor dashboard. Text only, no wireframe tooling.
+> Status: v1, being built on branch `v1-build` | Based on [PRD.md](PRD.md) (v1) | Last updated: 2026-10-20
+> v0's design (sign-in, chat, one-number dashboard) is in this file's git history. Text only, no wireframe tooling.
 
 ## 1. Design principles
-- **Teach, don't tell.** The tutor asks and hints. The interface never offers a "show answer" button, because v0 has no escape hatch.
-- **Show the sources.** Every claim has a visible, clickable citation.
-- **Label the AI.** Tutor output is marked AI-generated and is visually distinct from course material.
-- **Keep it small.** v0 has three screens, and the chat screen does nearly all the work.
+- **Teach, don't tell.** No "show answer" button anywhere. What the tutor may reveal is set per problem set by the professor, and the student always sees the rule.
+- **Show the sources.** Every claim has a clickable citation; materials students can open are one click away.
+- **Label the AI.** Tutor output is marked AI-generated and looks different from course material.
+- **Chat is the one place for help.** The course home only launches chats with context attached (PRD §4.1).
+- **Fail safe, visibly.** New problem sets start as Graded; limits, pauses and removals say plainly what happened and what to do next, and never fail silently.
+- **Aggregates, not surveillance.** Staff never see a student's chats. The UI says so to both sides.
 
 ## 2. Information architecture
 ```
-Sign-in  ──►  Student:    Chat screen (chat list + conversation + source panel)
-         └─►  Professor:  Dashboard (question count)
+Log in / Sign up / Forgot password / Set new password
+   │
+   ▼
+Home ─┬─ no courses ─────────► Welcome: [Join a course] [Create a course]
+      ├─ student in a course ► Course home ──► Chat (sidebar of chats + conversation + source panel)
+      └─ owner or staff ─────► Staff console ─ Setup · Materials · Problem sets · Guidelines ·
+                                               Members · Dashboard · Pause · Plan (owner)
+                                             └ Preview as student ──► Course home (preview) ──► Chat
+Top bar: course switcher · Join or create · name and Log out · About
 ```
-- **Sign-in** is a name, a role (student or professor), and an access code. There is no password.
-- **Student** has one main screen. The chat list is a sidebar, not a separate page.
-- **Professor** has one page: the dashboard.
-- **Navigation** is just the signed-in name, a sign-out link, and an About link for MIT OCW attribution.
+- The **course switcher** lists every course the person belongs to, with their role. The last course used opens by default.
+- Routes are hash URLs (`#/c/12`, `#/c/12/chat/40`, `#/c/12/staff/materials`) so links and the back button work.
 
 ## 3. Core user flows
 
-**F1. First visit.** Sign in as a student, land on an empty new chat with a short welcome and three suggested questions. Ask a question, get a cited answer.
+**F1. Professor creates and pays for a course.** Sign up → "Create a course" → name, student seats, staff seats, weekly allowance per student → the price updates live from the server → "Pay with Stripe" → Stripe Checkout (test card 4242 4242 4242 4242) → back in the app, the course shows "Confirming payment…" and then the setup checklist. Cancel or failure returns to the plan screen with the course still pending and a "Try payment again" button.
 
-**F2. Ask a concept question.** Type a question, the answer appears with numbered citations, click a citation to see the source passage in the side panel, then continue the conversation.
+**F2. Setup checklist.** Upload materials → set problem set modes → write guidelines → try it as a student → share the student code. Each step shows done or not done, links to its screen, and stays reachable afterwards. Until there is a ready document the checklist says students will see "not open yet".
 
-**F3. Ask for an assigned problem's answer.** Paste a problem set problem and ask for the answer. The tutor asks what the student has tried and gives a hint. If the student asks again, the tutor holds the line and gives a bigger hint, never the answer.
+**F3. Upload materials.** Materials → "Upload" → pick a category first → choose files → for Solution, tick the problem sets it covers (or "Link later") → tick "I have the right to use these materials" → Upload. Rows appear as *Processing*, then *Ready*, *Failed* (with a reason and Retry) or *No text found*. A yellow note shows any mismatch warning ("Looks like a solution but is tagged as a reading"). Each row can be re-categorised, relinked, replaced or deleted.
 
-**F4. Not in the materials.** The tutor says it can't find this in the course materials and suggests what it can help with.
+**F4. Problem set modes.** Problem sets → one row per set: mode (Graded: hints only · Practice: full help · Solutions open), optional release date, "Tell students if their final answer is correct", linked solutions. New sets show Graded. "Confirm modes" ticks the checklist step.
 
-**F5. Multiple chats.** Click "New chat" to start another, click a chat in the sidebar to reopen it. History survives a restart.
+**F5. Guidelines.** One general guideline (a text box, with starter prompts to click in, or upload a .txt/.md), plus optional additional guidelines, each tagged to one or more materials. Character counters show the caps. A fixed note: guidelines can't unlock solutions, turn off citations or change modes.
 
-**F6. Memory.** Start a new chat after discussing a topic earlier. The tutor refers back to it naturally, and a small note shows that memory was used.
+**F6. Try it as a student.** "Preview as student" opens the student course home with a banner "Preview: your chats aren't counted in the dashboard." Everything works as for a student.
 
-**F7. Professor.** Sign in as a professor and see the total question count.
+**F7. Members.** Student code with Copy, Rotate, expiry date and email-domain restriction. Roster with name, email, joined date, questions and tokens, and Remove or Block per student. Owner only: staff list with Remove, "Add staff" (shows a single-use code once, valid 7 days) and pending codes with Revoke.
+
+**F8. Student joins.** Sign up → "Join a course" → enter code → course home. Wrong, rotated or expired code, full course, wrong email domain, pending course and blocked student each get a specific message.
+
+**F9. Student course home.** Course name, pause banner if paused, allowance meter, four entry points, starter questions:
+- **Help with a problem set** → pick a set (each labelled with its mode) → a chat opens with the set attached and the rule line visible.
+- **Review a topic** → pick a lecture or reading → a chat opens and asks for a review plan for it.
+- **Quiz me** → optional topic → a chat opens and the tutor asks the first question.
+- **Browse materials** → documents by category; opening one opens the source. Solutions appear only once their set is open.
+
+**F10. Chat.** As in v0 (streaming, numbered citation chips, source panel, AI-generated label, "Used memory"), plus the problem set **rule line** under the title when a set applies ("Problem Set 04 · Graded: hints only"). A set detected mid-chat shows its rule from that reply on.
+
+**F11. Dashboard.** Range selector (7 days · 30 days · Whole term). Panels: usage overview, most-asked materials, unanswered questions, where students are stuck, student usage. Panels that would identify fewer than 5 students show "Not enough students yet to show this without identifying anyone." A "Sample data" badge shows when the course has seeded sample students.
+
+**F12. Errors and limits** (PRD §4.8): every failure keeps the student's message in the thread and says what to do next — Retry for AI failures; allowance reached with when it frees up; tutor paused with until when; removed or blocked with "contact your instructor"; session expired returns to log in and keeps the draft.
 
 ## 4. Key screens
 
-### 4.1 Sign-in
+### 4.1 Log in and sign up
 ```
-┌──────────────────────────────┐
-│  BruinBuddy                  │
-│  Study help for 18.05        │
-│                              │
-│  Name  [________________]    │
-│  I am  (•) Student ( ) Prof. │
-│  Access code [__________]    │
-│                              │
-│  [ Continue ]                │
-└──────────────────────────────┘
+┌──────────────────────────────────┐
+│  BruinBuddy                      │
+│  An AI tutor for your course     │
+│                                  │
+│  [ Continue with Google ]        │  (only if Google is enabled)
+│  ───────────── or ─────────────  │
+│  Email     [__________________]  │
+│  Password  [__________________]  │
+│  [ Log in ]                      │
+│  Forgot password? · Create account│
+└──────────────────────────────────┘
 ```
-Same name plus role returns to the same history and memory. The access-code field appears only when the server requires one. A wrong code shows an inline error. If professor sign-in is not enabled on the server, the professor option says so and the button is disabled.
+Sign up adds a name field. "Forgot password" asks for an email and confirms that a link was sent. The link returns to a "Set a new password" form. In local development the Google button and password reset are hidden.
 
-### 4.2 Student chat screen
+### 4.2 Create a course
 ```
-┌────────────┬─────────────────────────────────┬──────────────────┐
-│ + New chat │  Bayes and priors               │ Source           │
-│            │                                 │                  │
-│ Bayes and  │  You                            │ Class 7 notes    │
-│  priors  ● │  Why does Bayes need a prior?   │ p. 3             │
-│ Pset 3 hlp │                                 │ ──────────────── │
-│ Exam prep  │  BruinBuddy        [AI-generated]│ "…posterior ∝    │
-│            │  Bayes' theorem combines…  [1]  │ likelihood ×     │
-│            │  The prior encodes…        [2]  │ prior…"          │
-│            │                                 │                  │
-│            │  Used memory: you were reviewing│ [ Open document ]│
-│            │  conditional probability        │                  │
-│            │                                 │                  │
-│ Alex   ⏻   │  [ Ask a question…        Send ]│                  │
-└────────────┴─────────────────────────────────┴──────────────────┘
+┌───────────────────────────────────────────────┐
+│ Create a course                               │
+│ Course name        [ Stats 100A, Fall 2026 ]  │
+│ Student seats      [ 40 ]                     │
+│ Staff (TAs, co-instructors) [ 2 ]             │
+│ Allowance per student [100k tokens/week ▾]    │
+│                    ≈ 25 questions a week      │
+│ ───────────────────────────────────────────── │
+│ Base                         $19.00           │
+│ 2 staff × $9                 $18.00           │
+│ 40 seats × $2.00             $80.00           │
+│ Total for the term          $117.00           │
+│ [ Pay with Stripe ]   Test mode: 4242 4242 …  │
+└───────────────────────────────────────────────┘
 ```
-- **Left sidebar:** New chat button, list of chats (most recent first, titled automatically from the first question), the signed-in name, and sign-out.
-- **Center:** the conversation, with the input fixed at the bottom.
-- **Right panel:** the source viewer. It is empty until a citation is clicked, and it collapses on narrow screens.
-- **Empty state:** a welcome line plus three suggested questions (concept, study plan, "I'm stuck on a problem").
 
-### 4.3 Professor dashboard
+### 4.3 Student course home
 ```
-┌──────────────────────────────────────┐
-│ BruinBuddy · Professor        Sign out│
-│                                      │
-│   Questions asked                    │
-│        128                           │
-└──────────────────────────────────────┘
+┌ BruinBuddy   [Stats 100A ▾]                          Alex · Log out ┐
+│ ⏸ The tutor is paused for Midterm 1 until Thu 3:00 pm  (if paused)  │
+│ Stats 100A                       Allowance this week ▓▓▓▓░░░ 58%    │
+│                                                                     │
+│ ┌ Help with a problem set ┐ ┌ Review a topic ┐ ┌ Quiz me ┐ ┌ Browse ┐│
+│                                                                     │
+│ Try asking                                                          │
+│ › Why does Bayes' theorem need a prior?                             │
+│ › What should I review before the conditional probability quiz?     │
+│ › How is variance different from standard deviation?                │
+│                                                                     │
+│ Recent chats: Bayes and priors · Pset 3 help · Quiz: CLT            │
+└─────────────────────────────────────────────────────────────────────┘
 ```
-One big number. No filters, no charts in v0.
+Empty course: "Your instructor hasn't added materials yet. Check back soon."
+
+### 4.4 Chat screen
+```
+┌────────────┬─────────────────────────────────────┬──────────────────┐
+│ ← Course   │ Pset 4 help                         │ Source           │
+│ + New chat │ Problem Set 04 · Graded: hints only │ Class 7 notes    │
+│            │                                     │ p. 3             │
+│ Pset 4 hlp●│ You: How do I start problem 2?      │ "…posterior ∝    │
+│ Bayes      │ BruinBuddy [AI-generated]           │ likelihood ×     │
+│ Quiz: CLT  │ What does the problem give you? [1] │ prior…"          │
+│            │                                     │ [Open document]  │
+│ Alex  ⏻    │ [ Ask a question…             Send ]│                  │
+└────────────┴─────────────────────────────────────┴──────────────────┘
+```
+The empty chat shows the starter questions. On a phone the chat list is a menu and the source panel a bottom sheet.
+
+### 4.5 Staff console
+```
+┌ BruinBuddy   [Stats 100A ▾ owner]                      Prof. Kim · Log out ┐
+│ Setup  Materials  Problem sets  Guidelines  Members  Dashboard  Pause  Plan│
+│                                              [ Preview as student ]        │
+│ Setup                                                                      │
+│ ✓ Upload materials            12 ready, 1 processing                       │
+│ ○ Set problem set modes       4 sets, all Graded            [Review modes] │
+│ ○ Write guidelines                                          [Write]        │
+│ ○ Try it as a student                                       [Preview]      │
+│ ○ Share the student code      ABCD-2345  [Copy]                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.6 Materials library
+```
+│ [ Upload ]                                              Filter: All ▾      │
+│ Title                     Category      Status        Linked     Actions   │
+│ Class 7 notes             Lecture notes Ready                    ⋯         │
+│ Problem Set 04            Problem set   Ready         Sol. 04    ⋯         │
+│ Problem Set 04 Solutions  Solution      Ready         Pset 04    ⋯         │
+│ scan_week3.pdf            Reading       No text found            ⋯         │
+│ ⚠ "week5_answers.pdf" looks like a solution but is tagged as a reading.    │
+```
+
+### 4.7 Dashboard
+```
+│ Dashboard              [7 days | 30 days | Whole term]      Sample data    │
+│ Active students 23 · Questions 412 · Seats 31/40 · Tokens 1.2M / 12M       │
+│ Questions per day  ▁▂▃▅▇▅▃▂                                                │
+│ Most-asked materials          │ Where students are stuck                   │
+│ Class 7 notes        61       │ Pset 4   14 students · 3.1 q/student       │
+│ Reading 3            44       │          ✓ 9  ◐ 12  ✗ 7                    │
+│ Unanswered questions (anonymised)                                          │
+│ "Is the midterm cumulative?"                                   Oct 18      │
+│ Student usage    Name   Questions   Tokens                                 │
+```
 
 ## 5. Interaction patterns
+**Citations.** Numbered chips at the end of the claim; click opens the passage in the source panel with document, page and an "Open document" link (signed, expires quickly). Solutions are never cited or linked until released.
 
-**Citations**
-- Inline numbered chips such as [1] sit at the end of the claim they support.
-- Clicking a chip opens the source panel with the document name, location (page or section), and the passage the answer used.
-- "Open document" opens the source PDF in a new tab. The link is signed and expires quickly, so it can't be shared.
-- Solution documents never appear as a citation, a source, or a link.
+**Rule line.** Under the chat title: "Problem Set 04 · Graded: hints only", "Practice: full help" or "Solutions open". The same labels are used on the course home picker and in the staff Problem sets screen, so students and staff see one vocabulary.
 
-**Teaching responses**
-- Hints come as short steps. Each reply ends with a question back to the student when it makes sense ("What is P(A | B) here?").
-- When the tutor declines to give an answer, it says so briefly and offers the next hint. It does not lecture about academic integrity.
-- There is no "just show me" button and no way to unlock solutions.
+**Teaching responses.** Hints as short steps, ending with a question when it helps. A refusal is one sentence and then the next hint, with no lecture.
 
-**AI label**
-- Every tutor message carries an "AI-generated" tag. Student messages do not.
-- The About page states that the tutor can make mistakes and that the materials are from MIT OCW 18.05, CC BY-NC-SA 4.0.
+**AI label.** On every tutor message. The About page states that the tutor can make mistakes, credits MIT OCW for the demo course, and says staff see aggregate usage and not individual chats.
 
-**Memory**
-- When a reply uses memory, a small line under it says what it drew on ("Used memory: you were reviewing conditional probability").
-- v0 does not let students view, edit, or clear memory (PRD_v0 §8).
+**Memory.** "Used memory from past chats" under a reply that used it. Memory is per course. Not viewable or editable in v1.
 
-**Loading and errors**
-- While the tutor responds, show a typing indicator and stream text as it arrives.
-- If the request fails, the student's message stays in the thread and the tutor's reply shows an error with a Retry link. A daily-limit message from the server is shown the same way.
-- If no relevant sources are found, show the "not in the materials" reply, with no citations.
-- Long pasted problems are accepted, and the input grows up to a limit and then scrolls.
+**Allowance.** A meter on the course home ("58% of this week's allowance used"). At the limit the reply slot says "You've used this week's allowance. More frees up Tue 9:40 am." and nothing is sent to the AI.
+
+**Pause.** A banner on the home and chat while paused, with the professor's message and the end time. Sending shows the same message.
+
+**Loading and errors.** Typing indicator and streaming as in v0. Every request failure keeps the student's message and offers Retry where retrying can help. Payment, upload and save errors appear inline next to the control that caused them.
+
+**Copy and codes.** Codes are shown in a monospace box with a Copy button. A staff code is shown once with "Copy it now; you won't see it again."
 
 ## 6. Visual design system
-- **Type:** one system sans-serif font. Body text 16px with generous line height, because answers are long.
-- **Layout:** a centered chat column with a maximum width of about 720px so lines stay readable.
-- **Color:** a neutral theme (light and dark, following the system setting) with one accent color for buttons and citation chips. Tutor messages sit on a faint tinted background to set them apart from student messages. Use no UCLA blue or gold, and no UCLA marks.
-- **Components:** message bubble, citation chip, source panel, chat list item, primary and secondary buttons, text input.
-- **Math:** render formulas with KaTeX, both inline and block, in tutor answers and source excerpts.
-- **Responsive:** desktop first. On narrow screens the sidebar collapses to a menu and the source panel becomes a slide-up sheet. Not optimized beyond that.
+- **Type:** system sans-serif; 16px body with generous line height; monospace only for codes.
+- **Layout:** chat column max ~720px; staff screens max ~1100px with tables that scroll horizontally on small screens.
+- **Color:** neutral light and dark themes following the system setting, one green accent for buttons, chips and focus; amber for warnings, red for errors. No UCLA blue or gold, no UCLA marks.
+- **Components:** button (primary, secondary, danger, link), text input, select, checkbox, card, tabs, table, badge (role, status, mode), banner (info, warning), meter, modal, citation chip, message bubble, source panel.
+- **Math:** KaTeX inline and block, in answers and source excerpts.
+- **Responsive:** usable on a phone (PRD §4.7): the chat list becomes a menu, the source panel a bottom sheet, staff tabs scroll horizontally, tables scroll inside their card.
 
-## 7. Accessibility and usability
-- Everything works with the keyboard: Enter sends, Shift+Enter adds a new line, Tab reaches citation chips, and Enter opens one.
-- Text contrast of at least 4.5:1, and focus rings on all controls.
-- Citation chips have a text label (for example "Source 1: Class 7 notes, p. 3") for screen readers.
-- Math renders with accessible markup (KaTeX's MathML output), not images.
-- New tutor messages are announced to screen readers (a polite live region).
-- Informal usability check: have two or three classmates try F1–F5 and note where they get stuck. No formal testing in v0.
+## 7. Accessibility
+- Keyboard: Enter sends, Shift+Enter adds a line; all controls reachable with Tab; visible focus rings.
+- Contrast at least 4.5:1; status is never shown by color alone (badges carry text).
+- Citation chips have labels ("Source 1: Class 7 notes, page 3"). Math renders with KaTeX's MathML.
+- New tutor messages are announced (polite live region); form errors use `role="alert"`.
 
 ## 8. Design decisions and open questions
-
 | Decision | Choice | Alternative | Why |
 |---|---|---|---|
-| Screens | Three: sign-in, chat, dashboard | Separate pages for chats, memory, and settings | Smallest thing that covers the PRD |
-| Citations | Numbered chips plus a side panel | Footnotes at the end of the message | Lets students check a claim without losing their place |
-| Chat list | Sidebar in the chat screen | Separate "My chats" page | Switching chats is frequent |
-| Refusals | Short, then a hint | A long explanation of the policy | Keeps the student working on the problem |
-| Memory visibility | A one-line note only | A memory page with edit and delete | Out of v0 scope |
-| Dashboard | One number | Charts and a topic breakdown | PRD v0 |
-
-**Decided in v0**
-- Chats are titled with the first 48 characters of the first question (no model call).
-- The three suggested questions are fixed.
-- The source panel shows the extracted passage, with a link to the original PDF page.
+| Student surface | Course home that launches chats | Separate quiz, planner and flashcard tools | PRD §4.1: chat is the one place for help |
+| Staff surface | One console with tabs | A wizard only | The checklist guides setup; tabs make every step revisitable |
+| Code entry | One "Enter a course code" field for students and staff | Separate fields | Less to explain; the server knows which is which |
+| Price display | Server-computed breakdown that updates as the plan changes | A fixed price table | The formula is still open (PRD §2.7) and stays in one place |
+| Problem set rule | Always-visible rule line | A tooltip | Students should never be surprised by a refusal |
+| Dashboard privacy | Small groups hidden, no names in unanswered list | Full per-student detail | PRD §3.6 |
+| Routing | Hash URLs | History API with rewrites | Works on Vercel and the local backend unchanged |
 
 **Open questions**
-- Should suggested questions be drawn from the materials?
-- Do students need a way to report a wrong answer? Deferred.
-- Should students be able to see and clear their memory?
+- Do students need to see and clear their memory? (Out of scope for v1.)
+- Should staff be able to edit starter questions? (Out of scope for v1.)
+- Do we need a "report a wrong answer" control? (Out of scope for v1.)
