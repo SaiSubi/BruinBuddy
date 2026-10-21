@@ -6,11 +6,12 @@ import { Banner, ErrorText, useAction } from './ui.jsx'
 // Log in, create an account, forgot password, and set a new password (after the emailed reset link).
 export default function AuthScreen({ cfg, notice, initialMode = 'login', onSignedIn, onDone }) {
   const [mode, setMode] = useState(initialMode)
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', account_type: 'student' })
   const [info, setInfo] = useState('')
   const { busy, error, run, setError } = useAction()
   const { openA11yModal, activeBadgeCount } = useAccessibility()
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+  const setRole = (role) => setForm((prev) => ({ ...prev, account_type: role }))
   const go = (m) => { setMode(m); setError(null); setInfo('') }
   const google = cfg.auth.google
 
@@ -69,6 +70,34 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
 
         {mode === 'signup' && (
           <>
+            <label>I am signing up as</label>
+            <div className="role-selector-grid" role="radiogroup" aria-label="Account role">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={form.account_type === 'student'}
+                className={`role-option-card ${form.account_type === 'student' ? 'active' : ''}`}
+                onClick={() => setRole('student')}
+              >
+                <span className="role-option-title">I am a Student</span>
+                <span className="role-option-desc">
+                  Join a course with your class code, ask the AI Tutor, and generate concept animations.
+                </span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={form.account_type === 'instructor'}
+                className={`role-option-card ${form.account_type === 'instructor' ? 'active' : ''}`}
+                onClick={() => setRole('instructor')}
+              >
+                <span className="role-option-title">I am an Instructor / Tutor</span>
+                <span className="role-option-desc">
+                  Create and manage courses, upload materials, set problem modes, and view analytics.
+                </span>
+              </button>
+            </div>
+
             <label htmlFor="name">Your name</label>
             <input id="name" value={form.name} onChange={set('name')} autoComplete="name" maxLength={60} required />
           </>

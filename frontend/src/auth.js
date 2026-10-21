@@ -46,10 +46,10 @@ async function localAuth(path, body) {
   return data
 }
 
-export async function signUp({ name, email, password }) {
-  if (!sb) return localAuth('/api/auth/signup', { name, email, password })
+export async function signUp({ name, email, password, account_type = 'student' }) {
+  if (!sb) return localAuth('/api/auth/signup', { name, email, password, account_type })
   const { data, error } = await sb.auth.signUp({
-    email, password, options: { data: { name }, emailRedirectTo: window.location.origin },
+    email, password, options: { data: { name, account_type }, emailRedirectTo: window.location.origin },
   })
   if (error) throw new Error(error.message)
   return { needsConfirm: !data.session }

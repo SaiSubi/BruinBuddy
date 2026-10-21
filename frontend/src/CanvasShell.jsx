@@ -165,6 +165,7 @@ export default function CanvasShell({
     .toUpperCase()
 
   const isStaff = course && (course.role === 'owner' || course.role === 'staff')
+  const isStudentAccount = me?.account_type === 'student' && !isStaff
   const codeLabel = course ? courseCodeTag(course.name, course.id) : null
 
   return (
@@ -331,16 +332,41 @@ export default function CanvasShell({
                   <p className="muted">You haven’t joined a course yet.</p>
                 )}
                 <div className="canvas-tray-actions">
-                  <button
-                    type="button"
-                    className="primary small"
-                    onClick={() => {
-                      closeTray()
-                      navigate('/join')
-                    }}
-                  >
-                    + Join or create a course
-                  </button>
+                  {isStudentAccount ? (
+                    <button
+                      type="button"
+                      className="primary small"
+                      onClick={() => {
+                        closeTray()
+                        navigate('/join')
+                      }}
+                    >
+                      + Join a course
+                    </button>
+                  ) : (
+                    <div className="inline wrap">
+                      <button
+                        type="button"
+                        className="primary small"
+                        onClick={() => {
+                          closeTray()
+                          navigate('/create')
+                        }}
+                      >
+                        + Create a course
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        onClick={() => {
+                          closeTray()
+                          navigate('/join')
+                        }}
+                      >
+                        Join with code
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -352,6 +378,11 @@ export default function CanvasShell({
                   <div>
                     <strong>{me?.name}</strong>
                     <div className="muted small">{me?.email || 'UCLA Bruin Learn Account'}</div>
+                    <div style={{ marginTop: 4 }}>
+                      <Badge tone={isStudentAccount ? 'info' : 'good'}>
+                        {isStudentAccount ? 'Student Account' : 'Instructor / Tutor Account'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <hr className="canvas-tray-hr" />
@@ -393,7 +424,7 @@ export default function CanvasShell({
                   </li>
                   <li>
                     <a href="#/join" onClick={closeTray}>
-                      Join or create a course
+                      {isStudentAccount ? 'Join a course' : 'Create or join a course'}
                     </a>
                   </li>
                   <li>
@@ -523,7 +554,9 @@ export default function CanvasShell({
                     {c.status === 'pending' ? ' (unpaid)' : ''}
                   </option>
                 ))}
-                <option value="new">Join or create a course…</option>
+                <option value="new">
+                  {isStudentAccount ? 'Join a course…' : 'Create or join a course…'}
+                </option>
               </select>
             )}
 
@@ -638,31 +671,56 @@ export default function CanvasShell({
   )
 }
 
-// Multi-Course Canvas Dashboard
+// Multi-Course Canvas Dashboard (Role-segregated for Student vs Instructor/Tutor accounts)
 export function CanvasDashboard({ me }) {
   const todayStr = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long' })
+  const isStudentAccount = me?.account_type === 'student'
 
   return (
     <div className="canvas-dashboard-view">
       <div className="dashboard-date-group">
         <div className="row-between">
           <div>
-            <h2 className="dashboard-today-title">Today</h2>
-            <div className="muted small">{todayStr}</div>
+            <h2 className="dashboard-today-title">
+              {isStudentAccount ? 'Student Dashboard' : 'Instructor & Tutor Dashboard'}
+            </h2>
+            <div className="muted small">
+              {todayStr} · {isStudentAccount ? 'Your Enrolled Courses' : 'Course Management & Teaching Studio'}
+            </div>
           </div>
-          <button
-            type="button"
-            className="primary small"
-            onClick={() => navigate('/join')}
-          >
-            + Join or Create Course
-          </button>
+          {isStudentAccount ? (
+            <button
+              type="button"
+              className="primary small"
+              onClick={() => navigate('/join')}
+            >
+              + Join a Course
+            </button>
+          ) : (
+            <div className="inline wrap">
+              <button
+                type="button"
+                className="primary small"
+                onClick={() => navigate('/create')}
+              >
+                + Create a Course
+              </button>
+              <button
+                type="button"
+                className="secondary small"
+                onClick={() => navigate('/join')}
+              >
+                Join with Staff Code
+              </button>
+            </div>
+          )}
         </div>
 
         {me?.courses?.length > 0 ? (
           <div className="dashboard-stream-list">
             {me.courses.map((c) => {
               const code = courseCodeTag(c.name, c.id)
+              const courseIsStaff = c.role === 'owner' || c.role === 'staff'
               return (
                 <div key={c.id} className="dashboard-stream-row">
                   <a href={`#/c/${c.id}`} className="dashboard-course-thumb">
@@ -678,11 +736,31 @@ export function CanvasDashboard({ me }) {
                       {code} · {c.name.toUpperCase()}
                     </div>
                     <a href={`#/c/${c.id}`} className="dashboard-stream-link">
-                      Open Course Home, AI Tutor & Concept Animations
+                      {courseIsStaff
+                        ? 'Manage Course Setup, Materials, Guidelines & Analytics'
+                        : 'Open Course Home, AI Tutor & Concept Animations'}
                     </a>
                   </div>
-                  <div className="dashboard-stream-right">
-                    <Badge tone={c.status === 'pending' ? 'warn' : 'good'}>
+                  <div className="dashboard-stream-right inline wrap">
+                    {courseIsStaff && (
+                      <>
+                        <button
+                          type="button"
+                          className="primary small"
+                          onClick={() => navigate(`/c/${c.id}/staff/setup`)}
+                        >
+                          Instructor Console
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => navigate(`/c/${c.id}/preview`)}
+                        >
+                          Student View
+                        </button>
+                      </>
+                    )}
+                    <Badge tone={c.status === 'pending' ? 'warn' : courseIsStaff ? 'good' : 'info'}>
                       {c.status === 'pending' ? 'Pending' : ROLE[c.role] || 'Student'}
                     </Badge>
                   </div>
@@ -692,11 +770,26 @@ export function CanvasDashboard({ me }) {
           </div>
         ) : (
           <div className="card">
-            <h3>No courses enrolled yet</h3>
-            <p className="muted">Enter a course code from your instructor or create a course to populate your Dashboard.</p>
-            <button type="button" className="primary" onClick={() => navigate('/join')}>
-              Join or create a course
-            </button>
+            <h3>{isStudentAccount ? 'No courses enrolled yet' : 'No courses created or joined yet'}</h3>
+            <p className="muted">
+              {isStudentAccount
+                ? 'Enter the course code from your instructor to join your class and start using BruinBuddy.'
+                : 'Create a new course to upload materials and invite students, or join an existing course with a staff code.'}
+            </p>
+            {isStudentAccount ? (
+              <button type="button" className="primary" onClick={() => navigate('/join')}>
+                Join a course
+              </button>
+            ) : (
+              <div className="inline wrap">
+                <button type="button" className="primary" onClick={() => navigate('/create')}>
+                  Create a course
+                </button>
+                <button type="button" className="secondary" onClick={() => navigate('/join')}>
+                  Join with staff code
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
