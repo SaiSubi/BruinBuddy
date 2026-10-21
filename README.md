@@ -54,10 +54,10 @@ cd backend
 - Spend is logged per call, with course and student, in the `usage_log` table.
 
 ## Deploy
-Production: Vercel (frontend) + Fly.io (backend) + Supabase (Postgres, Storage, Auth) + Stripe (test mode). Live v0: https://bruinbuddy.vercel.app and https://bruinbuddy-api.fly.dev. A push to `main` redeploys both: the backend through GitHub Actions (tests first, then `flyctl deploy`) and the frontend through Vercel's GitHub integration. See [TECHNICAL.md](docs/TECHNICAL.md) §17.
+Production: Vercel (frontend) + Fly.io (backend) + Supabase (Postgres, Storage, Auth) + Stripe (test mode). Live v1: https://bruinbuddy.vercel.app (frontend) and https://bruinbuddy-api.fly.dev (backend). A push to `main` redeploys both: the backend through GitHub Actions (tests first, then `flyctl deploy`) and the frontend through Vercel's GitHub integration. See [TECHNICAL.md](docs/TECHNICAL.md) §17.
 
 ### v1 go-live checklist
-The v1 backend refuses to start in production until Supabase Auth and Stripe are configured, so do steps 1–3 **before** merging to `main`. Settings that already exist from v0 (database, OpenRouter, Storage, `SECRET_KEY`, `ALLOWED_ORIGINS`) stay as they are.
+Done for the live site on 2026-10-20; kept for setting up another environment. The v1 backend refuses to start in production until Supabase Auth and Stripe are configured, so do steps 1–3 **before** merging to `main`. Settings that already exist from v0 (database, OpenRouter, Storage, `SECRET_KEY`, `ALLOWED_ORIGINS`) stay as they are.
 
 1. **Supabase Auth** (Supabase dashboard → Authentication)
    - *Sign In / Providers → Email:* turn off **Confirm email** for the demo (Supabase's built-in mailer only sends to project members and is rate-limited), or set up custom SMTP and leave it on.
