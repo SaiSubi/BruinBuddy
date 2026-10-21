@@ -214,3 +214,12 @@ The empty chat shows the starter questions. On a phone the chat list is a menu a
 - Do students need to see and clear their memory? (Out of scope for v1.)
 - Should staff be able to edit starter questions? (Out of scope for v1.)
 - Do we need a "report a wrong answer" control? (Out of scope for v1.)
+
+
+## 9. UCLA Bruin Learn (Canvas LMS) UI & Accessibility Suite
+- **UCLA Blue Global Navigation Rail (`CanvasShell.jsx`):** Fixed `84px` UCLA Blue (`#1e6b9e`) left rail with `UCLA` wordmark, `Account`, `Dashboard` (`#/dashboard` with multi-course timeline & mountain/pine-tree line-art footer), `Courses` slide-out tray, `History` slide-out tray, `Illustrate` launcher, `Search` tray, `Accessibility` drawer, and `Help`.
+- **Course Home Hero Banner & Accordions (`CourseHome.jsx`):** UCLA Blue & Gold (`#ffd100`) course hero card, `Welcome` and `Modules` gold-underlined headings, collapsible gray accordion bars, `SHOW BY DATE` / `SHOW BY TYPE` filterable assignment & module groups, and a right-hand `To do` & Allowance stream.
+- **Appearance & Accessibility Engine (`accessibility.jsx`):**
+  - **Themes:** Light (UCLA Bruin Learn), Dark (Westwood Night), High Contrast (WCAG AAA), and System Auto.
+  - **Colorblind Modes:** Standard, Protanopia/Deuteranopia (Red-Green Safe Okabe-Ito tokens), Tritanopia (Blue-Yellow Safe), and Monochromacy.
+  - **Dyslexia & Reading Comfort:** Dyslexia-friendly typography & spacing mode, reading surface paper tints (`Cream`, `Sage`, `Sky`), font scaling (`100%`–`130%`), link underlining, reduced motion, and built-in **`📖 Immersive Reader`** with Text-to-Speech (`speechSynthesis`), Line Focus, and Syllable spacing.

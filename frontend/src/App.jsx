@@ -1,10 +1,11 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { AccessibilityProvider } from './accessibility.jsx'
 import { api, setOnExpired } from './api.js'
 import { getToken, initAuth, signOut } from './auth.js'
+import CanvasShell, { CanvasDashboard } from './CanvasShell.jsx'
 import { navigate, takeQueryParams, useRoute } from './router.js'
 import { Banner, Loading } from './ui.jsx'
 import AuthScreen from './AuthScreen.jsx'
-import TopBar from './TopBar.jsx'
 import Welcome from './Welcome.jsx'
 import CreateCourse from './CreateCourse.jsx'
 import CourseHome from './CourseHome.jsx'
@@ -17,6 +18,14 @@ const remember = (id) => { try { localStorage.setItem(LAST_COURSE, String(id)) }
 const recalled = () => { try { return Number(localStorage.getItem(LAST_COURSE)) } catch { return 0 } }
 
 export default function App() {
+  return (
+    <AccessibilityProvider>
+      <AppInner />
+    </AccessibilityProvider>
+  )
+}
+
+function AppInner() {
   const [cfg, setCfg] = useState(null)
   const [bootError, setBootError] = useState(null)
   const [me, setMe] = useState(undefined) // undefined: loading, null: signed out
@@ -87,26 +96,45 @@ export default function App() {
     return <AuthScreen cfg={cfg} notice={notice} onSignedIn={async () => { setNotice(''); await loadMe() }} />
   }
 
-  const shell = (content, wide = false) => (
-    <div className="page">
-      <TopBar me={me} courseId={route[0] === 'c' ? Number(route[1]) : null} onLogOut={logOut} />
-      <main className={wide ? 'content wide' : 'content'}>{content}</main>
-    </div>
+  const shell = (content, { wide = false, activeSection = 'home', breadcrumb = null } = {}) => (
+    <CanvasShell
+      me={me}
+      courseId={route[0] === 'c' ? Number(route[1]) : null}
+      activeSection={activeSection}
+      breadcrumb={breadcrumb}
+      onLogOut={logOut}
+    >
+      <div className={wide ? 'content wide' : 'content'}>{content}</div>
+    </CanvasShell>
   )
 
   if (params.checkout && params.course) {
-    return shell(<CheckoutReturn params={params} onDone={async (path) => { setParams({}); await loadMe(); navigate(path) }} />)
+    return shell(
+      <CheckoutReturn params={params} onDone={async (path) => { setParams({}); await loadMe(); navigate(path) }} />,
+      { breadcrumb: 'Payment Confirmation' }
+    )
   }
 
   const [section, id, ...rest] = route
-  if (section === 'about') return shell(<About onBack={() => window.history.back()} />)
-  if (section === 'join') return shell(<Welcome me={me} onJoined={loadMe} />)
-  if (section === 'create') return shell(<CreateCourse cfg={cfg} />)
+  if (section === 'dashboard') {
+    return shell(<CanvasDashboard me={me} />, { wide: true, activeSection: 'dashboard', breadcrumb: 'Dashboard' })
+  }
+  if (section === 'about') {
+    return shell(<About onBack={() => window.history.back()} />, { activeSection: 'about', breadcrumb: 'About & Help' })
+  }
+  if (section === 'join') {
+    return shell(<Welcome me={me} onJoined={loadMe} />, { activeSection: 'join', breadcrumb: 'Join or Create a Course' })
+  }
+  if (section === 'create') {
+    return shell(<CreateCourse cfg={cfg} />, { activeSection: 'create', breadcrumb: 'Create a Course' })
+  }
   if (section === 'c' && id) {
     remember(id)
     return <CourseRoute key={id} id={Number(id)} rest={rest} me={me} cfg={cfg} onLogOut={logOut} reloadMe={loadMe} />
   }
-  if (!me.courses.length) return shell(<Welcome me={me} onJoined={loadMe} />)
+  if (!me.courses.length) {
+    return shell(<Welcome me={me} onJoined={loadMe} />, { activeSection: 'join', breadcrumb: 'Welcome' })
+  }
   const last = me.courses.find((c) => c.id === recalled()) || me.courses[0]
   navigate(`/c/${last.id}`)
   return <Loading />
@@ -142,6 +170,7 @@ function CheckoutReturn({ params, onDone }) {
 function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
   const [course, setCourse] = useState(null)
   const [error, setError] = useState(null)
+  const [subSection, setSubSection] = useState('home') // 'home' | 'syllabus' | 'assignments' | 'modules'
   const load = useCallback(async () => {
     try {
       setCourse(await api.course(id))
@@ -152,36 +181,90 @@ function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
   }, [id])
   useEffect(() => { load() }, [load])
 
-  const top = <TopBar me={me} courseId={id} onLogOut={onLogOut} />
   if (error) {
     return (
-      <div className="page">{top}
-        <main className="content">
+      <CanvasShell me={me} courseId={id} breadcrumb="Course Unavailable" onLogOut={onLogOut}>
+        <div className="content">
           <div className="narrow">
             <Banner kind="error">{error.status === 404 ? 'This course doesn’t exist or you’re not a member of it.' : error.message}</Banner>
             <button className="secondary" onClick={async () => { await reloadMe(); navigate('/') }}>Go to my courses</button>
           </div>
-        </main>
-      </div>
+        </div>
+      </CanvasShell>
     )
   }
-  if (!course) return <div className="page">{top}<Loading /></div>
+  if (!course) {
+    return (
+      <CanvasShell me={me} courseId={id} breadcrumb="Loading…" onLogOut={onLogOut}>
+        <Loading />
+      </CanvasShell>
+    )
+  }
 
   const staff = course.role === 'owner' || course.role === 'staff'
   const [view, sub] = rest
   if (view === 'chat' && sub) {
-    return <div className="page chatpage">{top}<ChatView key={sub} course={course} chatId={Number(sub)} preview={staff} onCourseChange={load} /></div>
-  }
-  if (staff && view !== 'preview') {
     return (
-      <div className="page">{top}
-        <main className="content wide">
-          <Suspense fallback={<Loading />}>
-            <StaffConsole course={course} tab={view === 'staff' ? sub || 'setup' : 'setup'} reload={load} cfg={cfg} />
-          </Suspense>
-        </main>
-      </div>
+      <CanvasShell
+        me={me}
+        course={course}
+        courseId={id}
+        activeSection="chat"
+        breadcrumb="AI Tutor & Illustrate Studio"
+        onLogOut={onLogOut}
+        fullHeight
+      >
+        <ChatView key={sub} course={course} chatId={Number(sub)} preview={staff} onCourseChange={load} />
+      </CanvasShell>
     )
   }
-  return <div className="page">{top}<main className="content"><CourseHome course={course} preview={staff} reload={load} /></main></div>
+  if (staff && view !== 'preview') {
+    const activeTab = view === 'staff' ? sub || 'setup' : 'setup'
+    return (
+      <CanvasShell
+        me={me}
+        course={course}
+        courseId={id}
+        activeSection="staff"
+        staffTab={activeTab}
+        breadcrumb={`Instructor Console › ${activeTab}`}
+        onLogOut={onLogOut}
+      >
+        <div className="content wide">
+          <Suspense fallback={<Loading />}>
+            <StaffConsole course={course} tab={activeTab} reload={load} cfg={cfg} />
+          </Suspense>
+        </div>
+      </CanvasShell>
+    )
+  }
+
+  const sectionLabels = {
+    home: 'Home',
+    syllabus: 'Syllabus & AI Rules',
+    assignments: 'Assignments',
+    modules: 'Modules & Files',
+  }
+
+  return (
+    <CanvasShell
+      me={me}
+      course={course}
+      courseId={id}
+      activeSection={subSection}
+      breadcrumb={sectionLabels[subSection] || 'Home'}
+      onSelectCourseSection={(sec) => setSubSection(sec)}
+      onLogOut={onLogOut}
+    >
+      <div className="content wide">
+        <CourseHome
+          course={course}
+          preview={staff}
+          reload={load}
+          section={subSection}
+          onSectionChange={(sec) => setSubSection(sec)}
+        />
+      </div>
+    </CanvasShell>
+  )
 }
