@@ -45,11 +45,22 @@ def test_illustrate_auto_routing_and_persistence(app):
     assert r_diag.status_code == 200, r_diag.text
     assert r_diag.json()["skill"] == "explainer_diagram"
 
+    # Explicitly request Remotion Motion Graphics skill
+    r_rem = student.post(
+        f"/api/chats/{chat_id}/illustrate",
+        json={"preferred_skill": "remotion_motion", "prompt": "Kinetic motion graphics breakdown of expected value metrics"},
+    )
+    assert r_rem.status_code == 200, r_rem.text
+    rem_data = r_rem.json()
+    assert rem_data["skill"] == "remotion_motion"
+    assert rem_data["skill_meta"]["repo"] == "haidrrrry/claude-remotion-skill"
+    assert "renderRemotionMotion" in rem_data["artifact_html"]
+
     # Check persistence in GET /api/chats/{chat_id} and GET /api/chats/{chat_id}/illustrations
     chat_res = student.get(f"/api/chats/{chat_id}").json()
-    assert len(chat_res["illustrations"]) == 3
+    assert len(chat_res["illustrations"]) == 4
     list_res = student.get(f"/api/chats/{chat_id}/illustrations").json()
-    assert [x["id"] for x in list_res] == [r_diag.json()["id"], iso_data["id"], data["id"]]
+    assert [x["id"] for x in list_res] == [rem_data["id"], r_diag.json()["id"], iso_data["id"], data["id"]]
 
     # Verify usage attribution was logged with course_id, user_id, chat_id
     usage = q1(
