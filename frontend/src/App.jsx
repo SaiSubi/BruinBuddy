@@ -120,7 +120,7 @@ function AppInner() {
     return shell(<CanvasDashboard me={me} />, { wide: true, activeSection: 'dashboard', breadcrumb: 'Dashboard' })
   }
   if (section === 'about') {
-    return shell(<About onBack={() => window.history.back()} />, { activeSection: 'about', breadcrumb: 'About & Help' })
+    return shell(<About onBack={() => window.history.back()} />, { activeSection: 'about', breadcrumb: 'About' })
   }
   if (section === 'join') {
     return shell(<Welcome me={me} onJoined={loadMe} />, { activeSection: 'join', breadcrumb: 'Join or Create a Course' })
@@ -170,7 +170,7 @@ function CheckoutReturn({ params, onDone }) {
 function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
   const [course, setCourse] = useState(null)
   const [error, setError] = useState(null)
-  const [subSection, setSubSection] = useState('home') // 'home' | 'syllabus' | 'assignments' | 'modules'
+  const [subSection, setSubSection] = useState('home') // 'home' | 'psets' | 'materials'
   const load = useCallback(async () => {
     try {
       setCourse(await api.course(id))
@@ -210,7 +210,11 @@ function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
         course={course}
         courseId={id}
         activeSection="chat"
-        breadcrumb="AI Tutor & Illustrate Studio"
+        onSelectCourseSection={(sec) => {
+          setSubSection(sec)
+          navigate(`/c/${id}${staff ? '/preview' : ''}`)
+        }}
+        breadcrumb="AI Tutor & Illustrate"
         onLogOut={onLogOut}
         fullHeight
       >
@@ -226,7 +230,10 @@ function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
         course={course}
         courseId={id}
         activeSection="staff"
-        staffTab={activeTab}
+        onSelectCourseSection={(sec) => {
+          setSubSection(sec)
+          navigate(`/c/${id}/preview`)
+        }}
         breadcrumb={`Instructor Console › ${activeTab}`}
         onLogOut={onLogOut}
       >
@@ -241,9 +248,8 @@ function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
 
   const sectionLabels = {
     home: 'Home',
-    syllabus: 'Syllabus & AI Rules',
-    assignments: 'Assignments',
-    modules: 'Modules & Files',
+    psets: 'Problem Sets',
+    materials: 'Materials',
   }
 
   return (
