@@ -182,7 +182,7 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
           onClick={onSidebarIllustrate}
           disabled={illustrating || course.pause?.active}
         >
-          {illustrating ? '✨ Illustrating…' : '✨ Illustrate'}
+          {illustrating ? 'Illustrating…' : 'Illustrate'}
         </button>
         <nav aria-label="Chats" className="chatlist">
           {chats.map((c) => (
@@ -196,7 +196,7 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
 
       <main className="main">
         <header className="chathead">
-          <button className="link mobile-only" onClick={() => setMenuOpen((v) => !v)} aria-label="Toggle chat list">☰</button>
+          <button className="link mobile-only" onClick={() => setMenuOpen((v) => !v)} aria-label="Toggle chat list">Menu</button>
           <div className="chathead-text">
             <strong className="chattitle">{chat?.title || ' '}</strong>
             {preview && <Badge>Preview</Badge>}
@@ -213,7 +213,7 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
             onClick={onSidebarIllustrate}
             disabled={illustrating || course.pause?.active}
           >
-            {illustrating ? '✨ Illustrating…' : `✨ Illustrate${illustrations.length ? ` (${illustrations.length})` : ''}`}
+            {illustrating ? 'Illustrating…' : `Illustrate${illustrations.length ? ` (${illustrations.length})` : ''}`}
           </button>
         </header>
         {course.pause?.active && <div className="chatbanner"><PauseBanner pause={course.pause} /></div>}
@@ -269,14 +269,14 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
             className={`pane-tab ${rightMode === 'illustrate' ? 'active' : ''}`}
             onClick={() => setRightMode('illustrate')}
           >
-            ✨ Illustrate {illustrations.length > 0 ? `(${illustrations.length})` : ''}
+            Illustrate {illustrations.length > 0 ? `(${illustrations.length})` : ''}
           </button>
           <button
             type="button"
             className={`pane-tab ${rightMode === 'source' ? 'active' : ''}`}
             onClick={() => setRightMode('source')}
           >
-            📄 Source {source ? `#${source.n}` : ''}
+            Source {source ? `#${source.n}` : ''}
           </button>
         </div>
 
@@ -296,7 +296,7 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
           <>
             <div className="srchead">
               <strong>Source {source.n}</strong>
-              <button className="link" onClick={() => { setSource(null); setRightOpen(false) }} aria-label="Close source">✕</button>
+              <button className="link" onClick={() => { setSource(null); setRightOpen(false) }} aria-label="Close source">×</button>
             </div>
             <p className="srctitle">{source.title}</p>
             <p className="muted small">Page {source.page}</p>
@@ -305,7 +305,7 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
           </>
         ) : (
           <p className="muted small">
-            Click a numbered citation to see the passage it came from, or switch to <strong>✨ Illustrate</strong> to generate an interactive concept animation.
+            Click a numbered citation to see the passage it came from, or switch to <strong>Illustrate</strong> to generate an interactive concept animation.
           </p>
         )}
       </aside>

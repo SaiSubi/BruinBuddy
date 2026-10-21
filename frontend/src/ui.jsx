@@ -54,7 +54,7 @@ export function Modal({ title, onClose, wide = false, children }) {
       <div className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>{title}</h2>
-          <button className="link" onClick={onClose} aria-label="Close">✕</button>
+          <button className="link" onClick={onClose} aria-label="Close">×</button>
         </div>
         {children}
       </div>

@@ -5,12 +5,12 @@ import { day, ROLE } from './format.js'
 import { navigate } from './router.js'
 import { Badge } from './ui.jsx'
 
-// Clean SVG icons matching Instructure Canvas / UCLA Bruin Learn
-function RailIcon({ name }) {
+// Clean monochrome stroke SVG icons matching Instructure Canvas / UCLA Bruin Learn
+export function RailIcon({ name, size = 22 }) {
   switch (name) {
     case 'dashboard':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M4 15a8 8 0 1 1 16 0" strokeLinecap="round" />
           <path d="M12 15l3.5-4.5" strokeLinecap="round" />
           <circle cx="12" cy="15" r="1.5" fill="currentColor" />
@@ -19,7 +19,7 @@ function RailIcon({ name }) {
       )
     case 'courses':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z" />
           <path d="M5 17h14" />
           <path d="M9 8h6M9 11.5h4" strokeLinecap="round" />
@@ -27,28 +27,27 @@ function RailIcon({ name }) {
       )
     case 'history':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="12" cy="12" r="8.5" />
           <path d="M12 7.5v5l3.2 2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )
     case 'illustrate':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" strokeLinejoin="round" />
-          <path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
+          <polygon points="5 3 19 12 5 21 5 3" strokeLinejoin="round" />
         </svg>
       )
     case 'search':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="10.8" cy="10.8" r="6.5" />
           <path d="M15.8 15.8L20.5 20.5" strokeLinecap="round" />
         </svg>
       )
     case 'a11y':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="12" cy="12" r="9" />
           <circle cx="12" cy="7.5" r="1.3" fill="currentColor" />
           <path d="M7.5 10.5h9M12 10.5v4.2m0 0l-2.3 3.8m2.3-3.8l2.3 3.8" strokeLinecap="round" />
@@ -56,10 +55,41 @@ function RailIcon({ name }) {
       )
     case 'help':
       return (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="12" cy="12" r="8.5" />
           <path d="M9.6 9.4a2.5 2.5 0 1 1 3.7 2.2c-.8.5-1.3 1-1.3 1.9" strokeLinecap="round" />
           <circle cx="12" cy="16.8" r="0.9" fill="currentColor" />
+        </svg>
+      )
+    case 'reader':
+      return (
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M2 5.5C2 4.7 2.7 4 3.5 4H10c1.1 0 2 .9 2 2v13.5c0-.8-.7-1.5-1.5-1.5H3.5C2.7 18 2 17.3 2 16.5v-11z" />
+          <path d="M22 5.5c0-.8-.7-1.5-1.5-1.5H14c-1.1 0-2 .9-2 2v13.5c0-.8.7-1.5 1.5-1.5h6.5c.8 0 1.5-.7 1.5-1.5v-11z" />
+        </svg>
+      )
+    case 'doc':
+      return (
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+          <polyline points="14 3 14 9 20 9" />
+          <line x1="8" y1="13" x2="16" y2="13" />
+          <line x1="8" y1="17" x2="13" y2="17" />
+        </svg>
+      )
+    case 'assignment':
+      return (
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
+          <rect x="4" y="3" width="16" height="18" rx="2" />
+          <line x1="8" y1="8" x2="16" y2="8" />
+          <line x1="8" y1="12" x2="16" y2="12" />
+          <line x1="8" y1="16" x2="12" y2="16" />
+        </svg>
+      )
+    case 'chat':
+      return (
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       )
     default:
@@ -184,7 +214,7 @@ export default function CanvasShell({
             navigate('/dashboard')
           }}
         >
-          <RailIcon name="dashboard" />
+          <RailIcon name="dashboard" size={24} />
           <span className="rail-label">Dashboard</span>
         </button>
 
@@ -194,7 +224,7 @@ export default function CanvasShell({
           onClick={() => toggleTray('courses')}
           aria-expanded={activeTray === 'courses'}
         >
-          <RailIcon name="courses" />
+          <RailIcon name="courses" size={24} />
           <span className="rail-label">Courses</span>
         </button>
 
@@ -204,7 +234,7 @@ export default function CanvasShell({
           onClick={() => toggleTray('history')}
           aria-expanded={activeTray === 'history'}
         >
-          <RailIcon name="history" />
+          <RailIcon name="history" size={24} />
           <span className="rail-label">History</span>
         </button>
 
@@ -217,7 +247,7 @@ export default function CanvasShell({
           }}
           title="Open Illustrate Animation Studio"
         >
-          <RailIcon name="illustrate" />
+          <RailIcon name="illustrate" size={22} />
           <span className="rail-label">Illustrate</span>
         </button>
 
@@ -227,7 +257,7 @@ export default function CanvasShell({
           onClick={() => toggleTray('search')}
           aria-expanded={activeTray === 'search'}
         >
-          <RailIcon name="search" />
+          <RailIcon name="search" size={24} />
           <span className="rail-label">Search</span>
         </button>
 
@@ -238,7 +268,7 @@ export default function CanvasShell({
           aria-expanded={activeTray === 'a11y'}
         >
           <span className="rail-icon-wrap">
-            <RailIcon name="a11y" />
+            <RailIcon name="a11y" size={24} />
             {activeBadgeCount > 0 && <span className="rail-badge">{activeBadgeCount}</span>}
           </span>
           <span className="rail-label">Accessibility</span>
@@ -252,7 +282,7 @@ export default function CanvasShell({
             navigate('/about')
           }}
         >
-          <RailIcon name="help" />
+          <RailIcon name="help" size={24} />
           <span className="rail-label">Help</span>
         </button>
 
@@ -287,7 +317,7 @@ export default function CanvasShell({
                 {activeTray === 'a11y' && 'Appearance & Accessibility'}
               </h2>
               <button type="button" className="canvas-tray-close" onClick={closeTray} aria-label="Close tray">
-                ✕
+                ×
               </button>
             </div>
             <hr className="canvas-tray-hr" />
@@ -363,21 +393,21 @@ export default function CanvasShell({
                       className={prefs.theme === 'light' ? 'active' : ''}
                       onClick={() => updatePref('theme', 'light')}
                     >
-                      ☀️ Light
+                      Light
                     </button>
                     <button
                       type="button"
                       className={prefs.theme === 'dark' ? 'active' : ''}
                       onClick={() => updatePref('theme', 'dark')}
                     >
-                      🌙 Dark
+                      Dark
                     </button>
                     <button
                       type="button"
                       className={prefs.theme === 'high-contrast' ? 'active' : ''}
                       onClick={() => updatePref('theme', 'high-contrast')}
                     >
-                      ⚡ High Contrast
+                      High Contrast
                     </button>
                   </div>
                 </div>
@@ -388,7 +418,7 @@ export default function CanvasShell({
                       className="link"
                       onClick={() => setActiveTray('a11y')}
                     >
-                      ♿ Appearance & Accessibility Settings
+                      Appearance & Accessibility Settings
                     </button>
                   </li>
                   <li>
@@ -515,7 +545,11 @@ export default function CanvasShell({
                 aria-label="Toggle course navigation menu"
                 title="Toggle course navigation menu"
               >
-                ☰
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
               </button>
             )}
             {activeSection === 'dashboard' ? (
@@ -584,7 +618,8 @@ export default function CanvasShell({
               onClick={() => openImmersiveReader()}
               title="Open Immersive Reader (Read Aloud, Line Focus, Dyslexia Spacing)"
             >
-              <span aria-hidden="true">📖</span> Immersive Reader
+              <RailIcon name="reader" size={16} />
+              <span>Immersive Reader</span>
             </button>
 
             <button
@@ -593,7 +628,7 @@ export default function CanvasShell({
               onClick={() => toggleTray('a11y')}
               title="Appearance & Accessibility (Light/Dark, Colorblind, Dyslexia)"
             >
-              ♿ Appearance{activeBadgeCount > 0 ? ` (${activeBadgeCount})` : ''}
+              Appearance{activeBadgeCount > 0 ? ` (${activeBadgeCount})` : ''}
             </button>
 
             <form className="canvas-search-box hide-narrow" onSubmit={handleHeaderSearch}>
@@ -605,7 +640,7 @@ export default function CanvasShell({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button type="submit" aria-label="Search">
-                🔍
+                <RailIcon name="search" size={15} />
               </button>
             </form>
           </div>
@@ -688,7 +723,7 @@ export default function CanvasShell({
                     className="course-nav-btn"
                     onClick={() => openChatOrNew(course, true)}
                   >
-                    ✨ Illustrate Studio
+                    Illustrate Studio
                   </button>
                 </li>
               </ul>
@@ -767,7 +802,9 @@ export function CanvasDashboard({ me }) {
                   <div className="dashboard-stream-Check">
                     <input type="checkbox" aria-label={`Mark ${c.name} reviewed`} />
                   </div>
-                  <div className="dashboard-stream-icon" aria-hidden="true">📘</div>
+                  <div className="dashboard-stream-icon" aria-hidden="true">
+                    <RailIcon name="courses" size={18} />
+                  </div>
                   <div className="dashboard-stream-main">
                     <div className="dashboard-stream-meta">
                       {code} {c.name.toUpperCase()} · BRUINBUDDY AI TUTOR & ILLUSTRATE STUDIO
@@ -833,7 +870,7 @@ export function CanvasDashboard({ me }) {
             <polygon points="835,215 860,88 885,215" fill="#76c893" stroke="currentColor" strokeWidth="2" />
             <line x1="860" y1="115" x2="860" y2="215" stroke="currentColor" strokeWidth="2" />
           </svg>
-          <div className="dashboard-art-caption">All caught up! Pick a course above to ask a question or illustrate a concept.</div>
+          <div className="dashboard-art-caption">Nothing planned yet</div>
         </div>
       </div>
     </div>

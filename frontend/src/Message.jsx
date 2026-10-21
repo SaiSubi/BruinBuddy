@@ -70,7 +70,7 @@ export default function Message({ m, onCite, onIllustrate, illustrating }) {
             onClick={() => onIllustrate(m)}
             disabled={illustrating}
           >
-            ✨ Illustrate this
+            Illustrate this
           </button>
         )}
         {m.memory_used?.length > 0 && (
