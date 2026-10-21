@@ -14,7 +14,7 @@ if os.environ.get("TEST_DATABASE_URL"):
     os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
 else:
     os.environ["BB_DB_PATH"] = str(_tmp / "test.db")
-    os.environ.pop("DATABASE_URL", None)
+    os.environ["DATABASE_URL"] = ""
 os.environ.update({"BB_MOCK_LLM": "1", "BB_SYNC_JOBS": "1", "AUTH_PROVIDER": "local", "ENV": "",
                    "BB_UPLOAD_DIR": str(_tmp / "uploads"), "STRIPE_SECRET_KEY": "", "STRIPE_WEBHOOK_SECRET": "",
                    "SUPABASE_URL": "", "SUPABASE_SERVICE_KEY": "", "SUPABASE_ANON_KEY": "", "TUTOR_FALLBACK_MODEL": ""})

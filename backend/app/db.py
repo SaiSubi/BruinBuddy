@@ -19,7 +19,8 @@ V0_CONVERSATION_TABLES = ["users", "chats", "messages", "memories"]  # replaced 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(
   id {PK}, auth_id TEXT NOT NULL UNIQUE, email TEXT NOT NULL, name TEXT NOT NULL,
-  password_hash TEXT, is_sample INTEGER NOT NULL DEFAULT 0, created_at DOUBLE PRECISION NOT NULL);
+  password_hash TEXT, account_type TEXT NOT NULL DEFAULT 'instructor',
+  is_sample INTEGER NOT NULL DEFAULT 0, created_at DOUBLE PRECISION NOT NULL);
 CREATE TABLE IF NOT EXISTS courses(
   id {PK}, name TEXT NOT NULL, slug TEXT UNIQUE, owner_id INTEGER NOT NULL REFERENCES users(id),
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','active')),
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS stripe_events(
 
 # Columns added to tables that v0 databases already have (added in place, idempotently).
 ADDED_COLUMNS = {
+    "users": {"account_type": "TEXT NOT NULL DEFAULT 'instructor'"},
     "documents": {
         "course_id": "INTEGER", "status": "TEXT NOT NULL DEFAULT 'ready'", "status_detail": "TEXT",
         "storage_path": "TEXT", "content_type": "TEXT", "pages": "INTEGER", "size_bytes": "INTEGER",
@@ -201,6 +203,14 @@ def init_db() -> None:
         conn.execute("UPDATE documents SET kind='solution' WHERE kind='problem_set_solution'")
         conn.execute("INSERT INTO solution_links(solution_id,pset_id) SELECT id, linked_doc_id FROM documents "
                      "WHERE linked_doc_id IS NOT NULL ON CONFLICT DO NOTHING")  # v0 kept one link per solution
+        # Migrate existing users: any user who has student memberships and no owner/staff memberships is a student.
+        conn.execute(
+            "UPDATE users SET account_type='student' WHERE id IN ("
+            "  SELECT user_id FROM memberships WHERE role='student' AND status='active'"
+            ") AND id NOT IN ("
+            "  SELECT user_id FROM memberships WHERE role IN ('owner','staff') AND status='active'"
+            ")"
+        )
         for st in _statements(INDEXES):
             conn.execute(st)
         if IS_PG:

@@ -194,6 +194,8 @@ class CourseIn(BaseModel):
 
 @router.post("/api/courses")
 def create_course(body: CourseIn, user: dict = Depends(current_user)):
+    if user.get("account_type") == "student":
+        raise HTTPException(403, "Student accounts cannot create courses. Join a course with your instructor's code.")
     q = billing.quote(body.student_seats, body.staff_seats, body.token_cap, body.cap_period)  # validates the plan
     with db() as conn:
         cur = conn.execute(

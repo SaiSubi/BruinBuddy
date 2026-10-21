@@ -115,6 +115,7 @@ function AppInner() {
     )
   }
 
+  const isStudentAccount = me.account_type === 'student'
   const [section, id, ...rest] = route
   if (section === 'dashboard') {
     return shell(<CanvasDashboard me={me} />, { wide: true, activeSection: 'dashboard', breadcrumb: 'Dashboard' })
@@ -123,9 +124,16 @@ function AppInner() {
     return shell(<About onBack={() => window.history.back()} />, { activeSection: 'about', breadcrumb: 'About' })
   }
   if (section === 'join') {
-    return shell(<Welcome me={me} onJoined={loadMe} />, { activeSection: 'join', breadcrumb: 'Join or Create a Course' })
+    return shell(<Welcome me={me} onJoined={loadMe} />, {
+      activeSection: 'join',
+      breadcrumb: isStudentAccount ? 'Join a Course' : 'Create or Join a Course',
+    })
   }
   if (section === 'create') {
+    if (isStudentAccount) {
+      navigate('/join')
+      return <Loading />
+    }
     return shell(<CreateCourse cfg={cfg} />, { activeSection: 'create', breadcrumb: 'Create a Course' })
   }
   if (section === 'c' && id) {
