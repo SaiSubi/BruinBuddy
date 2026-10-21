@@ -83,6 +83,18 @@ export const api = {
   chats: (id) => get(`${c(id)}/chats`),
   newChat: (id, kind = 'chat', docId = null) => post(`${c(id)}/chats`, { kind, doc_id: docId }),
   chat: (chatId) => get(`/api/chats/${chatId}`),
+  illustrations: (chatId) => get(`/api/chats/${chatId}/illustrations`),
+  illustrate: (chatId, body = {}) => post(`/api/chats/${chatId}/illustrate`, body),
+  downloadIllustration: async (illustrationId, format = 'html') => {
+    const r = await fetch(`${API_BASE}/api/illustrations/${illustrationId}/download?format=${encodeURIComponent(format)}`, {
+      headers: await headers(),
+    })
+    if (!r.ok) {
+      if (r.status === 401) onExpired()
+      throw new ApiError(r.status, 'Could not download illustration.')
+    }
+    return r.blob()
+  },
 }
 
 // POST a message and read the SSE stream. Calls onEvent for each parsed event.

@@ -4,6 +4,7 @@ import { when } from './format.js'
 import { navigate } from './router.js'
 import { Badge, Banner } from './ui.jsx'
 import { modeTone, PauseBanner } from './CourseHome.jsx'
+import IllustratePane from './IllustratePane.jsx'
 import Message from './Message.jsx'
 
 const draftKey = (id) => `bb_draft_${id}`
@@ -28,6 +29,12 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
   const [chats, setChats] = useState([])
   const [chat, setChat] = useState(null)
   const [messages, setMessages] = useState([])
+  const [illustrations, setIllustrations] = useState([])
+  const [activeIllustration, setActiveIllustration] = useState(null)
+  const [illustrating, setIllustrating] = useState(false)
+  const [illustrateError, setIllustrateError] = useState(null)
+  const [rightMode, setRightMode] = useState('source') // 'source' | 'illustrate'
+  const [rightOpen, setRightOpen] = useState(false)
   const [rule, setRule] = useState(null)
   const [input, setInput] = useState(() => loadDraft(chatId))
   const [busy, setBusy] = useState(false)
@@ -74,12 +81,53 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
     }
   }
 
+  const runIllustrate = async ({ message_id = null, prompt = null, preferred_skill = 'auto' } = {}) => {
+    if (illustrating || course.pause?.active) return
+    setRightMode('illustrate')
+    setRightOpen(true)
+    setMenuOpen(false)
+    setIllustrating(true)
+    setIllustrateError(null)
+    try {
+      const created = await api.illustrate(chatId, { message_id, prompt, preferred_skill })
+      setIllustrations((prev) => [created, ...prev.filter((x) => x.id !== created.id)])
+      setActiveIllustration(created)
+    } catch (err) {
+      const until = err.until ? ` ${err.status === 423 ? 'The tutor is back' : 'More frees up'} ${when(err.until)}.` : ''
+      setIllustrateError((err.message || 'Could not generate illustration.') + until)
+      if (err.status === 423 || err.status === 429) onCourseChange()
+    } finally {
+      setIllustrating(false)
+    }
+  }
+
+  const onSidebarIllustrate = () => {
+    setMenuOpen(false)
+    setRightMode('illustrate')
+    setRightOpen(true)
+    if (illustrations.length === 0 && messages.length > 0 && !illustrating) {
+      runIllustrate()
+    }
+  }
+
+  const onCiteClick = (c) => {
+    setSource(c)
+    setRightMode('source')
+    setRightOpen(true)
+  }
+
   useEffect(() => {
     loadChats()
+    setSource(null)
+    setIllustrateError(null)
     api.chat(chatId).then((c) => {
       setChat(c)
       setMessages(c.messages)
       setRule(c.rule)
+      const ills = c.illustrations || []
+      setIllustrations(ills)
+      setActiveIllustration(ills[0] || null)
+      if (ills.length > 0) setRightMode('illustrate')
       const first = takeFirstMessage(chatId)
       if (first && !c.messages.length && !startedFirst.current) {
         startedFirst.current = true
@@ -112,10 +160,18 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${rightMode === 'illustrate' && activeIllustration ? 'illustrate-open' : ''}`}>
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <a className="link backlink" href={home}>← Course home</a>
         <button className="primary" onClick={newChat}>+ New chat</button>
+        <button
+          type="button"
+          className={`secondary illustrate-sidebar-btn ${rightMode === 'illustrate' ? 'active' : ''}`}
+          onClick={onSidebarIllustrate}
+          disabled={illustrating || course.pause?.active}
+        >
+          {illustrating ? '✨ Illustrating…' : '✨ Illustrate'}
+        </button>
         <nav aria-label="Chats" className="chatlist">
           {chats.map((c) => (
             <a key={c.id} className={`chatitem ${c.id === chatId ? 'active' : ''}`} href={`#/c/${course.id}/chat/${c.id}`}
@@ -138,6 +194,15 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
               </div>
             )}
           </div>
+          <div className="spacer" />
+          <button
+            type="button"
+            className="secondary small"
+            onClick={onSidebarIllustrate}
+            disabled={illustrating || course.pause?.active}
+          >
+            {illustrating ? '✨ Illustrating…' : `✨ Illustrate${illustrations.length ? ` (${illustrations.length})` : ''}`}
+          </button>
         </header>
         {course.pause?.active && <div className="chatbanner"><PauseBanner pause={course.pause} /></div>}
         {ended && <div className="chatbanner"><Banner kind="error" action={<a className="link" href="#/">My courses</a>}>{ended}</Banner></div>}
@@ -157,9 +222,16 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
           ) : (
             <div className="thread">
               {messages.map((m, i) => (
-                <Message key={m.id ?? `t${i}`} m={m} onCite={setSource} />
+                <Message
+                  key={m.id ?? `t${i}`}
+                  m={m}
+                  onCite={onCiteClick}
+                  onIllustrate={(msg) => runIllustrate({ message_id: msg.id })}
+                  illustrating={illustrating || busy}
+                />
               ))}
               {busy && <p className="muted small" aria-hidden="true">BruinBuddy is thinking…</p>}
+              {illustrating && <p className="muted small" aria-hidden="true">BruinBuddy is building an interactive animation…</p>}
               <div ref={bottom} />
             </div>
           )}
@@ -178,12 +250,41 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
         </form>
       </main>
 
-      <aside className={`sourcepane ${source ? 'open' : ''}`} aria-label="Source">
-        {source ? (
+      <aside className={`sourcepane ${source || rightOpen || rightMode === 'illustrate' ? 'open' : ''}`} aria-label="Study Studio">
+        <div className="pane-tabs">
+          <button
+            type="button"
+            className={`pane-tab ${rightMode === 'illustrate' ? 'active' : ''}`}
+            onClick={() => setRightMode('illustrate')}
+          >
+            ✨ Illustrate {illustrations.length > 0 ? `(${illustrations.length})` : ''}
+          </button>
+          <button
+            type="button"
+            className={`pane-tab ${rightMode === 'source' ? 'active' : ''}`}
+            onClick={() => setRightMode('source')}
+          >
+            📄 Source {source ? `#${source.n}` : ''}
+          </button>
+        </div>
+
+        {rightMode === 'illustrate' ? (
+          <IllustratePane
+            illustrations={illustrations}
+            active={activeIllustration}
+            onSelect={(ill) => setActiveIllustration(ill)}
+            onGenerate={(opts) => runIllustrate(opts)}
+            generating={illustrating}
+            error={illustrateError}
+            hasMessages={messages.length > 0}
+            paused={Boolean(course.pause?.active)}
+            onClose={() => { setRightOpen(false); setRightMode('source') }}
+          />
+        ) : source ? (
           <>
             <div className="srchead">
               <strong>Source {source.n}</strong>
-              <button className="link" onClick={() => setSource(null)} aria-label="Close source">✕</button>
+              <button className="link" onClick={() => { setSource(null); setRightOpen(false) }} aria-label="Close source">✕</button>
             </div>
             <p className="srctitle">{source.title}</p>
             <p className="muted small">Page {source.page}</p>
@@ -191,7 +292,9 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
             <a className="primary linkbtn" href={fileUrl(source.url)} target="_blank" rel="noreferrer">Open document</a>
           </>
         ) : (
-          <p className="muted small">Click a numbered citation to see the passage it came from.</p>
+          <p className="muted small">
+            Click a numbered citation to see the passage it came from, or switch to <strong>✨ Illustrate</strong> to generate an interactive concept animation.
+          </p>
         )}
       </aside>
     </div>
