@@ -97,10 +97,17 @@ export default function Members({ course, reload }) {
           <h3>Staff ({data.seats.staff} of {data.seats.staff_seats} staff seats{data.seats.pending_codes ? `, ${data.seats.pending_codes} code pending` : ''})</h3>
           <ul className="plain">
             {data.staff.map((p) => (
-              <li key={p.user_id} className="inline">
+              <li key={p.user_id} className="inline wrap">
                 <span>{p.name}</span><span className="muted small">{p.email}</span><Badge>{p.role === 'owner' ? 'Owner' : 'Staff'}</Badge>
-                {owner && p.role === 'staff' && (
-                  <button className="link small danger" onClick={() => act(p.user_id, 'remove', `Remove ${p.name} from the course staff?`)}>Remove</button>
+                {p.status !== 'active' && <Badge tone={p.status === 'blocked' ? 'bad' : 'neutral'}>{p.status}</Badge>}
+                {owner && p.role === 'staff' && p.status === 'active' && (
+                  <button className="link small" onClick={() => act(p.user_id, 'remove', `Remove ${p.name} from the course staff? They could rejoin as a student with the student code.`)}>Remove</button>
+                )}
+                {owner && p.role === 'staff' && p.status !== 'blocked' && (
+                  <button className="link small danger" onClick={() => act(p.user_id, 'block', `Block ${p.name}? Their access ends now and they can’t rejoin with any code.`)}>Block</button>
+                )}
+                {owner && p.role === 'staff' && p.status === 'blocked' && (
+                  <button className="link small" onClick={() => act(p.user_id, 'unblock', `Unblock ${p.name}? They’ll be able to rejoin with a code.`)}>Unblock</button>
                 )}
               </li>
             ))}

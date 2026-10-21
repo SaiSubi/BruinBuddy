@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from . import billing, config, knowledge, starters
 from .accounts import current_user
-from .db import db, now
+from .db import db, lock_row, now
 
 router = APIRouter()
 
@@ -332,6 +332,7 @@ def join(body: JoinIn, user: dict = Depends(current_user)):
         if not _email_allowed(user["email"], c["email_domain"]):
             raise HTTPException(403, f"This course only accepts @{c['email_domain']} email addresses. "
                                      "Sign up with your school email to join.")
+        lock_row(conn, "courses", c["id"])  # two students joining at once can't both take the last seat
         used = conn.execute("SELECT COUNT(*) AS n FROM memberships WHERE course_id=? AND role='student' "
                             "AND status='active'", (c["id"],)).fetchone()["n"]
         if used >= c["student_seats"]:
@@ -354,8 +355,10 @@ class GuidelinesIn(BaseModel):
 def load_guidelines(conn, course_id: int) -> dict:
     general = conn.execute("SELECT general_guideline FROM courses WHERE id=?", (course_id,)).fetchone()
     rows = conn.execute("SELECT id, text, doc_ids FROM guidelines WHERE course_id=? ORDER BY id", (course_id,)).fetchall()
+    valid = {r["id"] for r in conn.execute("SELECT id FROM documents WHERE course_id=?", (course_id,)).fetchall()}
     return {"general": general["general_guideline"] if general else "",
-            "tagged": [{"id": r["id"], "text": r["text"], "doc_ids": json.loads(r["doc_ids"])} for r in rows]}
+            "tagged": [{"id": r["id"], "text": r["text"], "doc_ids": [d for d in json.loads(r["doc_ids"]) if d in valid]}
+                       for r in rows]}
 
 
 @router.get("/api/courses/{course_id}/guidelines")
@@ -378,8 +381,9 @@ def put_guidelines(body: GuidelinesIn, m: Member = Depends(get_staff)):
         for g in body.tagged:
             if len(g.text.strip()) > config.TAGGED_GUIDELINE_MAX_CHARS:
                 raise HTTPException(422, f"Each additional guideline can be at most {config.TAGGED_GUIDELINE_MAX_CHARS} characters.")
-            if not set(g.doc_ids) <= valid:
-                raise HTTPException(422, "A guideline is tagged to a material that isn't in this course.")
+            g.doc_ids = [d for d in g.doc_ids if d in valid]  # drop materials that were deleted meanwhile
+            if not g.doc_ids:
+                raise HTTPException(422, "Each additional guideline needs at least one material from this course.")
         conn.execute("UPDATE courses SET general_guideline=? WHERE id=?", (general, m.course["id"]))
         conn.execute("DELETE FROM guidelines WHERE course_id=?", (m.course["id"],))
         for g in body.tagged:

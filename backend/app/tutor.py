@@ -57,13 +57,18 @@ CHECKER_EXTRA = {
                 "official solution's wording.",
 }
 LEAK_SYSTEM = """You check a tutor reply for solution leakage. Given CONFIDENTIAL official solution excerpts and a REPLY, decide whether the reply reveals the final answer, a numeric result, or the worked solution steps from the excerpts. Hints that only point to a concept do not count.
-Reply with JSON only: {"leaks": true | false}"""
+Reply with exactly one JSON object and nothing before or after it: {"leaks": true} or {"leaks": false}"""
+LEAK_VERDICT = re.compile(r'"leaks"\s*:\s*(true|false)', re.I)
 
 NC_MARKER = "[NC]"
 NC_PHRASES = re.compile(
     r"(?:can(?:no|')?t|can’t|could(?:n't| not)|unable to) find (?:that|this|it|anything|information)[^.]{0,60}materials"
     r"|not (?:covered )?in the (?:course )?materials|materials don['’]t (?:cover|mention)", re.I)
 ATTEMPT_STATUSES = {"none", "correct", "partially", "incorrect"}
+
+
+class EmptyReply(Exception):
+    """The model returned no text (for example it spent its budget reasoning, or the provider sent nothing)."""
 
 
 @dataclass
@@ -91,7 +96,7 @@ def _rewrite(history: list[dict], message: str, attr: dict) -> str:
     out = llm.complete("rewrite", [
         {"role": "system", "content": "Rewrite the student's latest message as a standalone search query for the "
                                       "course materials. Output only the query."},
-        {"role": "user", "content": f"CONVERSATION:\n{convo}\n\nLATEST MESSAGE: {message}"}], max_tokens=80, attr=attr)
+        {"role": "user", "content": f"CONVERSATION:\n{convo}\n\nLATEST MESSAGE: {message}"}], max_tokens=200, attr=attr)
     return out.strip() or message
 
 
@@ -132,17 +137,27 @@ def _check(solution_text: list[str], history: list[dict], message: str, mode: st
     raw = llm.complete("checker", [
         {"role": "system", "content": CHECKER_SYSTEM.format(extra=CHECKER_EXTRA[mode])},
         {"role": "user", "content": "CONFIDENTIAL SOLUTION EXCERPTS:\n" + "\n---\n".join(solution_text)
-         + f"\n\nRECENT CONVERSATION:\n{convo}\n\nSTUDENT MESSAGE:\n{message}"}], max_tokens=300, attr=attr)
+         + f"\n\nRECENT CONVERSATION:\n{convo}\n\nSTUDENT MESSAGE:\n{message}"}], max_tokens=600, attr=attr)
     out = llm.parse_json(raw)
     status = out.get("attempt_status") if out.get("attempt_status") in ATTEMPT_STATUSES else "none"
     return {"attempt_status": status, "feedback": str(out.get("feedback", ""))[:600]}
 
 
 def _llm_leak(solution_text: list[str], reply: str, attr: dict) -> bool:
-    raw = llm.complete("guard", [{"role": "system", "content": LEAK_SYSTEM},
-                                 {"role": "user", "content": "CONFIDENTIAL SOLUTION EXCERPTS:\n"
-                                  + "\n---\n".join(solution_text) + f"\n\nREPLY:\n{reply}"}], max_tokens=60, attr=attr)
-    return bool(llm.parse_json(raw).get("leaks", False))
+    """Second opinion on Graded turns. The verdict is read leniently (the model sometimes explains before the JSON);
+    if there is none, it is asked once more for just the JSON, and if it still can't be read the reply counts as a
+    leak (fail closed)."""
+    messages = [{"role": "system", "content": LEAK_SYSTEM},
+                {"role": "user", "content": "CONFIDENTIAL SOLUTION EXCERPTS:\n" + "\n---\n".join(solution_text)
+                 + f"\n\nREPLY:\n{reply}"}]
+    for _ in range(2):
+        raw = llm.complete("guard", messages, max_tokens=300, attr=attr)
+        m = LEAK_VERDICT.search(raw or "")
+        if m:
+            return m.group(1).lower() == "true"
+        messages += [{"role": "assistant", "content": (raw or "")[:2000] or "(no answer)"},
+                     {"role": "user", "content": 'Answer with exactly {"leaks": true} or {"leaks": false} and nothing else.'}]
+    return True
 
 
 def _guideline_block(guidelines: dict, kb: CourseKnowledge, sources: dict, problem_doc: str | None) -> str:
@@ -240,8 +255,8 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
 
     try:
         prior_user = [m["content"] for m in history if m["role"] == "user"]
-        attached = t.chat["doc_id"] if t.chat["kind"] == "pset" and t.chat["doc_id"] in kb.docs else None
-        problem_doc = attached or kb.detect_pset(message, prior_user)
+        attached = t.chat["doc_id"] if t.chat["kind"] == "pset" else None
+        problem_doc = kb.turn_pset(message, prior_user, attached)
         rule = kb.rule(problem_doc)
         mode = rule["mode"] if rule else None
 
@@ -250,7 +265,9 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
 
         verdict, solution_text = None, []
         if mode in ("graded", "practice"):
-            solution_text = solution_chunks_for(problem_doc, message + " " + " ".join(prior_user[-2:]))
+            # Practice may explain, so its checker never sees a solution file that also covers a Graded set
+            solution_text = solution_chunks_for(problem_doc, message + " " + " ".join(prior_user[-2:]),
+                                                exclude_docs=kb.guarded if mode == "practice" else frozenset())
             if solution_text:
                 verdict = _check(solution_text, history, message, mode, attr)
 
@@ -260,6 +277,8 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
         leaked, not_covered = False, False
         if mode == "graded":  # buffer: nothing reaches the student until it passes the guard
             text = "".join(llm.stream("tutor", messages, max_tokens=config.TUTOR_MAX_TOKENS, attr=attr)).strip()
+            if not text:
+                raise EmptyReply()
             if text.startswith(NC_MARKER):
                 not_covered, text = True, text[len(NC_MARKER):].lstrip()
             leaked = kb.guard.leaks(text) or (bool(solution_text) and _llm_leak(solution_text, text, attr))
@@ -271,6 +290,8 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
                 parts.append(delta)
                 yield {"type": "delta", "text": delta}
             text, not_covered = "".join(parts), stripper.found
+            if not text.strip() and not not_covered:
+                raise EmptyReply()
             if kb.guard.leaks(text):
                 leaked, text = True, SAFE_REPLY
                 yield {"type": "replace", "text": SAFE_REPLY}
@@ -298,5 +319,7 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
         jobs.run(update_memory, course_id, t.user_id, message, text, attr)
     except llm.LLMUnavailable as e:
         yield {"type": "error", "message": str(e)}
+    except EmptyReply:
+        yield {"type": "error", "message": "The tutor didn't return an answer. Please try again."}
     except Exception as e:  # network / provider errors: the question is already saved
         yield {"type": "error", "message": f"Something went wrong ({type(e).__name__}). Try again."}

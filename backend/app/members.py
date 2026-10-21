@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .courses import Member, get_owner, get_staff, hash_code, new_staff_code
-from .db import db, now
+from .db import db, lock_row, now
 
 router = APIRouter()
 
@@ -29,11 +29,11 @@ def roster(m: Member = Depends(get_staff)):
                "joined_at": r["created_at"], "sample": bool(r["is_sample"]),
                "questions": questions.get(r["id"], 0), "tokens": int(tokens.get(r["id"], 0) or 0)} for r in rows]
     students = [p for p in people if p["role"] == "student"]
-    staff = [p for p in people if p["role"] != "student" and p["status"] == "active"]
+    staff = [p for p in people if p["role"] != "student"]  # removed and blocked staff stay listed so they can be blocked
     return {"students": students, "staff": staff,
             "seats": {"students": sum(p["status"] == "active" for p in students), "student_seats": m.course["student_seats"],
-                      "staff": sum(p["role"] == "staff" for p in staff), "staff_seats": m.course["staff_seats"],
-                      "pending_codes": pending}}
+                      "staff": sum(p["role"] == "staff" and p["status"] == "active" for p in staff),
+                      "staff_seats": m.course["staff_seats"], "pending_codes": pending}}
 
 
 class MemberAction(BaseModel):
@@ -54,14 +54,11 @@ def member_action(user_id: int, body: MemberAction, m: Member = Depends(get_staf
             raise HTTPException(404, "That person isn't in this course.")
         if target["role"] == "owner":
             raise HTTPException(403, "The course owner can't be removed.")
-        if target["role"] == "staff":
-            if m.role != "owner":
-                raise HTTPException(403, "Only the course owner can remove staff.")
-            if body.action != "remove":
-                raise HTTPException(422, "Staff can be removed, not blocked.")
+        if target["role"] == "staff" and m.role != "owner":
+            raise HTTPException(403, "Only the course owner can remove or block staff.")
         status = {"remove": "removed", "block": "blocked", "unblock": "removed"}[body.action]
         if body.action == "unblock" and target["status"] != "blocked":
-            raise HTTPException(422, "That student isn't blocked.")
+            raise HTTPException(422, "That person isn't blocked.")
         conn.execute("UPDATE memberships SET status=?, updated_at=? WHERE course_id=? AND user_id=?",
                      (status, now(), cid, user_id))
     return {"ok": True, "status": status}
@@ -89,6 +86,7 @@ def list_staff_codes(m: Member = Depends(get_owner)):
 def create_staff_code(m: Member = Depends(get_owner)):
     cid = m.course["id"]
     with db() as conn:
+        lock_row(conn, "courses", cid)
         staff = conn.execute("SELECT COUNT(*) AS n FROM memberships WHERE course_id=? AND role='staff' AND status='active'",
                              (cid,)).fetchone()["n"]
         pending = conn.execute("SELECT COUNT(*) AS n FROM staff_codes WHERE course_id=? AND used_by IS NULL "

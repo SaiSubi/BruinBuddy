@@ -6,7 +6,7 @@ source of truth), or by asking Stripe for the Checkout Session when the owner re
 alone never activates anything."""
 import html
 import json
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -76,12 +76,25 @@ def quote_route(body: QuoteIn, user: dict = Depends(current_user)):
 
 
 # ---- activation -------------------------------------------------------------------------------------
+def _activate(conn, course_id: int, session_id: str | None) -> bool:
+    row = conn.execute("UPDATE courses SET status='active', paid_at=?, stripe_session_id=COALESCE(?, stripe_session_id) "
+                       "WHERE id=? AND status='pending' RETURNING id", (now(), session_id, course_id)).fetchone()
+    return row is not None
+
+
 def activate(course_id: int, session_id: str | None = None) -> bool:
     """Mark a pending course paid. Idempotent: returns False if it was already active (or doesn't exist)."""
     with db() as conn:
-        row = conn.execute("UPDATE courses SET status='active', paid_at=?, stripe_session_id=COALESCE(?, stripe_session_id) "
-                           "WHERE id=? AND status='pending' RETURNING id", (now(), session_id, course_id)).fetchone()
-    return row is not None
+        return _activate(conn, course_id, session_id)
+
+
+def _pays_for(session: dict, course: dict) -> bool:
+    """A Checkout Session pays for a course only if our server created it for that course (metadata is set by
+    `checkout` with our secret key; payers can't set it) and it collected at least the course's price in USD."""
+    return (str((session.get("metadata") or {}).get("course_id")) == str(course["id"])
+            and session.get("payment_status") == "paid"
+            and (session.get("currency") or "").lower() == "usd"
+            and int(session.get("amount_total") or 0) >= int(course["price_cents"]))
 
 
 def _owner_course(course_id: int, user: dict) -> dict:
@@ -94,10 +107,20 @@ def _owner_course(course_id: int, user: dict) -> dict:
 
 
 def _return_base(raw: str | None) -> str:
-    base = (raw or "").strip().rstrip("/")
-    allowed = set(config.ALLOWED_ORIGINS) | {config.APP_URL}
-    local = base.startswith(("http://localhost:", "http://127.0.0.1:")) and not config.PRODUCTION
-    return base if base in allowed or local else config.APP_URL
+    """Where Stripe (or the test checkout) sends the browser back: an allowed origin, else APP_URL. Parsed, not
+    prefix-matched, so 'http://localhost:@evil.example' (a user-info trick) is rejected."""
+    try:
+        u = urlsplit((raw or "").strip().rstrip("/"))
+        origin = f"{u.scheme}://{u.netloc}"
+        clean = u.scheme in ("http", "https") and u.hostname and not (u.username or u.password or u.path or u.query
+                                                                       or u.fragment)
+    except ValueError:
+        return config.APP_URL
+    if clean and origin in set(config.ALLOWED_ORIGINS) | {config.APP_URL}:
+        return origin
+    if clean and not config.PRODUCTION and u.scheme == "http" and u.hostname in ("localhost", "127.0.0.1"):
+        return origin
+    return config.APP_URL
 
 
 def _stripe():
@@ -159,7 +182,7 @@ def confirm(course_id: int, body: ConfirmIn, user: dict = Depends(current_user))
         s = _stripe().v1.checkout.sessions.retrieve(body.session_id).to_dict()
     except stripe.StripeError:
         return {"status": c["status"]}  # the webhook will still activate it
-    if str((s.get("metadata") or {}).get("course_id")) == str(course_id) and s.get("payment_status") == "paid":
+    if _pays_for(s, c):
         activate(course_id, s.get("id"))
         return {"status": "active"}
     return {"status": "pending"}
@@ -179,17 +202,20 @@ async def stripe_webhook(request: Request):
 
 
 def _handle_event(event: dict) -> dict:
+    """Record the event and act on it in one transaction: if activation fails, the event isn't recorded and Stripe's
+    retry is processed instead of being dropped as a duplicate."""
+    obj = (event.get("data") or {}).get("object") or {}
     with db() as conn:
         fresh = conn.execute("INSERT INTO stripe_events(id,type,created_at) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING "
                              "RETURNING id", (event["id"], event.get("type", ""), now())).fetchone()
-    if not fresh:
-        return {"received": True, "duplicate": True}
-    obj = (event.get("data") or {}).get("object") or {}
-    if event.get("type") in ("checkout.session.completed", "checkout.session.async_payment_succeeded") \
-            and obj.get("payment_status") == "paid":
-        course_id = (obj.get("metadata") or {}).get("course_id") or obj.get("client_reference_id")
-        if str(course_id or "").isdigit():
-            activate(int(course_id), obj.get("id"))
+        if not fresh:
+            return {"received": True, "duplicate": True}
+        course_id = str((obj.get("metadata") or {}).get("course_id") or "")
+        if event.get("type") in ("checkout.session.completed", "checkout.session.async_payment_succeeded") \
+                and course_id.isdigit():
+            course = conn.execute("SELECT id, price_cents FROM courses WHERE id=?", (int(course_id),)).fetchone()
+            if course and _pays_for(obj, dict(course)):
+                _activate(conn, course["id"], obj.get("id"))
     return {"received": True}
 
 

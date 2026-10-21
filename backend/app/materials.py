@@ -56,7 +56,7 @@ def _model_warning(file_name: str, kind: str, text: str, course_id: int) -> str 
     raw = llm.complete("mismatch", [{"role": "system", "content": MISMATCH_SYSTEM},
                                     {"role": "user", "content": f"FILE NAME: {file_name}\nCHOSEN CATEGORY: {kind}\n\n"
                                                                 f"TEXT:\n{text[:2000]}"}],
-                       max_tokens=60, attr={"course_id": course_id})
+                       max_tokens=200, attr={"course_id": course_id})
     out = llm.parse_json(raw)
     guess = out.get("category")
     if out.get("confident") and guess in KINDS and guess != kind:
@@ -94,7 +94,11 @@ def process_document(doc_id: str, data: bytes | None = None) -> None:
     except Exception as e:  # corrupt or encrypted files
         _set_status(doc_id, "failed", f"Couldn't read this file ({type(e).__name__}). Check that it opens, then retry.")
         return
+    digest = hashlib.sha256(data).hexdigest()
     with db() as conn:
+        current = conn.execute("SELECT file_hash, kind FROM documents WHERE id=?", (doc_id,)).fetchone()
+        if not current or current["file_hash"] != digest:
+            return  # deleted, or replaced by a newer file whose own job will index it
         used = conn.execute("SELECT COALESCE(SUM(pages),0) AS n FROM documents WHERE course_id=? AND status='ready' "
                             "AND id<>?", (doc["course_id"], doc_id)).fetchone()["n"]
         if used + len(pages) > config.MAX_PAGES_PER_COURSE:
@@ -104,9 +108,9 @@ def process_document(doc_id: str, data: bytes | None = None) -> None:
         conn.execute("DELETE FROM chunks WHERE doc_id=?", (doc_id,))
         for page, text in chunks:
             conn.execute("INSERT INTO chunks(doc_id,page,text,tutor_only) VALUES(?,?,?,?)",
-                         (doc_id, page, text, int(doc["kind"] == "solution")))
-        conn.execute("UPDATE documents SET status='ready', status_detail=NULL, pages=?, file_hash=?, warning=NULL, "
-                     "updated_at=? WHERE id=?", (len(pages), hashlib.sha256(data).hexdigest(), now(), doc_id))
+                         (doc_id, page, text, int(current["kind"] == "solution")))
+        conn.execute("UPDATE documents SET status='ready', status_detail=NULL, pages=?, warning=NULL, "
+                     "updated_at=? WHERE id=?", (len(pages), now(), doc_id))
         bump_content(conn, doc["course_id"])
     text = "\n".join(t for _, t in pages[:3])
     warning = _heuristic_warning(doc["file_name"], doc["kind"], text)
@@ -241,6 +245,26 @@ def list_materials(m: Member = Depends(get_member)):
                                          "max_mb": config.MAX_UPLOAD_BYTES // (1024 * 1024)}}
 
 
+def _unlink_solutions_of(conn, pset_id: str) -> None:
+    """A problem set is going away (deleted or re-categorised). Its solutions lose ALL their links, so they stay
+    tutor-only until staff relink them; dropping only this link could leave a multi-set solution whose remaining sets
+    are all open, which would release it."""
+    sols = [r["solution_id"] for r in conn.execute("SELECT solution_id FROM solution_links WHERE pset_id=?",
+                                                   (pset_id,)).fetchall()]
+    for sid in sols:
+        conn.execute("DELETE FROM solution_links WHERE solution_id=?", (sid,))
+        conn.execute("UPDATE documents SET warning=? WHERE id=?",
+                     ("A problem set this solution covered was removed, so it's unlinked and stays tutor-only. "
+                      "Link it again.", sid))
+
+
+def _untag_guidelines(conn, course_id: int, doc_id: str) -> None:
+    for g in conn.execute("SELECT id, doc_ids FROM guidelines WHERE course_id=?", (course_id,)).fetchall():
+        ids = json.loads(g["doc_ids"])
+        if doc_id in ids:
+            conn.execute("UPDATE guidelines SET doc_ids=? WHERE id=?", (json.dumps([i for i in ids if i != doc_id]), g["id"]))
+
+
 def _staff_doc(conn, course_id: int, doc_id: str):
     doc = conn.execute("SELECT * FROM documents WHERE id=? AND course_id=?", (doc_id, course_id)).fetchone()
     if not doc:
@@ -275,7 +299,7 @@ def update_material(doc_id: str, body: MaterialUpdate, m: Member = Depends(get_s
             if doc["kind"] == "solution":
                 conn.execute("DELETE FROM solution_links WHERE solution_id=?", (doc_id,))
             if doc["kind"] == "problem_set":
-                conn.execute("DELETE FROM solution_links WHERE pset_id=?", (doc_id,))
+                _unlink_solutions_of(conn, doc_id)
             if kind == "problem_set":
                 conn.execute("UPDATE documents SET mode='graded', release_at=NULL, confirm_answers=0 WHERE id=?", (doc_id,))
         if body.pset_ids is not None:
@@ -293,6 +317,8 @@ def update_material(doc_id: str, body: MaterialUpdate, m: Member = Depends(get_s
                 raise HTTPException(422, "Mode must be graded, practice or open.")
             conn.execute("UPDATE documents SET mode=? WHERE id=?", (body.mode, doc_id))
         if "release_at" in given:
+            if body.release_at is not None and body.release_at < 946684800:  # before 2000: not a real date
+                raise HTTPException(422, "Pick a release date, or clear it.")
             conn.execute("UPDATE documents SET release_at=? WHERE id=?", (body.release_at, doc_id))
         if body.confirm_answers is not None:
             conn.execute("UPDATE documents SET confirm_answers=? WHERE id=?", (int(body.confirm_answers), doc_id))
@@ -315,9 +341,9 @@ def replace_file(doc_id: str, file: UploadFile = File(...), m: Member = Depends(
     if doc["storage_path"] and doc["storage_path"] != path:
         storage.delete(doc["storage_path"])
     with db() as conn:
-        conn.execute("UPDATE documents SET file_name=?, storage_path=?, content_type=?, size_bytes=?, status='processing', "
-                     "status_detail=NULL, warning=NULL, updated_at=? WHERE id=?",
-                     (file.filename or "file", path, TYPES[ext], len(data), now(), doc_id))
+        conn.execute("UPDATE documents SET file_name=?, storage_path=?, content_type=?, size_bytes=?, file_hash=?, "
+                     "status='processing', status_detail=NULL, warning=NULL, updated_at=? WHERE id=?",
+                     (file.filename or "file", path, TYPES[ext], len(data), hashlib.sha256(data).hexdigest(), now(), doc_id))
         bump_content(conn, cid)  # the old text leaves the index until the new file is ready
     jobs.run(process_document, doc_id, data)
     return {"ok": True}
@@ -329,6 +355,8 @@ def retry(doc_id: str, m: Member = Depends(get_staff)):
         doc = _staff_doc(conn, m.course["id"], doc_id)
         if not doc["storage_path"]:
             raise HTTPException(409, "This material was loaded by a script and can't be reprocessed here.")
+        if doc["status"] == "processing":
+            raise HTTPException(409, "This file is still being processed.")
         conn.execute("UPDATE documents SET status='processing', status_detail=NULL WHERE id=?", (doc_id,))
     jobs.run(process_document, doc_id)
     return {"ok": True}
@@ -340,7 +368,10 @@ def delete_material(doc_id: str, m: Member = Depends(get_staff)):
     with db() as conn:
         doc = _staff_doc(conn, cid, doc_id)
         conn.execute("DELETE FROM chunks WHERE doc_id=?", (doc_id,))
+        if doc["kind"] == "problem_set":
+            _unlink_solutions_of(conn, doc_id)
         conn.execute("DELETE FROM solution_links WHERE solution_id=? OR pset_id=?", (doc_id, doc_id))
+        _untag_guidelines(conn, cid, doc_id)
         conn.execute("DELETE FROM documents WHERE id=?", (doc_id,))
         bump_content(conn, cid)
     if doc["storage_path"]:

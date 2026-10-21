@@ -54,9 +54,10 @@ class _FakeSessions:
         return SimpleNamespace(id="cs_test_123", url="https://checkout.stripe.test/c/cs_test_123")
 
     def retrieve(self, session_id):
-        course = self.created[-1]["metadata"]["course_id"]
-        return SimpleNamespace(to_dict=lambda: {"id": session_id, "payment_status": "paid",
-                                                "metadata": {"course_id": course}})
+        params = self.created[-1]
+        return SimpleNamespace(to_dict=lambda: {
+            "id": session_id, "payment_status": "paid", "currency": "usd", "metadata": params["metadata"],
+            "amount_total": params["line_items"][0]["price_data"]["unit_amount"]})
 
 
 @pytest.fixture
@@ -88,14 +89,24 @@ def test_stripe_checkout_and_webhook(app, stripe_mode):
     assert "{CHECKOUT_SESSION_ID}" in params["success_url"]
 
     anon = TestClient(app)
+    price = params["line_items"][0]["price_data"]["unit_amount"]
+    session = {"id": "cs_test_123", "currency": "usd", "amount_total": price, "metadata": {"course_id": str(cid)}}
     unpaid = {"id": f"evt_unpaid_{cid}", "type": "checkout.session.completed",
-              "data": {"object": {"id": "cs_test_123", "payment_status": "unpaid", "metadata": {"course_id": str(cid)}}}}
+              "data": {"object": {**session, "payment_status": "unpaid"}}}
     assert _webhook(anon, unpaid).status_code == 200
     assert q1("SELECT status FROM courses WHERE id=?", cid)["status"] == "pending"
     assert _webhook(anon, {**unpaid, "id": "evt_forged"}, secret="whsec_wrong").status_code == 400
 
+    short = {"id": f"evt_short_{cid}", "type": "checkout.session.completed",  # paid less than the price
+             "data": {"object": {**session, "payment_status": "paid", "amount_total": price - 1}}}
+    assert _webhook(anon, short).status_code == 200
+    by_reference = {"id": f"evt_ref_{cid}", "type": "checkout.session.completed",  # payer-settable field only
+                    "data": {"object": {**session, "payment_status": "paid", "metadata": {},
+                                        "client_reference_id": str(cid)}}}
+    assert _webhook(anon, by_reference).status_code == 200
+    assert q1("SELECT status FROM courses WHERE id=?", cid)["status"] == "pending"
     paid = {"id": f"evt_paid_{cid}", "type": "checkout.session.completed",
-            "data": {"object": {"id": "cs_test_123", "payment_status": "paid", "metadata": {"course_id": str(cid)}}}}
+            "data": {"object": {**session, "payment_status": "paid"}}}
     assert _webhook(anon, paid).json() == {"received": True}
     assert q1("SELECT status FROM courses WHERE id=?", cid)["status"] == "active"
     assert _webhook(anon, paid).json()["duplicate"] is True

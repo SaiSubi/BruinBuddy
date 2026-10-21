@@ -15,6 +15,7 @@ from .guard import LeakGuard
 from .retrieval import Chunk, Index
 
 MODES = ("graded", "practice", "open")
+MODE_RANK = {"graded": 0, "practice": 1, "open": 2}  # strictest first
 MODE_LABELS = {"graded": "Graded: hints only", "practice": "Practice: full help", "open": "Solutions open"}
 PUBLIC_KINDS = ("lecture_notes", "reading", "class_prep", "other", "problem_set")
 KINDS = PUBLIC_KINDS + ("solution",)
@@ -23,7 +24,7 @@ KIND_LABELS = {"lecture_notes": "Lecture notes", "reading": "Reading", "class_pr
 
 
 def effective_mode(mode: str | None, release_at: float | None, at: float | None = None) -> str:
-    if mode == "open" or (release_at and release_at <= (at or time.time())):
+    if mode == "open" or (release_at is not None and release_at <= (at or time.time())):
         return "open"
     return mode if mode in MODES else "graded"
 
@@ -73,6 +74,7 @@ class CourseKnowledge:
     key: tuple
     docs: dict[str, Doc]   # ready documents of the course
     public: set[str]       # ids of documents students may see, retrieve, cite and open
+    guarded: set[str]      # solutions that cover a Graded set (or no set): never used to explain anything
     index: Index
     guard: LeakGuard
 
@@ -96,31 +98,39 @@ class CourseKnowledge:
         return {"doc_id": d.id, "title": d.title, "mode": d.mode, "label": MODE_LABELS[d.mode],
                 "confirm_answers": d.confirm_answers}
 
-    def pset_from_reference(self, text: str) -> str | None:
-        refs = _message_refs(text)
-        if not refs:
-            return None
+    def psets_from_references(self, text: str) -> list[str]:
+        """Problem sets named in a message: "pset 4", "homework 3", "class 7 problems"."""
+        found: list[str] = []
         sets = [(d, _title_refs(d.title)) for d in self.psets()]
-        for kind, n, letter in refs:
+        for kind, n, letter in _message_refs(text):
             exact = [d for d, tr in sets if (kind, n, letter) in tr]
-            if len(exact) == 1:
-                return exact[0].id
-            if not letter:  # "class 5 problems" when only "Class 05a" exists
-                loose = [d for d, tr in sets if any(k == kind and m == n for k, m, _ in tr)]
-                if len(loose) == 1:
-                    return loose[0].id
-        return None
+            if not exact and not letter:  # "class 5 problems" when only "Class 05a" exists
+                exact = [d for d, tr in sets if any(k == kind and m == n for k, m, _ in tr)]
+            if len(exact) == 1 and exact[0].id not in found:
+                found.append(exact[0].id)
+        return found
 
-    def detect_pset(self, message: str, prior_user_msgs: list[str]) -> str | None:
-        """Problem set this turn is about: a reference by name, or a pasted problem (v0 heuristics)."""
-        for text in [message, *reversed(prior_user_msgs[-3:])]:
-            pid = self.pset_from_reference(text)
-            if pid:
-                return pid
-            chunk, cov = self.index.match_problem(text)
-            if chunk and cov >= 0.6:
-                return chunk.doc_id
-        return None
+    def _psets_in(self, text: str) -> list[str]:
+        found = self.psets_from_references(text)
+        chunk, cov = self.index.match_problem(text)
+        if chunk and cov >= 0.6 and chunk.doc_id not in found:
+            found.append(chunk.doc_id)
+        return found
+
+    def turn_pset(self, message: str, prior_user_msgs: list[str], attached: str | None = None) -> str | None:
+        """The problem set whose rule applies to this turn. Candidates are the chat's attached set, sets the message
+        names, and a set whose text it pastes; if the message brings none, the last few student messages are checked
+        (v0 behaviour). When several apply, the strictest mode wins, so naming a Practice set can't unlock a pasted
+        Graded problem."""
+        ids = ([attached] if attached in self.docs else []) + self._psets_in(message)
+        if len(ids) == (1 if attached in self.docs else 0):
+            for text in reversed(prior_user_msgs[-3:]):
+                more = self._psets_in(text)
+                if more:
+                    ids += more
+                    break
+        ids = [i for i in dict.fromkeys(ids) if i in self.docs and self.docs[i].kind == "problem_set"]
+        return min(ids, key=lambda i: MODE_RANK[self.docs[i].mode]) if ids else None
 
 
 def _build(course_id: int, key: tuple) -> CourseKnowledge:
@@ -158,7 +168,8 @@ def _build(course_id: int, key: tuple) -> CourseKnowledge:
                     page=r["page"], text=r["text"]) for r in crows if r["doc_id"] in docs]
     index = Index([c for c in chunks if c.doc_id in public])
     guard = LeakGuard((c.text for c in chunks if c.doc_id in guarded), (c.text for c in chunks if c.doc_id in public))
-    return CourseKnowledge(course_id=course_id, key=key, docs=docs, public=public, index=index, guard=guard)
+    return CourseKnowledge(course_id=course_id, key=key, docs=docs, public=public, guarded=guarded, index=index,
+                           guard=guard)
 
 
 class KnowledgeCache:

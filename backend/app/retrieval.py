@@ -104,12 +104,13 @@ class Index:
         return best, best_cov
 
 
-def solution_chunks_for(pset_id: str, message: str, k: int = 4) -> list[str]:
+def solution_chunks_for(pset_id: str, message: str, k: int = 4, exclude_docs: set[str] = frozenset()) -> list[str]:
     """Tutor-only. The most relevant passages of the solutions linked to a problem set, for the checker."""
     q = set(tokens(message))
     with db() as conn:
         rows = conn.execute(
-            "SELECT c.text FROM chunks c JOIN solution_links l ON l.solution_id=c.doc_id "
+            "SELECT c.text, c.doc_id FROM chunks c JOIN solution_links l ON l.solution_id=c.doc_id "
             "JOIN documents d ON d.id=c.doc_id WHERE l.pset_id=? AND d.status='ready'", (pset_id,)).fetchall()
+    rows = [r for r in rows if r["doc_id"] not in exclude_docs]
     scored = sorted(rows, key=lambda r: -len(q & set(tokens(r["text"]))))
     return [r["text"] for r in scored[:k]]

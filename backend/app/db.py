@@ -204,5 +204,14 @@ def init_db() -> None:
                     conn.execute(f"ALTER TABLE {t} ENABLE ROW LEVEL SECURITY")
 
 
+def lock_row(conn, table: str, row_id) -> None:
+    """Serialise writers on one row until this transaction commits (seat caps): count-then-insert is safe after this.
+    Postgres locks the row; SQLite takes the database write lock, which must happen before any read it depends on."""
+    if IS_PG:
+        conn.execute(f"SELECT 1 FROM {table} WHERE id=? FOR UPDATE", (row_id,))
+    elif not conn.raw.in_transaction:
+        conn.execute("BEGIN IMMEDIATE")
+
+
 def now() -> float:
     return time.time()
