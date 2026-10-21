@@ -28,21 +28,13 @@ export function RailIcon({ name, size = 22 }) {
     case 'history':
       return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="M12 7.5v5l3.2 2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       )
     case 'illustrate':
       return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
           <polygon points="5 3 19 12 5 21 5 3" strokeLinejoin="round" />
-        </svg>
-      )
-    case 'search':
-      return (
-        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="10.8" cy="10.8" r="6.5" />
-          <path d="M15.8 15.8L20.5 20.5" strokeLinecap="round" />
         </svg>
       )
     case 'a11y':
@@ -113,25 +105,23 @@ export default function CanvasShell({
   me,
   course = null,
   courseId = null,
-  activeSection = 'home', // 'dashboard' | 'home' | 'chat' | 'assignments' | 'modules' | 'syllabus' | 'staff' | 'join' | 'create' | 'about'
-  staffTab = null,
+  activeSection = 'home', // 'dashboard' | 'home' | 'chat' | 'psets' | 'materials' | 'staff' | 'join' | 'create' | 'about'
   breadcrumb = null,
   onLogOut,
   onSelectCourseSection = null,
   fullHeight = false,
   children,
 }) {
-  const [activeTray, setActiveTray] = useState(null) // 'account' | 'courses' | 'history' | 'search' | 'a11y' | null
+  const [activeTray, setActiveTray] = useState(null) // 'account' | 'courses' | 'chats' | 'a11y' | null
   const [subNavOpen, setSubNavOpen] = useState(true)
   const [railCompact, setRailCompact] = useState(false)
   const [trayChats, setTrayChats] = useState([])
-  const [searchQuery, setSearchQuery] = useState('')
   const { activeBadgeCount, openImmersiveReader, prefs, updatePref } = useAccessibility()
 
   const resolvedCourseId = course?.id || courseId || me?.courses?.[0]?.id || null
 
   useEffect(() => {
-    if (resolvedCourseId && (activeTray === 'history' || activeTray === 'search')) {
+    if (resolvedCourseId && activeTray === 'chats') {
       api.chats(resolvedCourseId).then(setTrayChats).catch(() => {})
     }
   }, [resolvedCourseId, activeTray])
@@ -167,12 +157,6 @@ export default function CanvasShell({
     }
   }
 
-  const handleHeaderSearch = (e) => {
-    e.preventDefault()
-    if (!searchQuery.trim()) return
-    setActiveTray('search')
-  }
-
   const initials = (me?.name || 'Bruin')
     .split(/\s+/)
     .map((p) => p[0])
@@ -185,7 +169,7 @@ export default function CanvasShell({
 
   return (
     <div className={`canvas-shell ${fullHeight ? 'canvas-shell-fixed' : ''} ${railCompact ? 'rail-compact' : ''}`}>
-      {/* 1. UCLA Blue Global Left Navigation Rail (Screenshots 1–4) */}
+      {/* 1. UCLA Blue Global Left Navigation Rail */}
       <aside className="canvas-rail" aria-label="UCLA Bruin Learn Global Navigation">
         <a
           className="ucla-brand-logo"
@@ -230,12 +214,12 @@ export default function CanvasShell({
 
         <button
           type="button"
-          className={`rail-item ${activeTray === 'history' ? 'active' : ''}`}
-          onClick={() => toggleTray('history')}
-          aria-expanded={activeTray === 'history'}
+          className={`rail-item ${activeTray === 'chats' ? 'active' : ''}`}
+          onClick={() => toggleTray('chats')}
+          aria-expanded={activeTray === 'chats'}
         >
-          <RailIcon name="history" size={24} />
-          <span className="rail-label">History</span>
+          <RailIcon name="history" size={22} />
+          <span className="rail-label">Chats</span>
         </button>
 
         <button
@@ -249,16 +233,6 @@ export default function CanvasShell({
         >
           <RailIcon name="illustrate" size={22} />
           <span className="rail-label">Illustrate</span>
-        </button>
-
-        <button
-          type="button"
-          className={`rail-item ${activeTray === 'search' ? 'active' : ''}`}
-          onClick={() => toggleTray('search')}
-          aria-expanded={activeTray === 'search'}
-        >
-          <RailIcon name="search" size={24} />
-          <span className="rail-label">Search</span>
         </button>
 
         <button
@@ -283,7 +257,7 @@ export default function CanvasShell({
           }}
         >
           <RailIcon name="help" size={24} />
-          <span className="rail-label">Help</span>
+          <span className="rail-label">About</span>
         </button>
 
         <div className="rail-spacer" />
@@ -299,7 +273,7 @@ export default function CanvasShell({
         </button>
       </aside>
 
-      {/* 2. Slide-Out White Tray (Screenshot 2) */}
+      {/* 2. Slide-Out White Tray */}
       {activeTray && (
         <>
           <div className="canvas-tray-backdrop" onClick={closeTray} aria-hidden="true" />
@@ -312,8 +286,7 @@ export default function CanvasShell({
               <h2>
                 {activeTray === 'courses' && 'Courses'}
                 {activeTray === 'account' && me?.name}
-                {activeTray === 'history' && 'Recent Study History'}
-                {activeTray === 'search' && 'Search Courses & Chats'}
+                {activeTray === 'chats' && 'Your Course Chats'}
                 {activeTray === 'a11y' && 'Appearance & Accessibility'}
               </h2>
               <button type="button" className="canvas-tray-close" onClick={closeTray} aria-label="Close tray">
@@ -369,9 +342,6 @@ export default function CanvasShell({
                     + Join or create a course
                   </button>
                 </div>
-                <p className="muted small canvas-tray-note">
-                  Welcome to your courses! Click any course above to open its AI Tutor, Illustrate Studio, and course materials.
-                </p>
               </div>
             )}
 
@@ -428,7 +398,7 @@ export default function CanvasShell({
                   </li>
                   <li>
                     <a href="#/about" onClick={closeTray}>
-                      About BruinBuddy & Academic Integrity
+                      About BruinBuddy
                     </a>
                   </li>
                 </ul>
@@ -439,7 +409,7 @@ export default function CanvasShell({
               </div>
             )}
 
-            {activeTray === 'history' && (
+            {activeTray === 'chats' && (
               <div className="canvas-tray-body">
                 <div className="row-between">
                   <span className="muted small">
@@ -478,48 +448,7 @@ export default function CanvasShell({
                     ))}
                   </ul>
                 ) : (
-                  <p className="muted small">No recent chats yet in this course.</p>
-                )}
-              </div>
-            )}
-
-            {activeTray === 'search' && (
-              <div className="canvas-tray-body">
-                <input
-                  type="search"
-                  placeholder="Filter courses or chats…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                />
-                <h3 className="section-title">Courses</h3>
-                <ul className="canvas-course-tray-list">
-                  {(me?.courses || [])
-                    .filter((c) => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((c) => (
-                      <li key={c.id}>
-                        <a href={`#/c/${c.id}`} onClick={closeTray}>
-                          {courseCodeTag(c.name, c.id)} {c.name}
-                        </a>
-                      </li>
-                    ))}
-                </ul>
-                {trayChats.length > 0 && (
-                  <>
-                    <h3 className="section-title">Chats in Current Course</h3>
-                    <ul className="canvas-course-tray-list">
-                      {trayChats
-                        .filter((ch) => !searchQuery || ch.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                        .slice(0, 12)
-                        .map((ch) => (
-                          <li key={ch.id}>
-                            <a href={`#/c/${resolvedCourseId}/chat/${ch.id}`} onClick={closeTray}>
-                              {ch.title}
-                            </a>
-                          </li>
-                        ))}
-                    </ul>
-                  </>
+                  <p className="muted small">No chats yet in this course.</p>
                 )}
               </div>
             )}
@@ -576,19 +505,6 @@ export default function CanvasShell({
           </div>
 
           <div className="canvas-top-right">
-            {activeSection === 'dashboard' && (
-              <button
-                type="button"
-                className="secondary small hide-narrow"
-                onClick={() => {
-                  if (resolvedCourseId) navigate(`/c/${resolvedCourseId}`)
-                }}
-              >
-                Today
-              </button>
-            )}
-
-            {/* Switch Course Dropdown for fast direct switching + test compatibility */}
             {me?.courses?.length > 0 && (
               <select
                 className="switcher hide-narrow"
@@ -611,7 +527,6 @@ export default function CanvasShell({
               </select>
             )}
 
-            {/* Immersive Reader button (exact match to Screenshot 3 top-right!) */}
             <button
               type="button"
               className="canvas-immersive-btn"
@@ -630,31 +545,18 @@ export default function CanvasShell({
             >
               Appearance{activeBadgeCount > 0 ? ` (${activeBadgeCount})` : ''}
             </button>
-
-            <form className="canvas-search-box hide-narrow" onSubmit={handleHeaderSearch}>
-              <input
-                type="search"
-                placeholder={course ? 'Search this course' : 'Search my courses'}
-                aria-label={course ? 'Search this course' : 'Search my courses'}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button type="submit" aria-label="Search">
-                <RailIcon name="search" size={15} />
-              </button>
-            </form>
           </div>
         </header>
 
         <div className="canvas-body-frame">
-          {/* 4. Secondary Course Left Navigation Menu (Screenshots 3 & 4) */}
+          {/* 4. Secondary Course Left Navigation Menu — Restricted Strictly to Backend-Supported Features */}
           {course && subNavOpen && (
             <nav className="canvas-course-nav" aria-label="Course Navigation">
               <div className="course-nav-term">2026 Fall Quarter</div>
               <ul className="course-nav-list">
                 <li>
                   <a
-                    href={`#/c/${course.id}${activeSection === 'preview' ? '/preview' : ''}`}
+                    href={`#/c/${course.id}${isStaff && activeSection !== 'staff' ? '/preview' : ''}`}
                     className={activeSection === 'home' ? 'active' : ''}
                     onClick={(e) => {
                       if (onSelectCourseSection) {
@@ -667,54 +569,12 @@ export default function CanvasShell({
                   </a>
                 </li>
                 <li>
-                  <a
-                    href={`#/c/${course.id}`}
-                    className={activeSection === 'syllabus' ? 'active' : ''}
-                    onClick={(e) => {
-                      if (onSelectCourseSection) {
-                        e.preventDefault()
-                        onSelectCourseSection('syllabus')
-                      }
-                    }}
-                  >
-                    Syllabus & AI Rules
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={`#/c/${course.id}`}
-                    className={activeSection === 'assignments' ? 'active' : ''}
-                    onClick={(e) => {
-                      if (onSelectCourseSection) {
-                        e.preventDefault()
-                        onSelectCourseSection('assignments')
-                      }
-                    }}
-                  >
-                    Assignments
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={`#/c/${course.id}`}
-                    className={activeSection === 'modules' ? 'active' : ''}
-                    onClick={(e) => {
-                      if (onSelectCourseSection) {
-                        e.preventDefault()
-                        onSelectCourseSection('modules')
-                      }
-                    }}
-                  >
-                    Modules & Files
-                  </a>
-                </li>
-                <li>
                   <button
                     type="button"
                     className={`course-nav-btn ${activeSection === 'chat' ? 'active' : ''}`}
                     onClick={() => openChatOrNew(course, false)}
                   >
-                    AI Tutor Notebook
+                    AI Tutor
                   </button>
                 </li>
                 <li>
@@ -723,37 +583,48 @@ export default function CanvasShell({
                     className="course-nav-btn"
                     onClick={() => openChatOrNew(course, true)}
                   >
-                    Illustrate Studio
+                    Illustrate
                   </button>
                 </li>
+                <li>
+                  <a
+                    href={`#/c/${course.id}${isStaff ? '/preview' : ''}`}
+                    className={activeSection === 'psets' ? 'active' : ''}
+                    onClick={(e) => {
+                      if (onSelectCourseSection) {
+                        e.preventDefault()
+                        onSelectCourseSection('psets')
+                      }
+                    }}
+                  >
+                    Problem Sets
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`#/c/${course.id}${isStaff ? '/preview' : ''}`}
+                    className={activeSection === 'materials' ? 'active' : ''}
+                    onClick={(e) => {
+                      if (onSelectCourseSection) {
+                        e.preventDefault()
+                        onSelectCourseSection('materials')
+                      }
+                    }}
+                  >
+                    Materials
+                  </a>
+                </li>
+                {isStaff && (
+                  <li>
+                    <a
+                      href={`#/c/${course.id}/staff/setup`}
+                      className={activeSection === 'staff' ? 'active' : ''}
+                    >
+                      Instructor Console
+                    </a>
+                  </li>
+                )}
               </ul>
-
-              {isStaff && (
-                <>
-                  <div className="course-nav-divider">Instructor Console</div>
-                  <ul className="course-nav-list">
-                    {[
-                      ['setup', 'Setup'],
-                      ['materials', 'Materials'],
-                      ['problem-sets', 'Problem Sets'],
-                      ['guidelines', 'Guidelines'],
-                      ['members', 'People & Codes'],
-                      ['dashboard', 'Analytics'],
-                      ['pause', 'Pause Tutor'],
-                      ['plan', 'Plan & Limits'],
-                    ].map(([key, label]) => (
-                      <li key={key}>
-                        <a
-                          href={`#/c/${course.id}/staff/${key}`}
-                          className={activeSection === 'staff' && staffTab === key ? 'active' : ''}
-                        >
-                          {label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
             </nav>
           )}
 
@@ -767,7 +638,7 @@ export default function CanvasShell({
   )
 }
 
-// Multi-Course Canvas Dashboard matching Screenshot 1 (with course banner thumbnails & mountain/pine-tree line art)
+// Multi-Course Canvas Dashboard
 export function CanvasDashboard({ me }) {
   const todayStr = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long' })
 
@@ -799,15 +670,12 @@ export function CanvasDashboard({ me }) {
                     <span className="thumb-title">{c.name.toUpperCase()}</span>
                     <span className="thumb-campus" aria-hidden="true" />
                   </a>
-                  <div className="dashboard-stream-Check">
-                    <input type="checkbox" aria-label={`Mark ${c.name} reviewed`} />
-                  </div>
                   <div className="dashboard-stream-icon" aria-hidden="true">
                     <RailIcon name="courses" size={18} />
                   </div>
                   <div className="dashboard-stream-main">
                     <div className="dashboard-stream-meta">
-                      {code} {c.name.toUpperCase()} · BRUINBUDDY AI TUTOR & ILLUSTRATE STUDIO
+                      {code} · {c.name.toUpperCase()}
                     </div>
                     <a href={`#/c/${c.id}`} className="dashboard-stream-link">
                       Open Course Home, AI Tutor & Concept Animations
@@ -817,7 +685,6 @@ export function CanvasDashboard({ me }) {
                     <Badge tone={c.status === 'pending' ? 'warn' : 'good'}>
                       {c.status === 'pending' ? 'Pending' : ROLE[c.role] || 'Student'}
                     </Badge>
-                    <div className="muted small">ACTIVE TERM</div>
                   </div>
                 </div>
               )
@@ -826,7 +693,7 @@ export function CanvasDashboard({ me }) {
         ) : (
           <div className="card">
             <h3>No courses enrolled yet</h3>
-            <p className="muted">Enter a course code from your instructor or create a course to populate your Bruin Learn Dashboard.</p>
+            <p className="muted">Enter a course code from your instructor or create a course to populate your Dashboard.</p>
             <button type="button" className="primary" onClick={() => navigate('/join')}>
               Join or create a course
             </button>
@@ -834,9 +701,8 @@ export function CanvasDashboard({ me }) {
         )}
       </div>
 
-      {/* Decorative Canvas Mountain, Clouds, Birds & Pine-Tree Line Art Footer (Screenshot 1) */}
+      {/* Decorative Canvas Mountain, Clouds, Birds & Pine-Tree Line Art Footer */}
       <div className="dashboard-art-footer">
-        <div className="muted small dashboard-art-date">Upcoming Study Schedule</div>
         <div className="dashboard-art-stage">
           <svg
             viewBox="0 0 900 220"
@@ -844,7 +710,6 @@ export function CanvasDashboard({ me }) {
             role="img"
             aria-label="UCLA Bruin Learn study horizon illustration"
           >
-            {/* Clouds */}
             <path
               d="M190 70 a22 22 0 0 1 40 -8 a26 26 0 0 1 46 6 a18 18 0 0 1 12 32 H182 a16 16 0 0 1 8 -30 z"
               fill="none"
@@ -852,15 +717,12 @@ export function CanvasDashboard({ me }) {
               strokeWidth="1.6"
               opacity="0.35"
             />
-            {/* Birds */}
             <path d="M520 52 q10 -10 20 0 q10 -10 20 0" fill="none" stroke="currentColor" strokeWidth="2" />
             <path d="M555 38 q8 -8 16 0 q8 -8 16 0" fill="none" stroke="currentColor" strokeWidth="1.8" />
             <path d="M575 68 q9 -9 18 0 q9 -9 18 0" fill="none" stroke="currentColor" strokeWidth="1.8" />
-            {/* Mountains on right */}
             <polygon points="620,215 715,75 810,215" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" opacity="0.55" />
             <polyline points="684,121 715,138 746,121" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.45" />
             <polygon points="735,215 805,105 875,215" fill="var(--panel)" stroke="currentColor" strokeWidth="1.6" opacity="0.55" />
-            {/* Pine trees left & right */}
             <polygon points="95,215 120,85 145,215" fill="#76c893" stroke="currentColor" strokeWidth="2" />
             <line x1="120" y1="115" x2="120" y2="215" stroke="currentColor" strokeWidth="2" />
             <polygon points="195,215 225,65 255,215" fill="#76c893" stroke="currentColor" strokeWidth="2" />
@@ -870,7 +732,7 @@ export function CanvasDashboard({ me }) {
             <polygon points="835,215 860,88 885,215" fill="#76c893" stroke="currentColor" strokeWidth="2" />
             <line x1="860" y1="115" x2="860" y2="215" stroke="currentColor" strokeWidth="2" />
           </svg>
-          <div className="dashboard-art-caption">Nothing planned yet</div>
+          <div className="dashboard-art-caption">Select a course above to launch the AI Tutor or Illustrate Studio</div>
         </div>
       </div>
     </div>
