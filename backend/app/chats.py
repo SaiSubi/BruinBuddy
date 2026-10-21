@@ -1,13 +1,14 @@
-"""Chats, the streaming message endpoint with its gates, citation sources, and file links."""
+"""Chats, the streaming message endpoint with its gates, concept illustrations, citation sources, and file links."""
 import json
+import re
 import time
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import auth, config, knowledge, storage
+from . import auth, config, illustrate, knowledge, llm, storage
 from .accounts import current_user
 from .courses import Member, allowance, course_tokens, get_member, member_of, pause_state
 from .db import db, now
@@ -28,6 +29,26 @@ def _own_chat(conn, chat_id: int, user: dict) -> tuple[dict, Member]:
     if not chat:
         raise HTTPException(404, "Chat not found")
     return dict(chat), member_of(conn, chat["course_id"], user)
+
+
+def _format_illustration(r) -> dict:
+    spec = json.loads(r["spec_json"] or "{}")
+    skill = r["skill"] if r["skill"] in illustrate.SKILL_META else "manim_3b1b"
+    return {
+        "id": r["id"],
+        "chat_id": r["chat_id"],
+        "message_id": r["message_id"],
+        "concept": r["concept"],
+        "skill": skill,
+        "skill_meta": illustrate.SKILL_META[skill],
+        "modality": r["modality"],
+        "title": r["title"],
+        "rationale": r["rationale"],
+        "spec": spec,
+        "artifact_html": r["artifact_html"],
+        "manim_code": r["manim_code"],
+        "created_at": r["created_at"],
+    }
 
 
 @router.get("/api/courses/{course_id}/chats")
@@ -75,12 +96,14 @@ def get_chat(chat_id: int, user: dict = Depends(current_user)):
         chat, m = _own_chat(conn, chat_id, user)
         rows = conn.execute("SELECT id, role, content, citations, memory_used, problem_doc_id FROM messages "
                             "WHERE chat_id=? ORDER BY id", (chat_id,)).fetchall()
+        ill_rows = conn.execute("SELECT * FROM illustrations WHERE chat_id=? ORDER BY id DESC", (chat_id,)).fetchall()
     kb = knowledge.cache.get(chat["course_id"])
     last_problem = next((r["problem_doc_id"] for r in reversed(rows) if r["role"] == "user" and r["problem_doc_id"]), None)
     msgs = [{"id": r["id"], "role": r["role"], "content": r["content"], "citations": _with_urls(json.loads(r["citations"])),
              "memory_used": json.loads(r["memory_used"])} for r in rows]
     return {"id": chat["id"], "course_id": chat["course_id"], "title": chat["title"], "kind": chat["kind"],
             "doc_id": chat["doc_id"], "is_preview": bool(chat["is_preview"]), "messages": msgs,
+            "illustrations": [_format_illustration(r) for r in ill_rows],
             "rule": kb.rule(chat["doc_id"] if chat["kind"] == "pset" else last_problem)}
 
 
@@ -88,21 +111,20 @@ class MessageIn(BaseModel):
     content: str = Field(min_length=1, max_length=8000)
 
 
+class IllustrateIn(BaseModel):
+    message_id: int | None = None
+    prompt: str | None = Field(default=None, max_length=1000)
+    preferred_skill: str = Field(default="auto", max_length=40)
+
+
 def _limit(status: int, message: str, until: float | None = None):
     raise HTTPException(status, {"message": message, "until": until})
 
 
-@router.post("/api/chats/{chat_id}/messages")
-def post_message(chat_id: int, body: MessageIn, user: dict = Depends(current_user)):
-    text = body.content.strip()
-    if not text:
-        raise HTTPException(422, "Type a question first.")
-    with db() as conn:
-        chat, m = _own_chat(conn, chat_id, user)
-    c = m.course
+def _check_turn_gates(c: dict, kb: knowledge.CourseKnowledge, m: Member, user: dict) -> None:
+    """Enforce pre-turn gates (course active, materials present, pause window, student allowance, course budget, daily limit)."""
     if c["status"] != "active":
         raise HTTPException(409, "This course isn't active yet.")
-    kb = knowledge.cache.get(c["id"])  # outside the connection above: building an index opens its own
     if not kb.has_material:
         raise HTTPException(409, "Your instructor hasn't added course materials yet, so the tutor isn't open.")
     with db() as conn:
@@ -120,6 +142,18 @@ def post_message(chat_id: int, body: MessageIn, user: dict = Depends(current_use
         if day >= config.GLOBAL_DAILY_LIMIT:
             _limit(429, "BruinBuddy has reached its daily limit for everyone. Please try again tomorrow.")
 
+
+@router.post("/api/chats/{chat_id}/messages")
+def post_message(chat_id: int, body: MessageIn, user: dict = Depends(current_user)):
+    text = body.content.strip()
+    if not text:
+        raise HTTPException(422, "Type a question first.")
+    with db() as conn:
+        chat, m = _own_chat(conn, chat_id, user)
+    c = m.course
+    kb = knowledge.cache.get(c["id"])  # outside the connection above: building an index opens its own
+    _check_turn_gates(c, kb, m, user)
+
     turn = Turn(course=c, user_id=user["id"], chat=chat, is_preview=bool(chat["is_preview"]))
 
     def events():
@@ -130,6 +164,75 @@ def post_message(chat_id: int, body: MessageIn, user: dict = Depends(current_use
 
     return StreamingResponse(events(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@router.get("/api/chats/{chat_id}/illustrations")
+def list_illustrations(chat_id: int, user: dict = Depends(current_user)):
+    with db() as conn:
+        _own_chat(conn, chat_id, user)
+        rows = conn.execute("SELECT * FROM illustrations WHERE chat_id=? ORDER BY id DESC", (chat_id,)).fetchall()
+    return [_format_illustration(r) for r in rows]
+
+
+@router.post("/api/chats/{chat_id}/illustrate")
+def post_illustrate(chat_id: int, body: IllustrateIn, user: dict = Depends(current_user)):
+    if body.preferred_skill != "auto" and body.preferred_skill not in illustrate.SKILLS:
+        raise HTTPException(422, "Unknown illustration skill.")
+    with db() as conn:
+        chat, m = _own_chat(conn, chat_id, user)
+        msg_count = conn.execute("SELECT COUNT(*) AS n FROM messages WHERE chat_id=?", (chat_id,)).fetchone()["n"]
+    if msg_count == 0 and not (body.prompt and body.prompt.strip()):
+        raise HTTPException(422, "Ask a question in the chat first so BruinBuddy has a concept to illustrate.")
+    c = m.course
+    kb = knowledge.cache.get(c["id"])
+    _check_turn_gates(c, kb, m, user)
+    try:
+        return illustrate.generate_illustration(
+            kb=kb,
+            course=c,
+            chat=chat,
+            user_id=user["id"],
+            message_id=body.message_id,
+            prompt=body.prompt,
+            preferred_skill=body.preferred_skill,
+        )
+    except llm.LLMUnavailable as e:
+        raise HTTPException(503, str(e))
+
+
+@router.get("/api/illustrations/{illustration_id}/download")
+def download_illustration(
+    illustration_id: int,
+    format: str = Query(default="html"),
+    user: dict = Depends(current_user),
+):
+    with db() as conn:
+        row = conn.execute("SELECT * FROM illustrations WHERE id=?", (illustration_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "Illustration not found")
+        _own_chat(conn, row["chat_id"], user)
+    slug = re.sub(r"[^a-z0-9]+", "-", (row["title"] or "illustration").lower()).strip("-")[:48] or "illustration"
+    if format == "svg":
+        spec = json.loads(row["spec_json"] or "{}")
+        svg = illustrate.build_svg_snapshot(spec)
+        return Response(
+            content=svg,
+            media_type="image/svg+xml",
+            headers={"Content-Disposition": f'attachment; filename="{slug}.svg"'},
+        )
+    if format == "py":
+        return Response(
+            content=row["manim_code"] or "",
+            media_type="text/x-python",
+            headers={"Content-Disposition": f'attachment; filename="{slug}_manim.py"'},
+        )
+    if format == "html":
+        return Response(
+            content=row["artifact_html"],
+            media_type="text/html; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{slug}.html"'},
+        )
+    raise HTTPException(422, "Unsupported download format. Choose html, svg, or py.")
 
 
 @router.get("/api/sources/{chunk_id}")

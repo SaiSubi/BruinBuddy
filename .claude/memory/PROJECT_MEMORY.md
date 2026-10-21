@@ -7,6 +7,7 @@
 - **Stack:**
   - **Backend:** Python 3.12+, FastAPI (`backend/app`), SQLite locally / Supabase Postgres in production (`db.py`), Supabase Storage / local `data/uploads/` (`storage.py`), OpenRouter (`llm.py`).
   - **Frontend:** React 18 + Vite (`frontend/src`), custom hash router (`router.js`), centralized HTTP client (`api.js`).
+  - **Concept Illustration Engine (`illustrate.py`, `IllustratePane.jsx`):** Routes student concepts across three visual skill packs (`.claude/skills/anatomy`, `.claude/skills/manim`, `.claude/skills/explainer-video`) and renders interactive animations in-page with HTML, WebM video, PNG, SVG, and Manim `.py` downloads.
   - **Production:** Live on Vercel (`https://bruinbuddy.vercel.app`) + Fly.io (`https://bruinbuddy-api.fly.dev`). Merging to `main` automatically deploys production via GitHub Actions (`deploy-backend.yml`) and Vercel.
 
 ## 2. Team & Git Workflow Memory

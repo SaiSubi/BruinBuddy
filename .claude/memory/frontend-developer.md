@@ -7,13 +7,13 @@
   - Fetches `/api/config` on startup to determine auth mode (`supabase` vs local) and Stripe settings.
   - Uses hash-based routing (`router.js`) for seamless SPA navigation across FastAPI static serving and Vercel.
 - **HTTP & Streaming (`api.js`, `auth.js`):**
-  - All backend calls go through `frontend/src/api.js` (attaches Bearer token, handles JSON & SSE streaming for chat messages).
+  - All backend calls go through `frontend/src/api.js` (attaches Bearer token, handles JSON, SSE streaming for chat messages, and `api.illustrate` / `api.illustrations` / `api.downloadIllustration`).
   - Never call `fetch` directly in React components.
-- **Student Experience (`CourseHome.jsx`, `ChatView.jsx`, `Message.jsx`):**
-  - Supports General, Review, and Quiz chat modes, starter questions, allowance indicator, and clickable source citations.
+- **Student Experience (`CourseHome.jsx`, `ChatView.jsx`, `Message.jsx`, `IllustratePane.jsx`):**
+  - Supports General, Review, and Quiz chat modes, starter questions, allowance indicator, clickable source citations, and the **✨ Illustrate** sidebar studio (`IllustratePane.jsx`).
+  - `IllustratePane.jsx` renders interactive animations in-page inside a sandboxed `<iframe srcDoc={...}>` with an Expand modal and one-click downloads for Interactive HTML (`.html`), Video (`.webm` via `MediaRecorder` bridge), Image (`.png`), Vector (`.svg`), and Manim script (`.py`).
   - Must **never** load or display staff-only endpoints, staff-scoped file URLs, or solution text.
 - **Staff Console (`frontend/src/staff/`):**
   - `StaffConsole.jsx` coordinates tabs: `Setup.jsx`, `Materials.jsx`, `ProblemSets.jsx`, `Guidelines.jsx`, `Pause.jsx`, `Members.jsx`, `Dashboard.jsx`, and `Plan.jsx`.
-  - `Dashboard.jsx` renders aggregate course usage and topic analytics while respecting the backend small-group privacy threshold.
 - **Verification:**
   - Always run `cd frontend && npm run build` after any JSX/CSS change.

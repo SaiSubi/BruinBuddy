@@ -15,8 +15,10 @@
   - Course activation happens *only* in `billing._activate` after either the signed Stripe webhook (`/api/stripe/webhook`) or server-side session verification passes `_pays_for` (checks metadata, paid state, and full USD price).
   - Local dev test checkout is only enabled when Stripe keys are unset and outside production.
 - **Database (`db.py`):**
+  - Tables: `users`, `courses`, `memberships`, `staff_codes`, `documents`, `solution_links`, `chunks`, `guidelines`, `pauses`, `chats`, `messages`, `illustrations`, `memories`, `usage_log`, `stripe_events`.
   - Uses `?` placeholders everywhere; `db.py` translates `?` to `%s` (and escapes literal `%`) when connected to Postgres (`psycopg`).
   - Use `db.lock_row` before seat-count checks or other count-then-insert operations to prevent race conditions.
-  - Avoid SQLite-only functions (`group_concat`, etc.).
 - **Pre-Turn Gates (`chats.py`):**
-  - `chats.post_message` checks course pause windows, per-student token allowances, course AI budget, and app-wide limits *before* invoking `tutor.run_turn`.
+  - `chats._check_turn_gates` checks course active status, ready materials, course pause windows, per-student token allowances, course AI budget, and app-wide limits *before* invoking `tutor.run_turn` or `illustrate.generate_illustration`.
+- **Illustrations (`illustrate.py`, `chats.py`):**
+  - `GET /api/chats/{chat_id}/illustrations`, `POST /api/chats/{chat_id}/illustrate`, and `GET /api/illustrations/{id}/download?format=html|svg|py` all enforce `_own_chat`.

@@ -40,7 +40,7 @@ export function Markdown({ text, citations = [], onCite }) {
   )
 }
 
-export default function Message({ m, onCite }) {
+export default function Message({ m, onCite, onIllustrate, illustrating }) {
   if (m.role === 'user') {
     return (
       <div className="msg user">
@@ -62,12 +62,24 @@ export default function Message({ m, onCite }) {
           </p>
         )}
       </div>
-      {m.memory_used?.length > 0 && (
-        <details className="memory">
-          <summary>Used memory from past chats</summary>
-          <ul>{m.memory_used.map((n) => <li key={n.id}>{n.text}</li>)}</ul>
-        </details>
-      )}
+      <div className="msg-footer">
+        {onIllustrate && m.content && !m.error && (
+          <button
+            type="button"
+            className="chip-btn illustrate-msg-btn"
+            onClick={() => onIllustrate(m)}
+            disabled={illustrating}
+          >
+            ✨ Illustrate this
+          </button>
+        )}
+        {m.memory_used?.length > 0 && (
+          <details className="memory">
+            <summary>Used memory from past chats</summary>
+            <ul>{m.memory_used.map((n) => <li key={n.id}>{n.text}</li>)}</ul>
+          </details>
+        )}
+      </div>
     </div>
   )
 }

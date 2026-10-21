@@ -165,6 +165,8 @@ The empty chat shows the starter questions. On a phone the chat list is a menu a
 ```
 
 ## 5. Interaction patterns
+**Illustrate studio.** An "✨ Illustrate" button in the chat sidebar (and under tutor replies) opens the right-hand Illustration Studio, automatically choosing between an interactive isometric apparatus (`wheresryan22/anatomy`), a 3Blue1Brown-style math animation (`adithya-s-k/manim_skill`), or a progressive diagram/whiteboard explainer (`iart-ai/explainer-video-skills`), rendered in-page with one-click downloads (`.html`, `.webm`, `.png`, `.svg`, `.py`).
+
 **Citations.** Numbered chips at the end of the claim; click opens the passage in the source panel with document, page and an "Open document" link (signed, expires quickly). Solutions are never cited or linked until released.
 
 **Rule line.** Under the chat title: "Problem Set 04 · Graded: hints only", "Practice: full help" or "Solutions open". The same labels are used on the course home picker and in the staff Problem sets screen, so students and staff see one vocabulary.
