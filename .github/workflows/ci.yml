@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]  # main runs the same tests in deploy-backend.yml before deploying
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r backend/requirements-dev.txt
+      - name: Run tests (mock model, temporary database, no keys)
+        working-directory: backend
+        run: python -m pytest -q
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+      - name: Build
+        working-directory: frontend
+        run: npm ci && npm run build

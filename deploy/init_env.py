@@ -25,10 +25,9 @@ def fill(key: str, value: str) -> None:
 
 
 fill("SECRET_KEY", secrets.token_urlsafe(48))
-fill("STUDENT_CODE", "bruin-" + secrets.token_hex(3))
-fill("PROFESSOR_CODE", "prof-" + secrets.token_hex(4))
 if local.get("OPENROUTER_API_KEY"):
     fill("OPENROUTER_API_KEY", local["OPENROUTER_API_KEY"])  # reuse your local key; stays on this machine
 target.write_text(text)
 target.chmod(0o600)
-print(f"wrote {target} (permissions 600). Fill in DATABASE_URL and ALLOWED_ORIGINS; see the codes inside the file.")
+print(f"wrote {target} (permissions 600). Fill in DATABASE_URL, the Supabase keys, the Stripe test keys, "
+      "ALLOWED_ORIGINS and APP_URL.")

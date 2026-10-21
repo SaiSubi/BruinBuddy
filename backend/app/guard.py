@@ -1,13 +1,12 @@
-"""Deterministic solution-leak guard.
+"""Deterministic solution-leak guard (one per course).
 
-Builds word-shingles from tutor-only solution text, minus any shingle that also appears in public
-materials (solutions repeat the problem statement, which students may legitimately see).
+Builds word-shingles from the course's protected solution text, minus any shingle that also appears in its
+public materials (solutions repeat the problem statement, which students may legitimately see).
 A reply that shares several solution-only shingles is treated as a leak.
 """
 import re
 import unicodedata
-
-from .db import db
+from collections.abc import Iterable
 
 N = 6
 THRESHOLD = 2
@@ -23,12 +22,13 @@ def _shingles(text: str) -> set[tuple[str, ...]]:
 
 
 class LeakGuard:
-    def __init__(self) -> None:
+    def __init__(self, protected_texts: Iterable[str], public_texts: Iterable[str]) -> None:
         sol: set = set()
         pub: set = set()
-        with db() as conn:
-            for r in conn.execute("SELECT text, tutor_only FROM chunks"):
-                (sol if r["tutor_only"] else pub).update(_shingles(r["text"]))
+        for t in protected_texts:
+            sol |= _shingles(t)
+        for t in public_texts:
+            pub |= _shingles(t)
         self.solution_only = sol - pub
 
     def leaks(self, reply: str) -> bool:

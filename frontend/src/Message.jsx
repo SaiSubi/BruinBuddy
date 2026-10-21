@@ -58,7 +58,7 @@ export default function Message({ m, onCite }) {
         <Markdown text={m.content} citations={m.citations} onCite={onCite} />
         {m.error && (
           <p className="error" role="alert">
-            {m.error} <button className="link" onClick={m.onRetry}>Retry</button>
+            {m.error} {m.onRetry && <button className="link" onClick={m.onRetry}>Retry</button>}
           </p>
         )}
       </div>

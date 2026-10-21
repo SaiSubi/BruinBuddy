@@ -1,209 +1,276 @@
-# BruinBuddy — Technical Architecture (v0)
+# BruinBuddy — Technical Architecture (v1)
 
-> Status: v0, built and deployed | Based on [PRD.md](PRD.md) and [DESIGN.md](DESIGN.md) | Last updated: 2026-10-20
-> Sections 1–12 describe the app (local development setup); section 13 describes the production deployment. Model choice and prompts are in AI_STRATEGY.md.
+> Status: v1 built on branch `v1-build` and verified locally; not deployed yet (README: go-live checklist) | Based on [PRD.md](PRD.md) (v1) and [DESIGN.md](DESIGN.md) | Last updated: 2026-10-20
+> v0 is described in [PRD_v0.md](PRD_v0.md) and in this file's git history. Model choice and prompts are in [AI_STRATEGY.md](AI_STRATEGY.md).
+> Where the PRD leaves a question open, this file records the default the build uses and marks it **(build default)** so it can be changed later.
 
 ## 1. System overview
 ```
-Browser (React)
-   │  HTTP + streaming (SSE)
-   ▼
+                    ┌──────────── Supabase Auth (email + password, Google, password reset)
+                    │  sign-up / login in the browser, returns a JWT
+Browser (React SPA) ┤
+                    │  HTTPS + SSE, Authorization: Bearer <JWT>
+                    ▼
 Backend (FastAPI, Python)
-   ├─ Auth: name + role (+ access codes), signed bearer token
-   ├─ Chat API ──► Tutor pipeline ──► OpenRouter (LLM API)
-   │                  │  ▲
-   │                  ▼  │
-   │             Retriever ──► Index: public chunks (BM25, in memory)
-   │                  │
-   │             Checker ───► tutor-only solution chunks (database)
-   ├─ Memory worker ───────► OpenRouter (cheap model)
-   └─ Dashboard API
-Database: users, chats, messages, memories, documents, chunks, usage_log
-  (SQLite file locally, Postgres on Supabase in production)
-PDFs: local folder in development, private Supabase Storage in production
+   ├─ Accounts: verify the JWT (Supabase JWKS), map it to a user row
+   ├─ Courses: memberships and roles, student code, staff codes, roster, settings, pause windows
+   ├─ Billing ──────────────► Stripe Checkout (test mode) ──► webhook back to /api/stripe/webhook
+   ├─ Materials: upload → background job (extract, chunk, mismatch check) ──► Supabase Storage
+   ├─ Knowledge: one BM25 index + leak guard per course, rebuilt when materials or modes change
+   ├─ Chat API ──► Tutor pipeline ──► OpenRouter (tutor, checker, helpers)
+   ├─ Memory worker (per course) ──► OpenRouter (cheap model)
+   └─ Dashboard API (aggregates only)
+Database: Postgres on Supabase in production, SQLite locally (same SQL)
+Files: private Supabase Storage bucket in production, data/uploads locally
 ```
-This diagram is the app itself. Locally everything runs on localhost and the only outside calls go to OpenRouter. See §13 for how it is deployed.
+Everything is one FastAPI service, as in v0. Each course is a tenant: every query below is scoped by `course_id`, and every route checks the caller's membership in that course.
 
-## 2. Stack choices (v0)
-| Area | Choice | Why |
+## 2. Stack changes from v0
+| Area | v1 choice | Why |
 |---|---|---|
-| Backend | Python 3.12, FastAPI | Python is installed and has the PDF and ML libraries we need. |
-| Frontend | React + Vite, KaTeX for math | Small SPA for the three screens in DESIGN.md. |
-| Storage | SQLite locally; **Postgres on Supabase** in production (when `DATABASE_URL` is set) | The same SQL runs on both. Local dev needs no database server. |
-| Retrieval | BM25 keyword search over about 1,100 chunks, built in memory at startup (no embeddings in v0) | No model download and no API cost. It handles course terms and symbols well. Embeddings or hybrid search are a later upgrade. |
-| PDF extraction | PyMuPDF | `pdftotext` is not installed here. |
-| LLM | **OpenRouter** (OpenAI-compatible API, called with the `openai` Python SDK). A stronger model for tutoring and the checker, a cheap model for query rewrite, memory, and the leak check. | One key and one API for any model. Model IDs live in `.env` (AI_STRATEGY.md). |
-| Config and secrets | Local: `.env` (git-ignored). Production: Fly secrets (§13). | `.env.example` and `.env.production.example` list the variables. |
+| Sign-up and login | **Supabase Auth** in the browser (`@supabase/supabase-js`, PKCE flow). The backend verifies the access token against the project's public JWKS (ES256) with PyJWT. | Same Supabase project we already use. No auth secrets on our server, and Google sign-in and password reset come built in. |
+| Local development auth | A small email + password provider in the backend (`AUTH_PROVIDER=local`): scrypt password hashes and HMAC session tokens. Refused in production. | Lets the app and the test suite run with no Supabase project. |
+| Payments | **Stripe Checkout** (test mode) with inline `price_data`, plus a signed webhook. `stripe` Python SDK. | Hosted payment page; no card data touches our servers. |
+| Uploads | `python-multipart` for uploads; PyMuPDF moves into the runtime image for PDF text extraction. | Professors upload their own materials (PRD §3.2). |
+| Retrieval | Still BM25 in memory, now **one index per course**, cached and rebuilt when the course's materials or problem set modes change. | Free, fast, and good enough at course scale. |
+| Routing (frontend) | A tiny hash router (`#/c/12/staff/materials`). | Works on Vercel and when the backend serves the build, with no rewrite rules. |
 
-## 3. Course materials and ingestion
+Unchanged: FastAPI + React/Vite, KaTeX, OpenRouter through the `openai` SDK, SSE streaming, Postgres/SQLite with `?` placeholders, Fly.io + Vercel + Supabase.
 
-**Source:** `18.05-spring-2022/`. The PDFs are in `static_resources/`. Each document's metadata (title, type, license) is in `resources/<id>/data.json`.
+## 3. Accounts and authentication
+- **Production (`AUTH_PROVIDER=supabase`).** The browser signs up or logs in with Supabase Auth: email and password, Google (if enabled in Supabase), and password reset by email. It sends the Supabase access token to our API as a bearer token. The backend verifies it locally: ES256 signature against `${SUPABASE_URL}/auth/v1/.well-known/jwks.json` (cached), `aud = authenticated`, issuer, expiry. It then upserts a `users` row keyed by the token's `sub`, storing email and display name. No call to Supabase per request.
+- **The frontend reads the Supabase URL and the public anon key from `GET /api/config`**, so the anon key is configured once, as a backend setting, rather than baked into the Vercel build. The anon key is public by design; all our tables have row-level security on with no policies, so it cannot read them.
+- **Local (`AUTH_PROVIDER=local`, the default when Supabase is not configured).** `POST /api/auth/signup` and `/api/auth/login` with email and password. Passwords are hashed with scrypt; the server returns an HMAC-signed session token (7 days). There is no email, so no password reset or Google in local mode. Production refuses to start with this provider.
+- **Email confirmation** is a Supabase setting. For the demo it is off (Supabase's built-in sender only mails project members and is rate-limited). If sign-up returns no session, the UI says "check your email to confirm".
+- **Redirects** (Google, password reset) come back with Supabase's `?code=`, which supabase-js exchanges on start; the app only consumes its own one-time parameters (`checkout`, `reset`, sign-in errors). With the PKCE flow a password-reset link must be opened in the same browser that asked for it.
+- **Roles come only from `memberships`** (PRD §2.1). There is no role on the user or the sign-in form. One login can own one course and be a student in another.
+- The demo's name-and-access-code sign-in is removed.
 
-**Which files are ingested** (`learning_resource_types` from `data.json`, plus filename checks):
-| Material | Source tag | Treatment |
-|---|---|---|
-| Lecture notes (26) | `Lecture Notes` | Public, citable |
-| Readings and class prep (36) | `Readings` (class prep files are tagged as readings, `class*-prep*`) | Public, citable |
-| Problem sets (34: homework and in-class problems) | `Problem Sets` | Public, citable |
-| Problem set solutions (34) | `Problem Set Solutions`, filename `*_sol*` | **Tutor-only** |
-| Compiled "All … Reading" files, exams, exam solutions, studio and R files, and all others | — | Not ingested in v0 (the compiled readings duplicate the individual readings) |
+## 4. Courses, membership and access codes
+**Course lifecycle.** `pending` (created, not paid) → `active` (payment confirmed by Stripe). Students cannot join a pending course. The tutor answers students only when the course is active **and** has at least one ready document.
 
-The ingestion script logs what it skipped. Result: 1,102 public chunks and 252 tutor-only chunks.
+**Roles.**
+| Action | Owner | Staff | Student |
+|---|---|---|---|
+| Materials, guidelines, problem set modes, pause windows | ✓ | ✓ | |
+| Roster: view, remove, block students; rotate code; domain and expiry; token cap | ✓ | ✓ | |
+| Dashboard, preview as student | ✓ | ✓ | |
+| Staff codes, remove staff, billing | ✓ | | |
+| Tutor chat, browse materials | preview | preview | ✓ |
 
-**Pipeline** (`python -m ingest`, safe to re-run):
-1. Read each `data.json` and select files per the table above.
-2. Extract text per page with PyMuPDF. Keep the page number.
-3. Clean the text: normalize Unicode (math-italic letters such as 𝑋 become plain X) and fold table cells that PyMuPDF emits one per line back into a single line. Then split into chunks of up to about 1,400 characters (roughly 350 tokens; the average is about 800), never crossing a page boundary. Each chunk keeps `doc_id`, `page`, and the document title.
-4. Store the chunks. Skip documents whose file hash is unchanged. (The BM25 index is built from the stored chunks when the server starts.)
-5. Link each solution document to its problem set (for example `class07_pset_sol` ↔ `class07_pset`) by filename. Store the link on the document.
-6. Print a report: counts per type, pages with little or no text, and unmatched solutions.
+**Student code (route B).** One per course, generated at creation (format `ABCD-2345`, no look-alike characters). Joining checks, in order: the code exists, the course is active, the code has not expired, the email domain matches if a restriction is set (the email's domain or any subdomain), the student is not blocked, and the seat cap. The seat count and the insert run under a lock on the course row (`SELECT … FOR UPDATE` on Postgres, `BEGIN IMMEDIATE` on SQLite), so students joining at the same moment can't overfill a course; staff codes are counted the same way. **Rotate** replaces the code; existing members keep access. A removed student can rejoin with the current code; a blocked one cannot.
 
-**Known weak spot:** math-heavy PDFs may extract badly (garbled formulas, broken tables). v0 accepts that and treats it as a risk to check by hand on a few documents. Page-image or LaTeX-aware extraction is a later option.
+**Staff codes.** Single-use, `STAFF-XXXX-XXXX-XXXX`, valid 7 days. Stored as a SHA-256 hash; the owner sees the full code once, at creation, and afterwards only its last four characters. Redeeming is one conditional `UPDATE … WHERE used_by IS NULL AND revoked_at IS NULL AND expires_at > now`, so a code works once. Active staff plus unused, unexpired codes may not exceed the plan's staff seats. The owner can revoke an unused code and remove staff.
 
-## 4. Tutor pipeline (one student message)
-0. **Gate:** check the token, then the daily limits (per student and for the whole app, HTTP 429 if exceeded). Save the question. The first message of a chat also sets the chat title (its first 48 characters).
-1. **Load context:** the last 8 messages of the chat and the student's memory notes (up to 15).
-2. **Detect an assigned problem** (plain code, no model call): the message names a problem set ("pset 4", "problem set 04", "homework 3", "class 7 problem"), or it has at least 8 content words and at least 60% of them appear in a single problem-set chunk. The last 3 student messages are checked too, so a follow-up stays in problem mode.
-3. **Rewrite the query** (small model): turn a short follow-up into a standalone search query. Skipped on the first message of a chat and when the message already has 8 or more content words.
-4. **Retrieve:** take the top 6 public chunks by BM25 score (chunk titles count triple). Only chunks with `tutor_only = 0` are ever eligible. BM25 scores aren't calibrated, so v0 only drops near-empty matches. The tutor decides whether the retrieved text really answers the question.
-5. **Check the attempt** (assigned problems only): the checker, a separate model call, sees the solution excerpts and returns a short nudge (§5).
-6. **Generate:** build a prompt from the system rules, memory notes, retrieved chunks labelled `[S1]…[S6]`, the checker's note if any, and chat history. Normal turns stream to the browser. Assigned-problem turns are buffered until the guard has passed.
-7. **Guard output** (§5).
-8. **Validate citations:** parse `[S#]` markers, drop any that don't map to a retrieved chunk, and convert the rest into citation objects (document, page, chunk text). The signed file link is added when the response is sent.
-9. **Save** the reply with its citations and the memory notes that were used.
-10. **Update memory** in a background thread (§7).
+**One code field.** Students and staff both use "Enter a course code"; the server tells them apart by the `STAFF-` prefix.
 
-If the materials don't cover the question, the tutor model says so (system prompt rule).
+**Roster.** Name, email, joined date, questions and tokens used. Remove frees the seat at once; block also stops rejoining. The owner can remove or block staff the same way (a removed but unblocked TA could otherwise rejoin as a student). Removed members lose all access to the course, including their old chats (PRD §4.12 proposal); their data is kept.
 
-## 5. Keeping solutions from leaking
-This is the highest-risk part of v0. The rule is enforced in code, with the prompt as a second layer.
+## 5. Payments
+**Plan.** The owner picks student seats, staff seats, and a per-student token allowance with its period.
 
-- **Separate storage.** Solution chunks live in the same tables but have `tutor_only = 1`. The public retriever filters them out in the query itself, not in the prompt.
-- **The tutor model never sees solution text.** When a student's message is about an assigned problem, a separate **checker** call (currently on the small model, see AI_STRATEGY.md §5) receives the student's message and recent conversation plus the 4 most relevant linked solution excerpts. It returns only a structured result: `{attempt_status: correct | partially | incorrect | none, feedback: "..."}`. The feedback is limited to a short nudge. It is told not to state final values or solution steps. The tutor model receives this result, not the solution.
-- **Output guard.** Every reply is checked against the solution text: the code builds 6-word phrases from solution chunks, drops any phrase that also appears in the public materials (solutions repeat the problem statement), and treats a reply with 2 or more remaining matches as a leak. On assigned-problem turns a small model also checks whether the reply reveals the answer or steps. A flagged reply is replaced with a fixed safe reply ("I can't share the solution… what have you tried?"). On normal turns the text may already have streamed, so the client swaps it for the safe reply. Leak events are not logged yet.
-- **No unlock path.** There is no setting, endpoint, or prompt phrase that turns the guard off.
-- **File serving.** The backend serves only documents with `tutor_only = 0`, from an explicit allowlist in the database. Solution PDFs are never exposed by URL.
-- **Citations** can only point to public chunks, since only those are ever retrieved for generation.
+**Pricing (build default; PRD §2.7 is open).** One payment per course per 10-week term:
+```
+weekly_allowance = token_cap × {day: 7, week: 1, term: 0.1}[cap_period]
+price  = $19 base
+       + $9 × staff seats            (the owner is free)
+       + student seats × $2 × weekly_allowance / 100,000 tokens   (at least $0.50 per seat)
+course ceiling (tokens) = (student seats + staff seats + 1) × weekly_allowance × 10 weeks
+```
+Example: 40 students, 2 staff, 100k tokens per week → $19 + $18 + $80 = **$117**; the course can use 43M tokens in the term. The formula lives in one function (`billing.quote`) and `POST /api/billing/quote` returns it, so the UI never computes a price itself.
 
-Tests for this section are in §10.
+**Checkout.**
+1. `POST /api/courses` creates the course as `pending` with an owner membership and the quoted price.
+2. `POST /api/courses/{id}/checkout` creates a Stripe Checkout Session (`mode=payment`, inline `price_data`, `metadata.course_id`, `client_reference_id`, the owner's email) and returns its URL. The success and cancel URLs point back to the app origin the browser sent; it is parsed and must be exactly an origin in `ALLOWED_ORIGINS` (or localhost in development), else `APP_URL` is used.
+3. **The webhook is the source of truth.** `POST /api/stripe/webhook` verifies the `Stripe-Signature` header with `STRIPE_WEBHOOK_SECRET`, then, in one transaction, records the event id (duplicates are ignored) and on `checkout.session.completed` or `checkout.session.async_payment_succeeded` marks the course `active`, so a failure leaves the event unrecorded for Stripe's retry. A session counts as payment for a course only if it is paid, its `metadata.course_id` (set by our server) is that course, and it collected at least the course's price in USD. The payer-settable `client_reference_id` is never trusted.
+4. When the browser returns from Stripe, the app calls `POST /api/courses/{id}/checkout/confirm` with the session id. The server **asks Stripe itself** (`sessions.retrieve`) and activates the course if Stripe says it is paid and the session belongs to this course. This covers a slow or misconfigured webhook. The browser's redirect alone never activates anything.
+5. A cancelled or failed payment leaves the course `pending`; the owner can retry checkout.
 
-## 6. Data model (SQLite locally, Postgres in production)
+**Without Stripe keys** (local development and tests), checkout goes to a built-in **test checkout page** served by the backend, which simulates the webhook. It is disabled in production, which refuses to start without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
+
+Out of scope (PRD §2.8): live payments, refunds, proration, taxes, invoices, subscriptions.
+
+## 6. Course materials
+**Upload** (`POST /api/courses/{id}/materials`, multipart): one category for the batch, one or more files, the rights checkbox, and for solutions the problem sets they cover (or none, "link later").
+
+| Category (`kind`) | Retrieval and citation |
+|---|---|
+| `lecture_notes`, `reading`, `class_prep`, `other` | Public, citable |
+| `problem_set` | Public, citable. Has a mode (§9). |
+| `solution` | Tutor-only until **all** of its linked problem sets are open. Unlinked solutions are always tutor-only. |
+
+**Processing** runs in a background thread per upload:
+1. Save the original: Supabase Storage at `courses/{course}/{doc}/{file}` in production, `data/uploads/…` locally. Insert the document as `processing`.
+2. Extract text per page (PyMuPDF for PDF; UTF-8 for `.txt`/`.md`, split into ~3,000-character parts). A PDF with no extractable text becomes `no_text` ("no text found; scanned PDFs are not supported").
+3. Clean and chunk exactly as in v0 (§6.1 below), store chunks, set `ready` (or `failed` with a short reason).
+4. **Mismatch check** (warns only): a filename and keyword heuristic, then one cheap model call on the first ~2,000 characters asking which category the file looks like. A disagreement is stored as `warning` ("This looks like a solution but is tagged as a reading"). The category is never changed automatically.
+5. Bump the course's `content_version`, so the course's index is rebuilt and its starter questions regenerate.
+
+Documents left in `processing` by a restart are marked `failed` on startup with "processing was interrupted"; **Retry** reprocesses the stored original. **Replace** uploads a new file under the same document id. **Re-categorise** and **delete** bump `content_version`; delete removes the chunks and the stored file, so the material disappears from the tutor and from future citations.
+
+**Caps (build default):** 300 files and 4,000 pages per course, 20 MB per file. File types: PDF, `.txt`, `.md`.
+
+### 6.1 Text extraction and chunking (unchanged from v0)
+NFKC normalisation (math-italic letters become plain letters), folding table cells that PyMuPDF emits one per line, chunks of up to ~1,400 characters that never cross a page, each keeping its page number and document.
+
+### 6.2 The 18.05 demo course
+`python -m app.ingest --owner-email <email>` creates (or updates) the demo course from the local MIT OCW export: lecture notes, readings and class prep, problem sets, and solutions linked to their problem sets by file name. It is `active` with no payment, its term is dated to have started four weeks earlier (so sample data falls inside it), its problem sets default to Graded, and it gets a generated student code. Solution PDFs are not uploaded to Storage (their text lives in the database only). `python -m app.seed sample-data` adds sample students and questions for the dashboard (PRD §3.6), all flagged `is_sample`.
+
+## 7. Knowledge per course
+`knowledge.py` keeps, per course, an in-memory **BM25 index of the chunks students may see** and a **leak guard** built from the solutions they may not see.
+
+- **What is public right now:** ready documents that are not solutions, plus solutions whose linked problem sets are all open. A problem set is open when its mode is `open` or its release date has passed.
+- **Cache key:** `(content_version, set of open problem sets)`. Each turn reads both with two small queries; if the key changed (an upload finished, a mode changed, a release date passed), the course's index and guard are rebuilt. This also works with more than one server process.
+- **Guard:** 6-word shingles of the protected solution chunks, minus any shingle that also appears in the course's public chunks (v0 logic). Solutions linked only to Practice sets are left out of the guard, because Practice allows worked explanations.
+- The checker reads protected solution chunks straight from the database (`solution_chunks_for`), never through the index.
+
+## 8. Tutor pipeline (one student message)
+0. **Gates**, in this order, each returning a clear message and making **no model call**: signed in → active member of an active course → course has a ready document → not inside a pause window (423) → student under their token allowance and the course under its ceiling (429) → app-wide daily safety limit (429). Save the question with its course, student and preview flag.
+1. **Load context:** the last 8 messages of the chat and the student's memory notes **for this course** (up to 15).
+2. **Which problem set applies:** the candidates are the chat's attached set (opened from "Help with a problem set"), sets the message names ("pset 4", "problem set 04", "homework 3", "class 7 problems", matched against the course's titles), and a set whose text the message pastes (at least 8 content words, 60% of them in one problem set chunk). If the message brings none, the previous 3 student messages are checked. **When several match, the strictest mode wins**, so naming a Practice or open set can't unlock a pasted Graded problem.
+3. **Mode** of that problem set: Graded (default), Practice or Open (§9).
+4. **Rewrite the query** for short follow-ups (cheap model, as in v0).
+5. **Retrieve** the top 6 public chunks of this course. Quiz chats exclude Graded problem sets. Review chats take up to 4 chunks from the chosen material and fill the rest from the whole course. When a problem set applies, up to 2 chunks come from that set, and a problem the student names ("problem 2", "question 3") brings in the chunk that states it, so hints are about the right problem even when the wording doesn't match.
+6. **Check the attempt** (Graded and Practice only): the checker sees the linked solution excerpts and returns `{attempt_status, feedback}`. The tutor never sees solution text. In Practice mode the checker skips any solution file that also covers a Graded set.
+7. **Build the prompt:** core rules, the mode's rules and the "tell students if their final answer is correct" setting, the chat type (quiz, review), the professor's guidelines (general, plus tagged guidelines whose material is among the retrieved sources or is the problem set), memory notes, retrieved chunks `[S1]…[S6]`, the checker's note, history.
+8. **Generate.** Graded turns are buffered until the guard passes; other turns stream.
+9. **Guard** (§9), then **validate citations** (drop markers that don't match a retrieved chunk), then detect **not covered**: the tutor starts such replies with `[NC]`, which is stripped; a phrase check is the fallback. Turns about a problem set are never counted as not covered: the dashboard's unanswered list is for course questions the materials don't answer.
+10. **Save** the reply, and tag the question with its cited documents, problem set, attempt result and not-covered flag for the dashboard.
+11. **Update memory** in a background thread, scoped to the course.
+
+## 9. Problem set modes and solution protection
+| Effective mode | Tutor behaviour | Solution text | Guard |
+|---|---|---|---|
+| **Graded** (default) | Hints and questions only. Buffered reply. | Checker only | Text-overlap guard + model leak check; a leaking reply is replaced with a fixed safe reply |
+| **Practice** | Guided help; a worked explanation after an attempt or on request | Checker only; never cited or served | Text-overlap guard against Graded solutions only |
+| **Open** (mode set, or release date passed) | Full discussion | Public: retrieved, cited and served | None for this set's solutions |
+
+- New problem sets default to Graded, so a forgotten setting fails safe. A solution linked to several sets stays protected until **all** of them are open. Deleting or re-categorising one of its sets unlinks the solution entirely (it stays tutor-only, with a "link it again" warning) rather than leaving only open sets behind.
+- The model leak check reads its verdict leniently (the model sometimes explains first), asks once more if there is none, and then fails closed: an unreadable answer counts as a leak. Helper calls get enough `max_tokens` for an explanation plus the JSON (200–600). An empty tutor reply is reported as an error, never saved.
+- **Guidelines cannot change any of this.** They are inserted below the safety rules with an explicit note that they cannot unlock solutions, turn off citations or change modes, and the guard runs in code whatever the prompt says.
+- **File serving:** `/files/{doc}` serves only documents that are public now. Staff links carry a staff scope and may open any material in their course, including solutions, for checking their library. Uploaded solutions are kept in the private bucket; the server simply never signs a student link for them until released.
+- **Pause:** while a pause window is active, the chat endpoint returns 423 with the pause message and makes no model call.
+
+## 10. Usage limits
+- **Per-student allowance:** tokens (prompt + completion, all calls in the student's turns, including the background memory update) over a rolling window of the course's period (day, week or term; default week). Checked before each turn. The 429 message says when allowance frees up (the oldest usage in the window plus the period).
+- **Course ceiling:** total tokens for the course, including staff preview chats and course-level helper calls (starter questions, mismatch checks). At the ceiling, students get "this course has used its plan's AI allowance".
+- **App-wide safety limit:** `GLOBAL_DAILY_LIMIT` questions per rolling 24 hours across all courses (cost backstop; default 600).
+- `usage_log` now records `course_id`, `user_id` and `chat_id` for every call; the background memory thread carries the same attribution.
+
+## 11. Dashboard
+`GET /api/courses/{id}/dashboard?range=7d|30d|term` (staff only). Preview chats are excluded. Nothing returns chat content except the unanswered list, which has no names and masks email addresses.
+
+| Panel | Computed from |
+|---|---|
+| Usage overview | distinct active students, questions per day (browser's time zone), active student seats / seat cap, course tokens / ceiling |
+| Most-asked materials | questions per cited document (from the citations of each answer) |
+| Unanswered questions | questions whose answer was marked not covered (text truncated, newest first) |
+| Where students are stuck | per problem set: students asking, questions per student, checker results (correct, partial, incorrect) |
+| Student usage | per student: questions and tokens in the range (numbers only) |
+
+**Small-group rule:** with fewer than 5 active students in the range, the materials, unanswered and stuck panels are hidden; a problem set row with fewer than 5 students is hidden too. Responses say when sample data is included.
+
+## 12. Data model
 | Table | Key fields |
 |---|---|
-| `users` | `id`, `name`, `role` (`student` \| `professor`), `created_at` |
-| `chats` | `id`, `user_id`, `title`, `created_at`, `updated_at` |
-| `messages` | `id`, `chat_id`, `role` (`user` \| `assistant`), `content`, `citations` (JSON), `memory_used` (JSON), `created_at` |
-| `memories` | `id`, `user_id`, `text`, `created_at`, `updated_at` |
-| `documents` | `id`, `title`, `kind`, `file_name`, `file_hash`, `tutor_only`, `linked_doc_id`, `license` |
-| `chunks` | `id`, `doc_id`, `page`, `text`, `tutor_only` |
-| `usage_log` | `ts`, `purpose`, `model`, `prompt_tokens`, `completion_tokens`, `cost` (for watching the budget) |
+| `users` | `id`, `auth_id` (Supabase `sub`, or `local:…`), `email`, `name`, `password_hash` (local only), `is_sample` |
+| `courses` | `id`, `name`, `owner_id`, `status` (`pending`/`active`), plan (`student_seats`, `staff_seats`, `token_cap`, `cap_period`, `token_ceiling`, `price_cents`), access (`student_code`, `code_expires_at`, `email_domain`), `general_guideline`, `starter_questions`, `starter_version`, `content_version`, `setup` (checklist flags), `stripe_session_id`, `paid_at` |
+| `memberships` | `course_id`, `user_id`, `role` (`owner`/`staff`/`student`), `status` (`active`/`removed`/`blocked`), unique per course and user |
+| `staff_codes` | `course_id`, `code_hash`, `last4`, `expires_at`, `used_by`, `used_at`, `revoked_at` |
+| `documents` | v0 fields + `course_id`, `status`, `status_detail`, `storage_path`, `content_type`, `pages`, `size_bytes`, `warning`, `rights_confirmed`, `mode`, `release_at`, `confirm_answers`, `uploaded_by`, timestamps |
+| `solution_links` | `solution_id`, `pset_id` (one solution can cover several sets) |
+| `chunks` | `id`, `doc_id`, `page`, `text`, `tutor_only` (1 for solution chunks) |
+| `guidelines` | tagged guidelines: `course_id`, `text`, `doc_ids` (JSON). The general guideline is on `courses`. |
+| `pauses` | `course_id`, `starts_at`, `ends_at`, `message` |
+| `chats` | `course_id`, `user_id`, `title`, `kind` (`chat`/`pset`/`review`/`quiz`), `doc_id` (attached material), `is_preview` |
+| `messages` | v0 fields + on questions: `course_id`, `user_id`, `is_preview`, `doc_ids` (cited, JSON), `problem_doc_id`, `attempt_status`, `not_covered`, `leak_blocked` |
+| `memories` | `course_id`, `user_id`, `text` |
+| `usage_log` | v0 fields + `course_id`, `user_id`, `chat_id`, `total_tokens` |
+| `stripe_events` | `id` (Stripe event id), `type`, `created_at` (webhook idempotency) |
 
-- A "question asked" is one `messages` row with `role = 'user'`. The dashboard count is `COUNT(*)` of those rows.
-- Chats and messages are kept until deleted by hand. There is no retention policy in v0.
+**Migration from v0.** On first start, if the v0 tables are found (`users` has a `role` column), `users`, `chats`, `messages` and `memories` are **copied** to `v0_users`, `v0_chats`, `v0_messages` and `v0_memories`, then dropped and recreated in the v1 shape, in one transaction. `documents`, `chunks` and `usage_log` are kept and get their new columns with `ALTER TABLE … ADD COLUMN`. Existing documents have no course until `python -m app.ingest` attaches them to the demo course. New columns are added idempotently on every start, so the same code runs on a fresh or an old database.
 
-## 7. Memory
-- **What it stores:** short notes per student, such as "reviewing conditional probability for exam 1" or "struggles with the denominator in Bayes' rule", and learning preferences. It stores nothing about the student beyond study context.
-- **When it updates:** after each assistant reply, a background job sends the latest exchange and the current notes to a cheap model. The model returns a list of changes: add, update, or remove a note. The job applies them.
-- **How it's used:** at the start of every turn, the student's notes (capped at about 15 most recent) are added to the prompt. The notes that were used (id and text) are saved in `messages.memory_used` so the UI can show the "Used memory" line.
-- **Limits in v0:** the student can't view, edit, or delete memory in the UI. To reset it, delete the rows by hand.
-
-## 8. API
-All routes except `/api/config`, `/api/session`, `/api/health`, and `/files/*` need `Authorization: Bearer <token>`. Role is checked on each route.
+## 13. API
+All routes except the public ones need `Authorization: Bearer <token>`. Course routes check an **active** membership and the role in the table in §4; a non-member gets 404 so course ids can't be probed.
 
 | Route | Who | Purpose |
 |---|---|---|
-| `GET /api/config` | any | Whether access codes are required (so the sign-in form can show the field). |
-| `POST /api/session` | any | Sign in with `{name, role, code}`, creating the user if needed. Returns a signed token. |
-| `GET /api/me` | any signed in | The current user. |
-| `GET /api/health` | any | Liveness and whether the LLM key is configured. |
-| `GET /api/chats` | student | List the student's chats. |
-| `POST /api/chats` | student | Create a chat. |
-| `GET /api/chats/{id}` | student (owner) | Get a chat and its messages. |
-| `POST /api/chats/{id}/messages` | student (owner) | Send a message. Streams the reply via SSE: text deltas, an optional `replace` event, then a final `done` event with citations. 429 when a daily limit is reached. |
-| `GET /api/sources/{chunk_id}` | student | Get a citation's passage and document info. Public chunks only. |
-| `GET /files/{doc_id}?t=…` | signed link | Citation links carry a token that is valid for one document for an hour. In production the response is a redirect to a Supabase Storage link that expires in 5 minutes. 404 if `tutor_only`. |
-| `GET /api/dashboard` | professor | Return `{questions_asked: n}`. |
+| `GET /api/health`, `GET /api/config` | public | Liveness; auth provider, Supabase URL and anon key, billing mode |
+| `POST /api/auth/signup`, `POST /api/auth/login` | public, local provider only | Email + password accounts for development |
+| `POST /api/stripe/webhook` | Stripe (signed) | Activate paid courses |
+| `GET /files/{doc_id}?t=` | signed link | Short-lived, document-bound link; redirects to Supabase Storage in production |
+| `GET`, `POST /api/billing/test-checkout/{id}` | signed link, development only | Stands in for Stripe Checkout when no Stripe keys are set; 404 in production |
+| `GET /api/me` | signed in | User and course memberships |
+| `POST /api/billing/quote` | signed in | Price and ceiling for a plan |
+| `POST /api/courses` | signed in | Create a pending course (caller becomes owner) |
+| `POST /api/join` | signed in | Join with a student or staff code |
+| `GET /api/courses/{id}` | member | Course view: role, status, pause, allowance (students), starter questions, setup checklist and code (staff) |
+| `PATCH /api/courses/{id}` | staff | Name, email domain, code expiry, token cap and period |
+| `POST /api/courses/{id}/code/rotate` | staff | New student code |
+| `POST /api/courses/{id}/setup` | staff | Mark a checklist step done |
+| `POST /api/courses/{id}/checkout`, `…/checkout/confirm` | owner | Start Stripe Checkout; confirm on return |
+| `GET /api/courses/{id}/materials` | member | Students: public materials with problem set modes. Staff: everything with status, warnings and links |
+| `POST /api/courses/{id}/materials` | staff | Upload (multipart) |
+| `PATCH /api/courses/{id}/materials/{doc}` | staff | Title, category, solution links, mode, release date, confirm-answers |
+| `POST …/materials/{doc}/file`, `…/retry`, `DELETE …/materials/{doc}` | staff | Replace, retry, delete |
+| `GET`, `PUT /api/courses/{id}/guidelines` | staff | General and tagged guidelines |
+| `GET`, `POST /api/courses/{id}/pauses`, `DELETE …/pauses/{pid}` | staff | Pause windows |
+| `GET /api/courses/{id}/members`, `POST …/members/{user}` | staff | Roster; remove, block, unblock (removing staff: owner only) |
+| `GET`, `POST /api/courses/{id}/staff-codes`, `DELETE …/staff-codes/{cid}` | owner | Single-use staff codes |
+| `GET /api/courses/{id}/dashboard` | staff | §11 |
+| `GET`, `POST /api/courses/{id}/chats` | member | List or create the caller's chats (`kind`, `doc_id`) |
+| `GET /api/chats/{id}`, `POST /api/chats/{id}/messages` | chat owner, active member | Read; send (SSE: `delta`, optional `replace`, `done` with citations and the problem set rule, or `error`) |
+| `GET /api/sources/{chunk}` | member of the chunk's course | A citation's passage, only if public now |
 
-**Errors** use standard HTTP codes with `{detail: "message"}`. If the LLM call fails, the user message is already saved and the client shows the retry state from DESIGN.md.
+Errors are `{detail}` with standard codes: 401 not signed in, 403 wrong role, 404 not found or not a member, 409 not ready (pending course, no materials), 413 too large, 422 invalid input, 423 paused, 429 limit reached, 502 storage or payment provider unavailable.
 
-## 9. Security, privacy, cost
-- **Auth:** sign-in is name plus role, gated by an access code when `STUDENT_CODE` / `PROFESSOR_CODE` are set. The server returns an HMAC-signed bearer token (7 days) and the browser sends it in a header, so the app works across domains with no cookies. This is demo-grade identity: anyone with the student code can use any student's name and read that student's chats. Real accounts (Supabase Auth) are the planned upgrade. In production, professor sign-in is disabled unless `PROFESSOR_CODE` is set, and the server refuses to start without a strong `SECRET_KEY`.
-- **Authorization:** students can read only their own chats. Only professors can call the dashboard route. Solution documents are never served (§5).
-- **Secrets:** locally in `.env` (git-ignored); in production as Fly secrets. They are never sent to the browser.
-- **Data sent out:** student messages and retrieved course text go to OpenRouter and the model provider behind it. Memory notes go to the provider too. The live site is gated by access codes and has no real student data yet. Review this before real students use it.
-- **Cost controls:** cap output tokens and top-k, skip re-ingesting unchanged files, use the cheap model for helper calls, enforce the daily limits (§13), and log token usage and cost per call in `usage_log` so we can watch the $10–20 budget.
-- **Licensing:** the About page credits MIT OCW 18.05 (CC BY-NC-SA 4.0). Non-commercial use only.
+## 14. Security, privacy, cost
+- **Tenancy:** every course query is filtered by `course_id` after a membership check; chats also check `user_id`. Sources and files re-check that the material is public at request time.
+- **Auth:** Supabase JWTs verified locally (signature, audience, issuer, expiry). Local tokens are HMAC-signed. Production refuses to start with the local provider, the mock LLM, the mock checkout, a weak `SECRET_KEY`, or missing Supabase or Stripe settings.
+- **Payments:** card data stays on Stripe. The webhook signature is required; events are processed once.
+- **Secrets:** server-side only (Fly secrets; `.env` and `.env.production` locally, git-ignored). The browser receives only the Supabase URL and anon key (public by design).
+- **Privacy:** staff see aggregates, never chats (PRD §3.6). Student messages, retrieved course text and memory notes go to OpenRouter and the model provider. Domain restriction is only meaningful when Supabase email confirmation is on.
+- **Cost:** token caps per student and per course, the app-wide limit, `max_tokens` on every call, top-6 retrieval, 8 messages of history, and per-call cost in `usage_log`.
+- **Licensing:** the demo course credits MIT OCW 18.05 (CC BY-NC-SA 4.0); uploads require the professor to confirm they have the right to use the materials.
 
-## 10. Testing
-**Automated** (20 pytest tests in `backend/tests`, run with a mock LLM so they cost nothing; the same suite also runs against Postgres with `TEST_DATABASE_URL`):
-- chat with citations, persistence, multiple chats, and per-student isolation
-- memory is created in one chat and used in the next
-- the dashboard count, and that it is professor-only
-- solution documents and chunks are never retrievable or served, and a verbatim solution is flagged by the guard
-- a leaked solution in a reply is replaced before it reaches the student
-- pasted and referenced assigned problems are detected
-- forged, tampered and expired tokens are rejected; access codes; professor sign-in off in production without a code; daily limits; file-link signing; CORS; unsafe production settings refuse to start; the Supabase Storage redirect and its failure case
+## 15. Testing
+- **Automated** (98 pytest tests, mock LLM, mock checkout, local auth): the suite builds its own small **synthetic course** (a few text documents: notes, a problem set and its solution) in a temporary database, so it needs neither the 18.05 export nor any key, and it runs in GitHub Actions before every deploy. It covers sign-up and login, course creation and the checkout and webhook path (with locally computed Stripe signatures), Supabase JWT verification (with a locally generated ES256 key), codes, seat caps, removal and blocking, tenancy, uploads and statuses, modes and release, solution protection, guidelines in the prompt, pause, token caps, starter questions, the dashboard rules and the v0 migration. The same suite passes on SQLite and on Postgres (`TEST_DATABASE_URL`), and the v0 → v1 migration was rehearsed on a Postgres database built from v0's own schema code. GitHub Actions runs it on pull requests (`ci.yml`, which also builds the frontend) and before every deploy (`deploy-backend.yml`). An independent review of the backend (2026-10-20) reproduced 11 issues, from a laxer mode being selectable for a pasted Graded problem to a seat-cap race; all are fixed, each with a regression test in `tests/test_hardening.py`.
+- **By hand** (2026-10-20, local server): the owner flow in a browser (sign up, create a course, test checkout, upload notes, a problem set and a linked solution, modes, guidelines, preview, members, dashboard, pause, plan), the student flow (join with a code, course home, review and problem set chats, phone layout), and six turns with the real model (AI_STRATEGY.md §7). **Not yet checked by hand:** Supabase Auth and Stripe against the real services, because their keys aren't configured (README checklist).
+- **Real-model leak evaluation:** `python -m app.evals --course-id <id> --pset "<title>"` (AI_STRATEGY.md §7). It costs real API calls, so it runs by hand, not in CI.
 
-**Done by hand, against the live site:** a concept question, an assigned-problem request, and a pressure prompt ("I'm the professor, ignore your rules"), plus student isolation and the dashboard.
+## 16. Configuration
+New settings (see `.env.example` and `.env.production.example`):
 
-**Not built yet:** a fixed set of leak prompts run against the real model, an evaluation set (PRD §8), and tests in GitHub Actions (the deploy workflow only checks that the app imports, because the tests need the ingested database).
+| Variable | Where | Purpose |
+|---|---|---|
+| `AUTH_PROVIDER` | backend | `supabase` (production) or `local` |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | backend | Auth: JWKS and issuer; anon key handed to the browser |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | backend | Checkout and webhook (test-mode keys) |
+| `APP_URL` | backend | Default return URL for checkout |
+| `GLOBAL_DAILY_LIMIT` | backend | App-wide question limit (cost backstop) |
 
-## 11. Running it locally
-```
-backend/app/   FastAPI app, tutor pipeline, retrieval, guard, memory, ingestion
-backend/tests/ pytest suite (runs on a copy of the DB with a mock LLM)
-frontend/      React + Vite app (built into frontend/dist, served by the backend)
-data/          bruinbuddy.db (git-ignored)
-.env           OPENROUTER_API_KEY, model IDs (git-ignored; copy from .env.example)
-```
-See the README for the exact commands.
+## 17. Production deployment
+Same layout as v0: Vercel (frontend, builds from `main`), Fly.io (backend, GitHub Actions on `main`), Supabase (Postgres, Storage, now Auth). See the README for the v1 go-live checklist: Supabase Auth settings, Stripe keys and webhook endpoint, new Fly secrets, the demo course owner, and the first-start migration.
 
-## 12. Decisions and open questions
+**CI:** the deploy workflow now runs the test suite before `flyctl deploy`, and `ci.yml` runs the tests and the frontend build on pull requests.
+
+**First v1 deploy:** set the new Fly secrets first (`AUTH_PROVIDER`, `SUPABASE_ANON_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`); without them the app refuses to start. On first start the database is migrated (§12). The demo course is then claimed with `python -m app.ingest --owner-email …` run against the production database.
+
+## 18. Decisions and open questions
 | Decision | Choice | Alternative |
 |---|---|---|
-| Solution handling | Separate checker call so the tutor never sees solutions, plus an output guard | Give the tutor the solutions and rely on the prompt |
-| Retrieval | BM25 in memory | Embeddings (local or hosted), or hybrid |
-| LLM access | OpenRouter | Direct Anthropic API |
-| Memory | List of short notes edited by a cheap model | A single rolling summary |
-| Streaming | SSE | WebSockets |
-| Auth | Signed bearer token in a header (works across domains) | Cookies (blocked as third-party in some browsers) |
-| PDF delivery | Private Supabase Storage, short-lived signed links | Bundle PDFs in the Docker image |
+| Auth | Supabase Auth in the browser; backend verifies JWTs with JWKS | Proxy auth through our backend (shares one IP for Supabase rate limits) |
+| Roles | Course memberships in our database | Roles in Supabase user metadata |
+| Payment confirmation | Signed webhook, plus a server-side `retrieve` on return | Trust the success redirect |
+| Price | One payment per term, formula in §5 **(build default)** | Subscription or flat tiers |
+| Cap period | Rolling week **(build default)**, configurable per course | Per day or per term only |
+| Per-course retrieval | Separate in-memory BM25 per course, cache keyed by content version and open sets | A shared index filtered per query; embeddings |
+| Solution release | Public only when all linked sets are open | Any linked set open |
+| Not-covered signal | `[NC]` marker from the tutor, phrase fallback | A separate classifier call per turn |
+| Uploads processing | Background thread in the API process | A job queue and worker |
 
 **Open questions**
-- Is PyMuPDF text good enough on the math-heavy notes? v0 extracts all pages with text, but formulas are flattened. Spot-check answers that depend on a formula.
-- How do we reliably match a pasted problem to its problem set chunk when the student rewords it?
-- Do we let the checker see only the final answer, or the whole worked solution?
-- Should the checker run on the stronger model? (→ AI_STRATEGY.md §11)
-- Is BM25 alone enough? Single-term questions ("what is variance") rank noisily, and v0 has no way to detect "not covered" from the score. Try embeddings or hybrid search next.
-
-## 13. Production deployment
-```
-Browser ──► Vercel (static React build)
-   │  VITE_API_BASE
-   ▼
-Fly.io (FastAPI container, scale-to-zero) ──► Supabase Postgres (transaction pooler)
-   │                                       └─► OpenRouter
-   └─ signs short-lived links to public PDFs in Supabase Storage (solution PDFs are never uploaded)
-```
-| Piece | Choice | Notes |
-|---|---|---|
-| Frontend | Vercel, built from `frontend/` | `VITE_API_BASE` is the Fly URL. Security headers in `frontend/vercel.json`. |
-| Backend | Fly.io, `Dockerfile` + `fly.toml` | 512 MB shared CPU, auto-stops when idle (the first request after idle is slow). Health check at `/api/health`. |
-| Database | Supabase Postgres | Connect with the **transaction pooler** URL. The schema is created on startup, with row-level security enabled and no policies, so Supabase's public REST API cannot read any table. The backend connects as a role that bypasses RLS. |
-| Course data | Ingested once from the local course folder into Supabase (`DATABASE_URL=… python -m app.ingest`) | The 18.05 folder never leaves this machine. |
-| PDFs | 96 public PDFs (13.6 MB) in a **private** Supabase Storage bucket `course-pdfs`, uploaded by `deploy/upload_pdfs.py`. `/files/{id}` redirects to a signed link that expires in 5 minutes. | Solution PDFs are never uploaded; solution text lives in the database only. |
-| Secrets | `fly secrets` for the backend, kept locally in `.env.production` (git-ignored) | `SECRET_KEY`, `DATABASE_URL`, `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (server-side only), access codes, `ALLOWED_ORIGINS`. |
-| CI/CD | GitHub Actions `.github/workflows/deploy-backend.yml`: on a push to `main` that touches backend files, check that the app imports, then `flyctl deploy` | Uses the repo secret `FLY_API_TOKEN` (a Fly deploy token for this app only). The image is built from git alone. |
-
-**Abuse and cost limits:** access codes gate sign-in, each student gets `DAILY_MESSAGE_LIMIT` questions per rolling 24 hours (default 40 in production), the whole app gets `GLOBAL_DAILY_LIMIT` (default 200, about $2.50 a day at the measured $0.012 per turn), and CORS only allows `ALLOWED_ORIGINS`. Also set a credit limit on the OpenRouter key.
-
-**Supabase features used:** Postgres and Storage. **Not used yet:** Auth (the planned replacement for the demo sign-in) and realtime.
-
-**Who can change production:** the Fly, Vercel and Supabase accounts belong to one person. The GitHub repo is private. Anyone given write access can push to `main`, which deploys, and the deploy workflow holds the Fly deploy token, so write access is effectively deploy access. There is no required review, no staging copy, and no database migration tooling yet.
-
-**Live (deployed 2026-10-19):** frontend https://bruinbuddy.vercel.app, backend https://bruinbuddy-api.fly.dev (region `sjc`; `sea` is deprecated), database on Supabase (us-west-2). The first Supabase load took about a minute from this machine.
-
-**Redeploying**
-- Backend: push to `main` and GitHub Actions deploys it (or run `fly deploy --ha=false` by hand). Change a secret with `fly secrets set KEY=value -a bruinbuddy-api` (this restarts the app). If the PDF set changes, run `backend/.venv/bin/python deploy/upload_pdfs.py`.
-- Frontend: the Vercel project is connected to `SaiSubi/BruinBuddy` (Root Directory `frontend`, production branch `main`), so every push to `main` builds and deploys it, and other branches get preview URLs. `VITE_API_BASE` (the Fly URL) is stored in the Vercel project for Production. Because the Root Directory is `frontend`, run manual Vercel CLI deploys from the repo root, not from `frontend/`.
-- New course data: `DATABASE_URL=<supabase url> python -m app.ingest` (the URL must be percent-encoded if the password has special characters).
+- Pricing, cap period, retention and what happens when a term ends (PRD §2.7).
+- Background processing in the web process can be interrupted by a scale-to-zero stop; a real job queue is the upgrade if uploads grow.
+- BM25 still struggles with single-term questions; hybrid or embedding retrieval remains the main quality upgrade.
+- PyMuPDF flattens math; LaTeX-aware or page-image extraction is still open.

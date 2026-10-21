@@ -1,7 +1,7 @@
-"""BM25 retrieval over public chunks, plus helpers that touch tutor-only solutions.
+"""BM25 retrieval over one course's public chunks, plus the one helper that touches tutor-only solutions.
 
-Only `Index` (public chunks) is ever used to produce citations or tutor context.
-Solution chunks are reachable only through `solution_chunks_for`, which feeds the checker.
+An `Index` only ever holds chunks students may see (knowledge.py decides which). Protected solution chunks are
+reachable only through `solution_chunks_for`, which feeds the checker and is never shown to the tutor.
 """
 import math
 import re
@@ -36,7 +36,6 @@ class Chunk:
     doc_id: str
     title: str
     kind: str
-    file_name: str
     page: int
     text: str
 
@@ -44,25 +43,21 @@ class Chunk:
 class Index:
     k1, b = 1.5, 0.75
 
-    def __init__(self) -> None:
-        with db() as conn:
-            rows = conn.execute(
-                "SELECT c.id, c.doc_id, d.title, d.kind, d.file_name, c.page, c.text FROM chunks c "
-                "JOIN documents d ON d.id=c.doc_id WHERE c.tutor_only=0 AND d.tutor_only=0").fetchall()
-        self.chunks = [Chunk(id=r["id"], doc_id=r["doc_id"], title=r["title"], kind=r["kind"],
-                             file_name=r["file_name"], page=r["page"], text=r["text"]) for r in rows]
-        self.by_id = {c.id: c for c in self.chunks}
-        self.tok = [tokens((c.title + " ") * 3 + c.text) for c in self.chunks]
+    def __init__(self, chunks: list[Chunk]) -> None:
+        self.chunks = chunks
+        self.by_id = {c.id: c for c in chunks}
+        self.tok = [tokens((c.title + " ") * 3 + c.text) for c in chunks]
         self.dl = [len(t) for t in self.tok]
         self.avgdl = (sum(self.dl) / len(self.dl)) if self.dl else 1.0
         self.post: dict[str, list[tuple[int, int]]] = defaultdict(list)
         for i, t in enumerate(self.tok):
             for term, tf in Counter(t).items():
                 self.post[term].append((i, tf))
-        self.n = len(self.chunks)
+        self.n = len(chunks)
         self.tokset = [set(t) for t in self.tok]
 
-    def search(self, query: str, k: int = 6, kinds: set[str] | None = None) -> list[tuple[float, Chunk]]:
+    def search(self, query: str, k: int = 6, *, exclude_docs: set[str] | frozenset = frozenset(),
+               only_docs: set[str] | None = None) -> list[tuple[float, Chunk]]:
         scores: dict[int, float] = defaultdict(float)
         for term in set(tokens(query)):
             plist = self.post.get(term)
@@ -72,18 +67,28 @@ class Index:
             for i, tf in plist:
                 norm = tf + self.k1 * (1 - self.b + self.b * self.dl[i] / self.avgdl)
                 scores[i] += idf * tf * (self.k1 + 1) / norm
-        ranked = sorted(scores.items(), key=lambda kv: -kv[1])
         out = []
-        for i, s in ranked:
+        for i, s in sorted(scores.items(), key=lambda kv: -kv[1]):
             c = self.chunks[i]
-            if kinds and c.kind not in kinds:
+            if c.doc_id in exclude_docs or (only_docs is not None and c.doc_id not in only_docs):
                 continue
             out.append((s, c))
             if len(out) >= k:
                 break
         return out
 
-    # ---- assigned-problem detection -------------------------------------------------
+    def first_chunks(self, doc_id: str, k: int) -> list[Chunk]:
+        """The opening chunks of one document (used when a query matches nothing in a focused material)."""
+        return sorted((c for c in self.chunks if c.doc_id == doc_id), key=lambda c: (c.page, c.id))[:k]
+
+    def problem_chunks(self, doc_id: str, numbers: list[int], k: int = 2) -> list[Chunk]:
+        """Chunks of one problem set that contain the statement of "Problem N" for the numbers a student named."""
+        out = []
+        for n in numbers:
+            pat = re.compile(rf"(^|\n)\s*problem\s*0*{n}\b", re.I)
+            out += [c for c in self.first_chunks(doc_id, 50) if pat.search(c.text) and c not in out][:1]
+        return out[:k]
+
     def match_problem(self, message: str) -> tuple[Chunk | None, float]:
         """Best problem-set chunk whose text covers most of the message's content words."""
         q = set(tokens(message))
@@ -98,31 +103,14 @@ class Index:
                 best, best_cov = c, cov
         return best, best_cov
 
-    def problem_doc_from_reference(self, message: str) -> str | None:
-        """'pset 4', 'problem set 04', 'class 7 problem' -> doc id of that problem set."""
-        m = message.lower()
-        hit = re.search(r"(?:pset|problem\s*set|homework|hw)\s*#?\s*(\d{1,2})", m)
-        name = None
-        if hit:
-            name = f"pset{int(hit.group(1)):02d}.pdf"
-        else:
-            hit = re.search(r"class\s*#?\s*(\d{1,2})\s*(?:in[- ]class\s*)?(?:problem|pset)", m)
-            if hit:
-                name = f"class{int(hit.group(1)):02d}_pset.pdf"
-        if not name:
-            return None
-        with db() as conn:
-            row = conn.execute("SELECT id FROM documents WHERE file_name LIKE ? AND kind='problem_set'",
-                               (f"%{name}",)).fetchone()
-        return row["id"] if row else None
 
-
-def solution_chunks_for(problem_doc_id: str, message: str, k: int = 4) -> list[str]:
-    """Tutor-only. Returns the most relevant solution passages for the checker. Never shown to the tutor."""
+def solution_chunks_for(pset_id: str, message: str, k: int = 4, exclude_docs: set[str] = frozenset()) -> list[str]:
+    """Tutor-only. The most relevant passages of the solutions linked to a problem set, for the checker."""
     q = set(tokens(message))
     with db() as conn:
         rows = conn.execute(
-            "SELECT c.text FROM chunks c JOIN documents d ON d.id=c.doc_id "
-            "WHERE d.tutor_only=1 AND d.linked_doc_id=?", (problem_doc_id,)).fetchall()
+            "SELECT c.text, c.doc_id FROM chunks c JOIN solution_links l ON l.solution_id=c.doc_id "
+            "JOIN documents d ON d.id=c.doc_id WHERE l.pset_id=? AND d.status='ready'", (pset_id,)).fetchall()
+    rows = [r for r in rows if r["doc_id"] not in exclude_docs]
     scored = sorted(rows, key=lambda r: -len(q & set(tokens(r["text"]))))
     return [r["text"] for r in scored[:k]]

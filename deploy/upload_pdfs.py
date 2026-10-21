@@ -1,4 +1,5 @@
-"""Upload the public (citable) PDFs to the private Supabase Storage bucket.  Tutor-only solution PDFs are never uploaded.
+"""Upload the 18.05 demo course's public (citable) PDFs to the private Supabase Storage bucket. Its tutor-only solution
+PDFs are never uploaded. (Files professors upload through the app are stored by the app.)
 
 Reads the local ingested SQLite DB for the file list and SUPABASE_URL / SUPABASE_SERVICE_KEY from the environment
 or .env.production.  Safe to re-run (uploads overwrite).  From the repo root:
@@ -32,8 +33,9 @@ if key.startswith("eyJ"):
     headers["Authorization"] = f"Bearer {key}"
 
 con = sqlite3.connect(ROOT / "data" / "bruinbuddy.db")
-public = [r[0] for r in con.execute("SELECT file_name FROM documents WHERE tutor_only=0")]
-secret = {r[0] for r in con.execute("SELECT file_name FROM documents WHERE tutor_only=1")}
+# Only the 18.05 seed's files (storage_path IS NULL); professor uploads are stored by the app itself.
+public = [r[0] for r in con.execute("SELECT file_name FROM documents WHERE tutor_only=0 AND storage_path IS NULL")]
+secret = {r[0] for r in con.execute("SELECT file_name FROM documents WHERE tutor_only=1 AND storage_path IS NULL")}
 assert public and not (set(public) & secret), "a file is both public and tutor-only"
 assert not any("_sol" in n for n in public), "a solution file is marked public"
 
