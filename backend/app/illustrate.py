@@ -12,7 +12,13 @@ from .knowledge import CourseKnowledge
 from .retrieval import solution_chunks_for
 from .tutor import _llm_leak, _retrieve
 
-SKILLS = ("anatomy_isometric", "manim_3b1b", "explainer_diagram", "explainer_storyboard")
+SKILLS = (
+    "anatomy_isometric",
+    "manim_3b1b",
+    "explainer_diagram",
+    "explainer_storyboard",
+    "remotion_motion",
+)
 
 SKILL_META = {
     "anatomy_isometric": {
@@ -39,6 +45,12 @@ SKILL_META = {
         "modality": "explainer_video",
         "modality_label": "Whiteboard Explainer Video",
     },
+    "remotion_motion": {
+        "label": "Remotion Motion Graphics",
+        "repo": "haidrrrry/claude-remotion-skill",
+        "modality": "motion_graphics",
+        "modality_label": "Kinetic Motion Graphics Video",
+    },
 }
 
 ROUTE_SYSTEM = """You are the Visual Skill Router for BruinBuddy, an AI university course tutor.
@@ -52,10 +64,12 @@ Given a student-tutor conversation excerpt and course material excerpts, choose 
    Choose for step-by-step processes, decision trees, Markov chains, hypothesis testing workflows (H0 -> test statistic -> p-value -> conclusion), or multi-node flowcharts.
 4. "explainer_storyboard" (from iart-ai/explainer-video-skills explainer-video & whiteboard-animation):
    Choose for high-level conceptual overviews, definitions, intuition builders, or stroke-by-stroke whiteboard walkthroughs.
+5. "remotion_motion" (from haidrrrry/claude-remotion-skill):
+   Choose for kinetic typography breakdowns, animated metric cards and comparisons, spring-physics data storytelling, key formula highlights, or broadcast-grade motion graphics summaries.
 
 Reply with JSON only:
 {
-  "skill": "manim_3b1b" | "anatomy_isometric" | "explainer_diagram" | "explainer_storyboard",
+  "skill": "manim_3b1b" | "anatomy_isometric" | "explainer_diagram" | "explainer_storyboard" | "remotion_motion",
   "concept": "Short name of the concept (max 60 chars)",
   "title": "Engaging visual title (max 70 chars)",
   "rationale": "One sentence explaining why this visual skill and modality best explains the concept."
@@ -70,7 +84,7 @@ Generate a rich, accurate educational animation specification in JSON for the se
   "title": "Title of the figure/animation",
   "subtitle": "1-sentence intuition or core takeaway",
   "formula": "Key mathematical relation or invariant in plain/LaTeX-like notation (e.g. P(A|B) = P(B|A)P(A) / P(B))",
-  "template": "distribution" | "bayes_square" | "clt_galton" | "integral_area" | "isometric_rig" | "flow_diagram" | "whiteboard_story",
+  "template": "distribution" | "bayes_square" | "clt_galton" | "integral_area" | "isometric_rig" | "flow_diagram" | "whiteboard_story" | "remotion_kinetic",
   "param_label": "Name of interactive parameter (e.g. 'Probability p', 'Mean μ', 'Sample size n', 'Prior P(H)')",
   "param_min": 0.1,
   "param_max": 0.9,
@@ -129,6 +143,8 @@ GRADED_NOTE = (
 def heuristic_skill(text: str) -> str:
     """Fast keyword fallback if the model omits a valid skill name."""
     low = text.lower()
+    if any(w in low for w in ("remotion", "motion graphics", "kinetic", "spring", "card", "metric", "counter", "promo", "reel")):
+        return "remotion_motion"
     if any(w in low for w in ("galton", "urn", "machine", "apparatus", "bucket", "filter", "coin", "dice", "rig", "isometric", "physical")):
         return "anatomy_isometric"
     if any(w in low for w in ("workflow", "flowchart", "pipeline", "hypothesis test", "markov", "decision tree", "step by step", "state")):
@@ -140,6 +156,8 @@ def heuristic_skill(text: str) -> str:
 
 def _default_template_for_skill(skill: str, concept: str) -> str:
     low = concept.lower()
+    if skill == "remotion_motion":
+        return "remotion_kinetic"
     if skill == "anatomy_isometric":
         if "galton" in low or "binomial" in low or "central limit" in low:
             return "clt_galton"
@@ -158,7 +176,16 @@ def _default_template_for_skill(skill: str, concept: str) -> str:
 def _normalize_spec(raw_spec: dict, skill: str, concept: str, title: str) -> dict:
     """Ensure all required fields and beats exist with safe bounds so the animation player never crashes."""
     template = raw_spec.get("template")
-    if template not in ("distribution", "bayes_square", "clt_galton", "integral_area", "isometric_rig", "flow_diagram", "whiteboard_story"):
+    if template not in (
+        "distribution",
+        "bayes_square",
+        "clt_galton",
+        "integral_area",
+        "isometric_rig",
+        "flow_diagram",
+        "whiteboard_story",
+        "remotion_kinetic",
+    ):
         template = _default_template_for_skill(skill, concept)
 
     beats = raw_spec.get("beats")
@@ -564,8 +591,8 @@ def build_artifact_html(spec: dict) -> str:
 
   <div class="controls">
     <div class="transport">
-      <button class="primary" id="btn-play" type="button">⏸ Pause</button>
-      <button id="btn-restart" type="button">↺ Replay</button>
+      <button class="primary" id="btn-play" type="button">Pause</button>
+      <button id="btn-restart" type="button">Replay</button>
       <div class="beats-strip" id="beats-strip"></div>
     </div>
     <div class="sliders">
@@ -669,12 +696,12 @@ rngP2.oninput();
 
 btnPlay.onclick = () => {{
   playing = !playing;
-  btnPlay.textContent = playing ? '⏸ Pause' : '▶ Play';
+  btnPlay.textContent = playing ? 'Pause' : 'Play';
 }};
 btnRestart.onclick = () => {{
   setBeat(0);
   playing = true;
-  btnPlay.textContent = '⏸ Pause';
+  btnPlay.textContent = 'Pause';
 }};
 
 // Isometric projection helper (from wheresryan22/anatomy: ±30 deg ground axes)
@@ -1064,6 +1091,207 @@ function renderExplainerDiagram(t, beatProgress) {{
   liveReadout.textContent = `Beat ${{beatIdx + 1}}/${{SPEC.beats.length}} · ${{SPEC.beats[beatIdx]?.highlight || ''}}`;
 }}
 
+// 4. Remotion Motion Graphics Engine (haidrrrry/claude-remotion-skill)
+// Implements 30fps damped spring physics, compound entrances, staggered kinetic words & cards,
+// and the mandatory 5-layer scene stack (BackgroundMesh -> Assets -> Typography -> ColorGrade -> Vignette+Grain).
+function remotionSpring(frameVal, damping = 14, stiffness = 160, mass = 0.6) {{
+  if (frameVal <= 0) return 0;
+  const tSec = frameVal / 30;
+  const omega0 = Math.sqrt(stiffness / mass);
+  const zeta = damping / (2 * Math.sqrt(stiffness * mass));
+  if (zeta < 1) {{
+    const omegaD = omega0 * Math.sqrt(1 - zeta * zeta);
+    return 1 - Math.exp(-zeta * omega0 * tSec) * (Math.cos(omegaD * tSec) + (zeta * omega0 / omegaD) * Math.sin(omegaD * tSec));
+  }}
+  return 1 - (1 + omega0 * tSec) * Math.exp(-omega0 * tSec);
+}}
+
+function easeOutExpo(x) {{
+  const c = Math.max(0, Math.min(1, x));
+  return c === 1 ? 1 : 1 - Math.pow(2, -10 * c);
+}}
+
+function renderRemotionMotion(t, beatProgress) {{
+  const W = canvas.width, H = canvas.height;
+  const f = beatProgress * BEAT_DURATION * 30; // local 30fps frame inside current beat
+  const normP = (p1 - SPEC.param_min) / Math.max(0.001, SPEC.param_max - SPEC.param_min);
+  const normS = (p2 - SPEC.secondary_min) / Math.max(1, SPEC.secondary_max - SPEC.secondary_min);
+
+  // LAYER 1: BackgroundMesh (#0A0A0F deep void + 2 drifting radial glow orbs + subtle grid)
+  ctx.fillStyle = '#0A0A0F';
+  ctx.fillRect(0, 0, W, H);
+
+  const orb1X = W * 0.28 + Math.sin(t * 0.45) * 32;
+  const orb1Y = H * 0.36 + Math.cos(t * 0.35) * 20;
+  const g1 = ctx.createRadialGradient(orb1X, orb1Y, 10, orb1X, orb1Y, 270);
+  g1.addColorStop(0, 'rgba(255, 94, 26, 0.16)');
+  g1.addColorStop(1, 'rgba(255, 94, 26, 0)');
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, W, H);
+
+  const orb2X = W * 0.74 + Math.cos(t * 0.38) * 28;
+  const orb2Y = H * 0.64 + Math.sin(t * 0.42) * 22;
+  const g2 = ctx.createRadialGradient(orb2X, orb2Y, 10, orb2X, orb2Y, 260);
+  g2.addColorStop(0, 'rgba(99, 102, 241, 0.16)');
+  g2.addColorStop(1, 'rgba(99, 102, 241, 0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx < W; gx += 64) {{
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+  }}
+  for (let gy = 0; gy < H; gy += 64) {{
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+  }}
+
+  // LAYER 2: Scene Assets — Staggered frosted glass metric cards with compound spring entrance + idle breathing
+  const cards = SPEC.nodes.slice(0, 4);
+  const cardW = (W - 96 - (cards.length - 1) * 14) / Math.max(1, cards.length);
+  const cardH = 148;
+  const baseY = H - cardH - 52;
+
+  cards.forEach((c, i) => {{
+    const delayFrames = 6 + i * 5;
+    const s = remotionSpring(f - delayFrames, 14, 160, 0.6);
+    const alpha = Math.max(0, Math.min(1, s));
+    const breathY = Math.sin(t * 2.1 + i * 1.1) * 2.5;
+    const translateY = (1 - s) * 28 + breathY;
+    const scale = 0.92 + 0.08 * s;
+    const cx = 48 + i * (cardW + 14) + cardW / 2;
+    const cy = baseY + cardH / 2 + translateY;
+    const isFocused = (i === beatIdx % cards.length);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = isFocused ? 'rgba(255, 255, 255, 0.065)' : 'rgba(255, 255, 255, 0.03)';
+    ctx.strokeStyle = isFocused ? '#FF5E1A' : 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = isFocused ? 2 : 1;
+    ctx.beginPath();
+    ctx.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    // Accent pill tag
+    ctx.fillStyle = isFocused ? '#FF5E1A' : '#6366F1';
+    ctx.font = '700 10px Inter, -apple-system, sans-serif';
+    ctx.fillText(`METRIC 0${{i + 1}}`, -cardW / 2 + 14, -cardH / 2 + 24);
+
+    // Card title
+    ctx.fillStyle = '#F8FAFC';
+    ctx.font = '700 13px Inter, -apple-system, sans-serif';
+    ctx.fillText(c.label.slice(0, 18), -cardW / 2 + 14, -cardH / 2 + 46);
+
+    // Card subtitle
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '500 11px Inter, -apple-system, sans-serif';
+    ctx.fillText((c.sub || 'Dynamic weight').slice(0, 22), -cardW / 2 + 14, -cardH / 2 + 65);
+
+    // Animated spring metric bar inside card
+    const rawMetric = Math.max(0.12, Math.min(0.96, ((normP * (i + 1) * 0.42 + normS * 0.35 + (i * 0.19)) % 0.88) + 0.12));
+    const barProgress = easeOutExpo(Math.max(0, (f - delayFrames - 4) / 26)) * rawMetric;
+    const trackW = cardW - 28;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.beginPath();
+    ctx.roundRect(-cardW / 2 + 14, cardH / 2 - 44, trackW, 7, 4);
+    ctx.fill();
+
+    const barGrad = ctx.createLinearGradient(-cardW / 2 + 14, 0, -cardW / 2 + 14 + trackW, 0);
+    barGrad.addColorStop(0, '#FF5E1A');
+    barGrad.addColorStop(1, '#FF8A4C');
+    ctx.fillStyle = barGrad;
+    ctx.beginPath();
+    ctx.roundRect(-cardW / 2 + 14, cardH / 2 - 44, Math.max(6, trackW * barProgress), 7, 4);
+    ctx.fill();
+
+    // Tabular animated percentage readout
+    ctx.fillStyle = '#F8FAFC';
+    ctx.font = '700 15px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillText(`${{(barProgress * 100).toFixed(1)}}%`, -cardW / 2 + 14, cardH / 2 - 16);
+
+    ctx.restore();
+  }});
+
+  // LAYER 3: Kinetic Typography (Word-by-word staggered spring reveal + animated hero counter)
+  const beat = SPEC.beats[beatIdx] || SPEC.beats[0];
+  const headlineWords = (beat.heading || SPEC.title).split(/\\s+/).slice(0, 7);
+  ctx.save();
+  ctx.font = '800 28px Inter, -apple-system, sans-serif';
+  let cursorX = 48;
+  const headlineY = 142;
+  headlineWords.forEach((word, wi) => {{
+    const ws = remotionSpring(f - wi * 3, 12, 200, 0.5);
+    const wAlpha = Math.max(0, Math.min(1, ws));
+    const wY = headlineY + (1 - ws) * 20;
+    ctx.save();
+    ctx.globalAlpha = wAlpha;
+    ctx.fillStyle = wi === headlineWords.length - 1 ? '#FF5E1A' : '#F8FAFC';
+    ctx.fillText(word, cursorX, wY);
+    ctx.restore();
+    cursorX += ctx.measureText(word + ' ').width;
+  }});
+
+  // Subtitle / highlight pill with spring entrance
+  const subSpring = remotionSpring(f - 10, 16, 120, 0.8);
+  ctx.globalAlpha = Math.max(0, Math.min(1, subSpring));
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '500 14px Inter, -apple-system, sans-serif';
+  ctx.fillText((beat.caption || SPEC.subtitle).slice(0, 76), 48, 174 + (1 - subSpring) * 12);
+
+  // Animated Hero Counter Card on top-right
+  const counterProgress = easeOutExpo(Math.min(1, f / 32));
+  const targetVal = (p1 * 100 * (1 + beatIdx * 0.15));
+  const currentVal = (targetVal * counterProgress).toFixed(1);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.strokeStyle = 'rgba(255, 94, 26, 0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(W - 228, 92, 180, 86, 12);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '700 10px Inter, -apple-system, sans-serif';
+  ctx.fillText((beat.highlight || 'LIVE INDEX').toUpperCase().slice(0, 22), W - 212, 114);
+
+  ctx.fillStyle = '#FF5E1A';
+  ctx.font = '800 28px "JetBrains Mono", ui-monospace, monospace';
+  ctx.fillText(`${{currentVal}}`, W - 212, 150);
+
+  ctx.fillStyle = '#10B981';
+  ctx.font = '600 11px "JetBrains Mono", ui-monospace, monospace';
+  ctx.fillText(`N=${{Math.round(p2)}} · 30fps`, W - 212, 168);
+  ctx.restore();
+
+  // LAYER 4: ColorGrade (subtle warm/cool split-tone atmospheric wash)
+  const grade = ctx.createLinearGradient(0, 0, W, H);
+  grade.addColorStop(0, 'rgba(255, 94, 26, 0.03)');
+  grade.addColorStop(1, 'rgba(99, 102, 241, 0.04)');
+  ctx.fillStyle = grade;
+  ctx.fillRect(0, 0, W, H);
+
+  // LAYER 5: Vignette + Film Grain (mandatory final Remotion layer)
+  const vig = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.25, W * 0.5, H * 0.5, W * 0.65);
+  vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  vig.addColorStop(1, 'rgba(0, 0, 0, 0.48)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+  const seed = Math.floor(t * 30);
+  for (let g = 0; g < 45; g++) {{
+    const gx = ((seed * 37 + g * 173) % W);
+    const gy = ((seed * 53 + g * 211) % H);
+    ctx.fillRect(gx, gy, 1.5, 1.5);
+  }}
+
+  liveReadout.textContent = `Remotion 30fps · Frame ${{Math.round(f)}} · p=${{p1.toFixed(2)}}`;
+}}
+
 function frame(now) {{
   const dt = Math.min(0.1, (now - lastTs) / 1000);
   lastTs = now;
@@ -1079,7 +1307,9 @@ function frame(now) {{
   ctx.fillStyle = '#111517';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (SPEC.skill === 'anatomy_isometric' || SPEC.template === 'clt_galton' || SPEC.template === 'isometric_rig') {{
+  if (SPEC.skill === 'remotion_motion' || SPEC.template === 'remotion_kinetic') {{
+    renderRemotionMotion(t, beatProgress);
+  }} else if (SPEC.skill === 'anatomy_isometric' || SPEC.template === 'clt_galton' || SPEC.template === 'isometric_rig') {{
     renderAnatomyIsometric(t);
   }} else if (SPEC.skill === 'explainer_diagram' || SPEC.skill === 'explainer_storyboard' || SPEC.template === 'flow_diagram' || SPEC.template === 'whiteboard_story') {{
     renderExplainerDiagram(t, beatProgress);

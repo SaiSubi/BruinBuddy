@@ -8,6 +8,7 @@ const SKILL_OPTIONS = [
   { value: 'anatomy_isometric', label: 'Anatomy · Isometric Apparatus' },
   { value: 'explainer_diagram', label: 'Diagram Animation · Flowchart' },
   { value: 'explainer_storyboard', label: 'Explainer Video · Whiteboard' },
+  { value: 'remotion_motion', label: 'Remotion · Motion Graphics Video' },
 ]
 
 function slugify(text) {

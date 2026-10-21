@@ -169,7 +169,9 @@ def _mock_complete(purpose: str, messages: list[dict], attr: dict | None) -> str
         return json.dumps({"category": "", "warning": ""})
     if purpose == "illustrate_route":
         low = last.lower()
-        if any(w in low for w in ("galton", "urn", "machine", "apparatus", "coin", "dice", "isometric")):
+        if any(w in low for w in ("remotion", "motion graphics", "kinetic", "spring", "metric", "counter")):
+            skill = "remotion_motion"
+        elif any(w in low for w in ("galton", "urn", "machine", "apparatus", "coin", "dice", "isometric")):
             skill = "anatomy_isometric"
         elif any(w in low for w in ("workflow", "flowchart", "pipeline", "hypothesis", "markov", "step")):
             skill = "explainer_diagram"
