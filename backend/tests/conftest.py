@@ -17,7 +17,8 @@ else:
     os.environ["DATABASE_URL"] = ""
 os.environ.update({"BB_MOCK_LLM": "1", "BB_SYNC_JOBS": "1", "AUTH_PROVIDER": "local", "ENV": "",
                    "BB_UPLOAD_DIR": str(_tmp / "uploads"), "STRIPE_SECRET_KEY": "", "STRIPE_WEBHOOK_SECRET": "",
-                   "SUPABASE_URL": "", "SUPABASE_SERVICE_KEY": "", "SUPABASE_ANON_KEY": "", "TUTOR_FALLBACK_MODEL": ""})
+                   "SUPABASE_URL": "", "SUPABASE_SERVICE_KEY": "", "SUPABASE_ANON_KEY": "", "TUTOR_FALLBACK_MODEL": "",
+                   "LANGFUSE_PUBLIC_KEY": "", "LANGFUSE_SECRET_KEY": ""})
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

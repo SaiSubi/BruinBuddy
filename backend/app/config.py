@@ -26,6 +26,10 @@ EMBED_MIN_SIMILARITY = float(os.getenv("EMBED_MIN_SIMILARITY", "0.35"))
 MOCK_LLM = os.getenv("BB_MOCK_LLM", "0") == "1"
 LLM_TIMEOUT_SECONDS = 60
 SYNC_JOBS = os.getenv("BB_SYNC_JOBS", "0") == "1"  # tests: run background jobs inline
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "").strip()  # optional tracing (tracing.py); off if empty
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "").strip()
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://us.cloud.langfuse.com").strip()
+LANGFUSE_SAMPLE_RATE = float(os.getenv("LANGFUSE_SAMPLE_RATE", "1.0"))  # share of answers traced (free-tier volume)
 
 TOP_K = 6
 MIN_RETRIEVAL_SCORE = 3.0  # BM25 is not calibrated: this only drops near-empty matches; the tutor judges relevance

@@ -15,7 +15,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from . import config, llm
+from . import config, llm, tracing
 from .accounts import current_user
 from .chats import _check_turn_gates
 from .courses import Member, get_member, get_staff, member_of, pause_state
@@ -366,7 +366,8 @@ def post_turn(assignment_id: int, body: TurnIn, user: dict = Depends(current_use
 
     cps, k, states = a["checkpoints"], sub["current_checkpoint"], _states(sub)
     cp = cps[k]
-    attr = {"course_id": a["course_id"], "user_id": user["id"], "chat_id": None}
+    trace = tracing.Trace("assignment_turn", {"course_id": a["course_id"], "user_id": user["id"], "chat_id": None}, text)
+    attr = trace.attr
     try:
         verdict = {"passed": False, "feedback": ""} if body.hint else _verify(a, cp, history, text, attr)
         passed = verdict["passed"]
@@ -392,14 +393,17 @@ def post_turn(assignment_id: int, body: TurnIn, user: dict = Depends(current_use
                             cp["hint"] if body.hint else "", text])
         leaked = bool(protected) and (any(short_answer_leaks(reply, t, public) for t in protected)
                                       or _llm_leak(protected, reply, attr))
-    except llm.LLMUnavailable as e:
-        raise HTTPException(503, str(e))
-    except HTTPException:
-        raise
-    except Exception:
+    except Exception as e:
+        trace.end(None, error=type(e).__name__)
+        if isinstance(e, llm.LLMUnavailable):
+            raise HTTPException(503, str(e))
+        if isinstance(e, HTTPException):
+            raise
         raise HTTPException(502, "Something went wrong with the tutor. Try again.")
     if leaked:
         reply = _safe_reply(stage, a, k)
+    trace.end(reply, tags=["leak-blocked"] if leaked else None, assignment_id=assignment_id, checkpoint=k,
+              stage=stage, passed=passed, leaked=leaked, hint=body.hint)
 
     with db() as conn:
         lock_row(conn, "assignment_submissions", sub["id"])  # two tabs can't both award the same checkpoint

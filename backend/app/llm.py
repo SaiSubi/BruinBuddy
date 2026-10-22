@@ -11,7 +11,7 @@ from typing import Iterator
 
 from openai import OpenAI
 
-from . import config
+from . import config, tracing
 from .db import db, now
 
 
@@ -49,14 +49,21 @@ def log_usage(purpose: str, model: str, prompt_tokens: int | None, completion_to
         pass  # logging must never break a reply
 
 
-def _log(purpose: str, model: str, usage, attr: dict | None, counted: bool = True) -> None:
-    if not usage:
-        return
+def _numbers(usage) -> tuple[int | None, int | None, float | None]:
     cost = getattr(usage, "cost", None)
     if cost is None and getattr(usage, "model_extra", None):
         cost = usage.model_extra.get("cost")
-    log_usage(purpose, model, getattr(usage, "prompt_tokens", None), getattr(usage, "completion_tokens", None),
-              cost, attr, counted)
+    return getattr(usage, "prompt_tokens", None), getattr(usage, "completion_tokens", None), cost
+
+
+def _log(purpose: str, model: str, usage, attr: dict | None, counted: bool = True,
+         g: tracing.Generation | None = None) -> None:
+    if not usage:
+        return
+    numbers = _numbers(usage)
+    if g:
+        g.usage = numbers
+    log_usage(purpose, model, *numbers, attr, counted)
 
 
 def _extra(effort: str) -> dict:
@@ -65,22 +72,25 @@ def _extra(effort: str) -> dict:
 
 def complete(purpose: str, messages: list[dict], *, model: str | None = None, max_tokens: int = 600,
              effort: str = "low", attr: dict | None) -> str:
-    if config.MOCK_LLM:
-        return _mock_complete(purpose, messages, attr)
     model = model or config.HELPER_MODEL
-    r = client().chat.completions.create(model=model, messages=messages, max_tokens=max_tokens,
-                                         extra_body=_extra(effort))
-    _log(purpose, model, r.usage, attr)
-    return r.choices[0].message.content or ""
+    with tracing.generation(purpose, messages, model, attr) as g:
+        if config.MOCK_LLM:
+            g.output = _mock_complete(purpose, messages, attr)
+            return g.output
+        r = client().chat.completions.create(model=model, messages=messages, max_tokens=max_tokens,
+                                             extra_body=_extra(effort))
+        _log(purpose, model, r.usage, attr, g=g)
+        g.output = r.choices[0].message.content or ""
+        return g.output
 
 
 def _stream_once(purpose: str, messages: list[dict], model: str, max_tokens: int, effort: str,
-                 attr: dict | None) -> Iterator[str]:
+                 attr: dict | None, g: tracing.Generation) -> Iterator[str]:
     s = client().chat.completions.create(model=model, messages=messages, max_tokens=max_tokens, stream=True,
                                          stream_options={"include_usage": True}, extra_body=_extra(effort))
     for ev in s:
         if ev.usage:
-            _log(purpose, model, ev.usage, attr)
+            _log(purpose, model, ev.usage, attr, g=g)
         if ev.choices and ev.choices[0].delta.content:
             yield ev.choices[0].delta.content
 
@@ -88,22 +98,31 @@ def _stream_once(purpose: str, messages: list[dict], model: str, max_tokens: int
 def stream(purpose: str, messages: list[dict], *, model: str | None = None, max_tokens: int = 1500,
            effort: str = "medium", attr: dict | None = None) -> Iterator[str]:
     """Stream a reply. If the model fails before sending any text and TUTOR_FALLBACK_MODEL is set, retry once."""
-    if config.MOCK_LLM:
-        yield from _mock_stream(messages, attr)
-        return
     model = model or config.TUTOR_MODEL
-    sent = False
-    try:
-        for delta in _stream_once(purpose, messages, model, max_tokens, effort, attr):
-            sent = True
-            yield delta
-    except LLMUnavailable:
-        raise
-    except Exception:
-        fallback = config.TUTOR_FALLBACK_MODEL
-        if sent or not fallback or fallback == model:
-            raise
-        yield from _stream_once(purpose, messages, fallback, max_tokens, effort, attr)
+    parts: list[str] = []
+    with tracing.generation(purpose, messages, model, attr) as g:
+        try:
+            if config.MOCK_LLM:
+                for delta in _mock_stream(messages, attr):
+                    parts.append(delta)
+                    yield delta
+                return
+            try:
+                for delta in _stream_once(purpose, messages, model, max_tokens, effort, attr, g):
+                    parts.append(delta)
+                    yield delta
+            except LLMUnavailable:
+                raise
+            except Exception:
+                fallback = config.TUTOR_FALLBACK_MODEL
+                if parts or not fallback or fallback == model:
+                    raise
+                g.model = fallback
+                for delta in _stream_once(purpose, messages, fallback, max_tokens, effort, attr, g):
+                    parts.append(delta)
+                    yield delta
+        finally:
+            g.output = "".join(parts)
 
 
 def can_embed() -> bool:

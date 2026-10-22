@@ -10,3 +10,4 @@ stripe>=10              # Stripe Checkout (test mode) and webhook signatures
 python-multipart>=0.0.9 # course material uploads
 pymupdf>=1.24           # PDF text extraction for uploads (and the 18.05 seed)
 numpy>=1.26             # in-memory embedding search (hybrid retrieval)
+langfuse>=3.15,<4       # optional answer tracing (tracing.py); idle without keys
