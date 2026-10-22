@@ -1,17 +1,31 @@
 import { useState } from 'react'
 import { useAccessibility } from './accessibility.jsx'
-import { canResetPassword, sendPasswordReset, signIn, signInWithGoogle, signUp, updatePassword } from './auth.js'
+import {
+  canResetPassword, lastRole, rememberRole, sendPasswordReset, signIn, signInWithGoogle, signUp, updatePassword,
+} from './auth.js'
 import { Banner, ErrorText, useAction } from './ui.jsx'
 
-// Log in, create an account, forgot password, and set a new password (after the emailed reset link).
+const ROLES = {
+  student: {
+    title: 'I am a Student',
+    desc: 'Join a course with your class code, ask the AI Tutor, and generate concept animations.',
+  },
+  instructor: {
+    title: 'I am an Instructor / Tutor',
+    desc: 'Create and manage courses, upload materials, set problem modes, and view analytics.',
+  },
+}
+
+// Student or instructor first, then log in, create an account (email or Google), forgot password, and set a new
+// password (after the emailed reset link). The role only shapes a new account; existing ones keep theirs.
 export default function AuthScreen({ cfg, notice, initialMode = 'login', onSignedIn, onDone }) {
   const [mode, setMode] = useState(initialMode)
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', account_type: 'student' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', account_type: lastRole() })
   const [info, setInfo] = useState('')
   const { busy, error, run, setError } = useAction()
   const { openA11yModal, activeBadgeCount } = useAccessibility()
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
-  const setRole = (role) => setForm((prev) => ({ ...prev, account_type: role }))
+  const setRole = (role) => { if (role) rememberRole(role); setForm((prev) => ({ ...prev, account_type: role })) }
   const go = (m) => { setMode(m); setError(null); setInfo('') }
   const google = cfg.auth.google
 
@@ -41,6 +55,8 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
   }
 
   const titles = { login: 'Log in', signup: 'Create your account', forgot: 'Reset your password', reset: 'Set a new password' }
+  const role = form.account_type
+  const choosingRole = !role && (mode === 'login' || mode === 'signup')
   return (
     <main className="signin">
       <div className="signin-top-a11y">
@@ -57,11 +73,31 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
         <p className="muted">An AI tutor & visual concept studio that teaches from your course’s own materials.</p>
         {notice && <Banner kind="warning">{notice}</Banner>}
         {info && <Banner>{info}</Banner>}
+        {choosingRole ? (
+          <>
+            <h2 className="formtitle">Who’s signing in?</h2>
+            <div className="role-selector-grid">
+              {Object.entries(ROLES).map(([key, r]) => (
+                <button key={key} type="button" className="role-option-card" onClick={() => setRole(key)}>
+                  <span className="role-option-title">{r.title}</span>
+                  <span className="role-option-desc">{r.desc}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
         <h2 className="formtitle">{titles[mode]}</h2>
+        {role && (mode === 'login' || mode === 'signup') && (
+          <p className="muted small role-chosen">
+            {mode === 'login' ? 'Logging in' : 'Signing up'} as {role === 'student' ? 'a student' : 'an instructor'} ·{' '}
+            <button type="button" className="link" onClick={() => setRole('')}>Change</button>
+          </p>
+        )}
 
         {google && (mode === 'login' || mode === 'signup') && (
           <>
-            <button type="button" className="secondary" onClick={() => run(signInWithGoogle)} disabled={busy}>
+            <button type="button" className="secondary" onClick={() => run(() => signInWithGoogle(role))} disabled={busy}>
               Continue with Google
             </button>
             <div className="divider"><span>or</span></div>
@@ -70,34 +106,6 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
 
         {mode === 'signup' && (
           <>
-            <label>I am signing up as</label>
-            <div className="role-selector-grid" role="radiogroup" aria-label="Account role">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={form.account_type === 'student'}
-                className={`role-option-card ${form.account_type === 'student' ? 'active' : ''}`}
-                onClick={() => setRole('student')}
-              >
-                <span className="role-option-title">I am a Student</span>
-                <span className="role-option-desc">
-                  Join a course with your class code, ask the AI Tutor, and generate concept animations.
-                </span>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={form.account_type === 'instructor'}
-                className={`role-option-card ${form.account_type === 'instructor' ? 'active' : ''}`}
-                onClick={() => setRole('instructor')}
-              >
-                <span className="role-option-title">I am an Instructor / Tutor</span>
-                <span className="role-option-desc">
-                  Create and manage courses, upload materials, set problem modes, and view analytics.
-                </span>
-              </button>
-            </div>
-
             <label htmlFor="name">Your name</label>
             <input id="name" value={form.name} onChange={set('name')} autoComplete="name" maxLength={60} required />
           </>
@@ -126,6 +134,8 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
         <button className="primary" type="submit" disabled={busy}>
           {busy ? 'Please wait…' : { login: 'Log in', signup: 'Create account', forgot: 'Send reset link', reset: 'Save password' }[mode]}
         </button>
+          </>
+        )}
 
         <p className="small authlinks">
           {mode === 'login' && (

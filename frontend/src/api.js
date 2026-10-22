@@ -54,6 +54,7 @@ const c = (id) => `/api/courses/${id}`
 export const api = {
   config: () => get('/api/config'),
   me: () => get('/api/me'),
+  setAccountType: (account_type) => put('/api/me/account-type', { account_type }),
   quote: (plan) => post('/api/billing/quote', plan),
   createCourse: (body) => post('/api/courses', body),
   checkout: (id) => post(`${c(id)}/checkout`, { return_url: window.location.origin }),

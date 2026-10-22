@@ -76,6 +76,10 @@ Top bar: course switcher · Join or create · name and Log out · About
 │  BruinBuddy                      │
 │  An AI tutor for your course     │
 │                                  │
+│  Who's signing in?               │  (first step; remembered next time)
+│  [ I am a Student ] [ Instructor ]│
+│                                  │
+│  Logging in as a student · Change│
 │  [ Continue with Google ]        │  (only if Google is enabled)
 │  ───────────── or ─────────────  │
 │  Email     [__________________]  │
@@ -84,7 +88,7 @@ Top bar: course switcher · Join or create · name and Log out · About
 │  Forgot password? · Create account│
 └──────────────────────────────────┘
 ```
-Sign up adds a name field. "Forgot password" asks for an email and confirms that a link was sent. The link returns to a "Set a new password" form. In local development the Google button and password reset are hidden.
+The first step asks whether you are a student or an instructor; log in and sign up (email or Google) follow, and "Change" goes back to the choice. The role only shapes a new account: an email sign-up stores it with the account, and a Google sign-in carries it across the redirect and applies it to a fresh account (no courses yet) through `PUT /api/me/account-type`. Existing accounts keep their type. Students still join with the course code afterwards. Sign up adds a name field. "Forgot password" asks for an email and confirms that a link was sent. The link returns to a "Set a new password" form. In local development the Google button and password reset are hidden.
 
 ### 4.2 Create a course
 ```
