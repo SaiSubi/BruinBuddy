@@ -6,7 +6,7 @@ import html
 import json
 import re
 
-from . import config, llm
+from . import config, llm, tracing
 from .db import db, now
 from .knowledge import CourseKnowledge
 from .retrieval import solution_chunks_for
@@ -1430,8 +1430,17 @@ def generate_illustration(
     preferred_skill: str = "auto",
 ) -> dict:
     """Route the chat concept to one of the 3 visual skill packs, check leak guards, and persist the illustration."""
-    course_id, chat_id = course["id"], chat["id"]
-    attr = {"course_id": course_id, "user_id": user_id, "chat_id": chat_id}
+    trace = tracing.Trace("illustration", {"course_id": course["id"], "user_id": user_id, "chat_id": chat["id"]},
+                          {"prompt": prompt, "preferred_skill": preferred_skill, "message_id": message_id})
+    try:
+        return _generate_illustration(kb, course, chat, user_id, message_id, prompt, preferred_skill, trace)
+    finally:
+        trace.end(error=True)  # no-op once the illustration ended normally
+
+
+def _generate_illustration(kb: CourseKnowledge, course: dict, chat: dict, user_id: int, message_id: int | None,
+                           prompt: str | None, preferred_skill: str, trace: tracing.Trace) -> dict:
+    course_id, chat_id, attr = course["id"], chat["id"], trace.attr
 
     with db() as conn:
         if message_id:
@@ -1558,6 +1567,11 @@ def generate_illustration(
             ),
         ).fetchone()["id"]
 
+    trace.end({"concept": concept, "title": spec["title"], "skill": skill, "rationale": rationale},
+              tags=[f"skill:{skill}", f"mode:{mode or 'none'}"] + (["leak-blocked"] if leaked else []),
+              illustration_id=ill_id, request=latest_text[:300], skill=skill, modality=modality,
+              routed=preferred_skill not in SKILLS, mode=mode, problem_doc=problem_doc, leaked=leaked,
+              message_id=target_msg_id, retrieved=[{"chunk_id": c.id, "title": c.title, "page": c.page} for c in chunks])
     return {
         "id": ill_id,
         "chat_id": chat_id,
