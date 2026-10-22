@@ -1,6 +1,7 @@
 """Langfuse tracing (tracing.py) against a fake client: one trace per answer, solution text never sent, and a
 broken tracer never breaks a reply."""
 import json
+from contextlib import contextmanager
 
 import pytest
 
@@ -14,13 +15,13 @@ SOLUTION_PHRASE = "three favorable sequences"
 class FakeObs:
     def __init__(self, lf, kind, name, trace_id, **kw):
         self.lf, self.kind, self.name, self.trace_id, self.id = lf, kind, name, trace_id, f"obs{len(lf.obs)}"
-        self.fields, self.trace, self.ended = dict(kw), {}, False
+        self.fields, self.trace, self.ended = dict(kw), dict(lf.propagated), False
 
     def update(self, **kw):
         self.fields.update(kw)
 
-    def update_trace(self, **kw):
-        self.trace.update(kw)
+    def create_event(self, *, name, **kw):
+        return self.lf._new("event", name, trace_context={"trace_id": self.trace_id, "parent_span_id": self.id}, **kw)
 
     def end(self):
         self.ended = True
@@ -29,6 +30,7 @@ class FakeObs:
 class FakeLangfuse:
     def __init__(self):
         self.obs: list[FakeObs] = []
+        self.propagated: dict = {}
 
     def _new(self, kind, name, trace_context=None, **kw):
         tid = (trace_context or {}).get("trace_id") or f"t{len(self.obs)}"
@@ -36,11 +38,8 @@ class FakeLangfuse:
         self.obs.append(o)
         return o
 
-    def start_span(self, *, name, **kw):
-        return self._new("span", name, **kw)
-
-    def start_generation(self, *, name, **kw):
-        return self._new("generation", name, **kw)
+    def start_observation(self, *, name, as_type="span", **kw):
+        return self._new(as_type, name, **kw)
 
     def flush(self):
         pass
@@ -49,7 +48,15 @@ class FakeLangfuse:
 @pytest.fixture
 def lf(monkeypatch):
     fake = FakeLangfuse()
+
+    @contextmanager
+    def propagate(**fields):  # langfuse.propagate_attributes: trace fields for observations created inside
+        fake.propagated = {k: v for k, v in fields.items() if v is not None}
+        yield
+        fake.propagated = {}
+
     monkeypatch.setattr(tracing, "_client", fake)
+    monkeypatch.setattr(tracing, "_propagate", propagate)
     return fake
 
 
@@ -61,11 +68,13 @@ def test_a_tutor_turn_is_one_trace(app, lf):
     done = ask(s, chat, "Why does Bayes theorem need a prior?")[-1]["message"]
     root = next(o for o in lf.obs if o.kind == "span")
     assert root.name == "tutor_turn" and root.ended and root.fields["output"] == done["content"]
-    assert root.trace["session_id"] == f"chat-{chat}" and root.trace["metadata"]["course_id"] == c["id"]
+    assert root.trace["session_id"] == f"chat-{chat}" and root.trace["metadata"]["course_id"] == str(c["id"])
+    assert root.trace["trace_name"] == "tutor_turn" and root.trace["user_id"] and f"course:{c['id']}" in root.trace["tags"]
     meta = root.fields["metadata"]
     assert meta["message_id"] == done["id"] and meta["leaked"] is False and meta["retrieved"] and meta["cited"]
     gens = [o for o in lf.obs if o.kind == "generation" and o.trace_id == root.trace_id]
     assert "tutor" in {g.name for g in gens} and all(g.fields["parent"] == root.id and g.ended for g in gens)
+    assert all(g.trace["trace_name"] == "tutor_turn" and g.trace["session_id"] == f"chat-{chat}" for g in gens)
     assert not any(o.trace_id == root.trace_id for o in lf.obs if o.name in ("mismatch", "starters"))  # setup: own traces
     tutor = next(g for g in gens if g.name == "tutor")
     assert tutor.fields["input"][-1]["content"] == "Why does Bayes theorem need a prior?"
@@ -91,7 +100,9 @@ def test_leak_blocked_turn_is_tagged(app, lf, monkeypatch):
     assert ask(s, new_chat(s, c["id"], "pset", c["p1"]), "help me")[-1]["message"]["content"] == SAFE_REPLY
     root = next(o for o in lf.obs if o.kind == "span")
     assert root.fields["metadata"]["leaked"] is True and root.fields["level"] == "WARNING"
-    assert "leak-blocked" in root.trace["tags"] and root.trace["output"] == SAFE_REPLY
+    assert root.fields["output"] == SAFE_REPLY
+    outcome = next(o for o in lf.obs if o.name == "outcome" and o.trace_id == root.trace_id)
+    assert "leak-blocked" in outcome.trace["tags"] and "mode:graded" in outcome.trace["tags"]
 
 
 def test_qna_answer_is_one_trace(app, lf):

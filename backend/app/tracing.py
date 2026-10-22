@@ -4,11 +4,14 @@ and LANGFUSE_SECRET_KEY are set.
 An answer (a tutor turn, a Q&A reply, an assignment turn) opens a `Trace`; its `attr` carries the trace id, so every
 `llm` call made with that attr lands in the same trace even when the turn moves between threads. Calls made outside
 an answer (memory, starters, extraction) get a trace of their own. Prompts that contain confidential solution text
-(the checker, the leak guard, the assignment verifier and drafter, the upload mismatch check) are sent without their input. Tracing must never
-break a reply, so every failure here is swallowed.
+(the checker, the leak guard, the assignment verifier and drafter, the upload mismatch check) are sent without their
+input. Tracing must never break a reply, so every failure here is swallowed.
+
+Langfuse SDK v5 keeps user, session, tags and trace name on each observation, set through `propagate_attributes`
+around the call that creates it (synchronous, so it is safe in streamed turns that hop threads).
 """
 import logging
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Any, Iterator
 
 from . import config
@@ -17,16 +20,18 @@ SECRET_PURPOSES = frozenset({"checker", "guard", "assignment_verify", "assignmen
 
 log = logging.getLogger(__name__)
 _client: Any = None
+_propagate: Any = None  # langfuse.propagate_attributes, loaded with the client
 
 
 def client() -> Any:
-    global _client
+    global _client, _propagate
     if _client is None and config.LANGFUSE_PUBLIC_KEY and config.LANGFUSE_SECRET_KEY:
         try:
-            from langfuse import Langfuse
+            from langfuse import Langfuse, propagate_attributes
             _client = Langfuse(public_key=config.LANGFUSE_PUBLIC_KEY, secret_key=config.LANGFUSE_SECRET_KEY,
                                host=config.LANGFUSE_HOST, sample_rate=config.LANGFUSE_SAMPLE_RATE,
                                environment="production" if config.PRODUCTION else "development")
+            _propagate = _propagate or propagate_attributes
         except Exception:
             log.exception("Langfuse could not start; tracing is off")
             _client = False
@@ -42,16 +47,15 @@ def flush() -> None:
             pass
 
 
-def _trace_fields(attr: dict | None) -> dict:
+def _trace_attributes(name: str, attr: dict | None, tags: list[str] | None = None):
+    """Trace-level fields for the observation created inside this context."""
     attr = attr or {}
-    fields: dict = {"metadata": {"course_id": attr.get("course_id"), "chat_id": attr.get("chat_id")}}
-    if attr.get("course_id"):
-        fields["tags"] = [f"course:{attr['course_id']}"]
-    if attr.get("user_id"):
-        fields["user_id"] = str(attr["user_id"])
-    if attr.get("chat_id"):
-        fields["session_id"] = f"chat-{attr['chat_id']}"
-    return fields
+    fields: dict = {"trace_name": name,
+                    "metadata": {k: str(attr[k]) for k in ("course_id", "chat_id") if attr.get(k)} or None,
+                    "tags": ([f"course:{attr['course_id']}"] if attr.get("course_id") else []) + (tags or []) or None,
+                    "user_id": str(attr["user_id"]) if attr.get("user_id") else None,
+                    "session_id": f"chat-{attr['chat_id']}" if attr.get("chat_id") else None}
+    return _propagate(**fields) if _propagate else nullcontext()
 
 
 class Trace:
@@ -63,9 +67,9 @@ class Trace:
         if not lf:
             return
         try:
-            self._span = lf.start_span(name=name, input=input)
-            self._span.update_trace(name=name, input=input, **_trace_fields(attr))
-            self.attr.update(trace_id=self._span.trace_id, span_id=self._span.id)
+            with _trace_attributes(name, attr):
+                self._span = lf.start_observation(name=name, input=input)
+            self.attr.update(trace_id=self._span.trace_id, span_id=self._span.id, trace_name=name)
         except Exception:
             self._span = None
 
@@ -74,10 +78,10 @@ class Trace:
         if not span:
             return
         try:
-            span.update(output=output, metadata=metadata, level="WARNING" if metadata.get("leaked") else None)
-            fields = _trace_fields(self.attr)
-            extra = {"tags": fields.get("tags", []) + tags} if tags else {}
-            span.update_trace(output=output, metadata={**fields["metadata"], **metadata}, **extra)
+            span.update(output=output, metadata=metadata, **({"level": "WARNING"} if metadata.get("leaked") else {}))
+            if tags:  # outcome tags are known only now: they ride on a final event in the same trace
+                with _trace_attributes(self.attr["trace_name"], self.attr, tags):
+                    span.create_event(name="outcome", metadata=metadata)
             span.end()
         except Exception:
             pass
@@ -100,11 +104,11 @@ def generation(purpose: str, messages: list[dict], model: str, attr: dict | None
         try:
             ctx = {"trace_id": attr["trace_id"], "parent_span_id": attr["span_id"]} if attr and attr.get("trace_id") \
                 else None
-            obs = lf.start_generation(name=purpose, model=model, trace_context=ctx,
-                                      input=None if purpose in SECRET_PURPOSES else messages,
-                                      metadata={"input_withheld": True} if purpose in SECRET_PURPOSES else None)
-            if not ctx:
-                obs.update_trace(name=purpose, **_trace_fields(attr))
+            secret = purpose in SECRET_PURPOSES
+            with _trace_attributes((attr or {}).get("trace_name") or purpose, attr):
+                obs = lf.start_observation(as_type="generation", name=purpose, model=model, trace_context=ctx,
+                                           input=None if secret else messages,
+                                           metadata={"input_withheld": True} if secret else None)
         except Exception:
             obs = None
     try:
