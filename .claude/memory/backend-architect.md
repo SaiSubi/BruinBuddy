@@ -26,3 +26,7 @@
   - Tables `assignments` (checkpoints as JSON), `assignment_submissions` (unique per assignment+user, `checkpoint_states_json`, `is_preview`), `assignment_messages` (`event_type`).
   - Routes: `POST /api/courses/{id}/assignments/generate-checkpoints` and `POST /api/courses/{id}/assignments` (`get_staff`), `GET /api/courses/{id}/assignments` (`get_member`), and `/api/assignments/{aid}` (`GET`, `POST …/turn`, `POST …/skip-checkpoint`, staff-only `GET …/submissions`, `DELETE`), each resolving membership via `assignments._open` → `member_of`.
   - `_check_turn_gates(c, kb=None, …)` skips the materials check; `pause=False` only for staff drafting. Assignment user messages count toward `GLOBAL_DAILY_LIMIT`. Turn state changes run after `lock_row` on the submission and 409 if it moved meanwhile.
+- **AI TA Q&A (`qna.py`, issue #20):**
+  - Tables `qa_sources`, `qa_pairs` (`pending`/`approved`, `faq`, `thread_id`), `qa_threads` (`escalated` flag + status), `qa_messages` (`student`/`ai`/`staff`/`system`); rules JSON in `courses.qa_rules`.
+  - Thread routes resolve access via `qna._thread_access`: the asker, or staff only when `escalated=1`; everyone else gets 404. Course routes use `get_member`/`get_staff` and filter pairs by `course_id`.
+  - `_respond` order: assistant off → sensitive regex → `_check_turn_gates(c, None, …)` (a failure leaves the thread `open`) → classify → escalate or answer. Escalation has no gate. Student `qa_messages` count toward `GLOBAL_DAILY_LIMIT`. `.docx` text comes from `extract.docx_text`.

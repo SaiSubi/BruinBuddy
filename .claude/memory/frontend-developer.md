@@ -24,3 +24,6 @@
 - **AI-Guided Assignments (`GuidedAssignments.jsx`, `staff/Assignments.jsx`):**
   - Routes `#/c/:id/assignments` (list) and `#/c/:id/assignments/:aid` (workspace), handled in `App.jsx` `CourseRoute` before the staff branch so staff can preview. `AssignmentList` also renders under Problem Sets in `CourseHome.jsx`; course nav link "AI Assignments" in `CanvasShell.jsx`.
   - Workspace: problem + `Stepper` (left), Socratic chat with Request hint / Skip & reveal (right). Builder + Gradebook live in the lazy staff chunk (console tab `assignments`). Styles use `.ga-*` classes and theme tokens; no emojis.
+- **Ask the Course (`QnA.jsx`, `staff/QnA.jsx`):**
+  - Routes `#/c/:id/qna` and `#/c/:id/qna/:tid` (in `App.jsx`, before the staff branch); nav link "Ask the Course". Staff console tab `qna` with Inbox / Knowledge base / Rules views (lazy chunk).
+  - Students only call `api.qna`, `askQna`, `qnaThread`, `qnaFollowUp`, `qnaEscalate`, `qnaResolve`. Styles use `.qna-*` classes.
