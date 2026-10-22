@@ -16,3 +16,6 @@
 - **LLM Attribution & Cost Control (`llm.py`):**
   - Every `llm` call requires explicit `attr={"course_id": ..., "user_id": ..., "chat_id": ...}` (logged to `usage_log` for allowance enforcement). Never use `contextvars` because streaming turns cross thread boundaries.
   - Default to `BB_MOCK_LLM=1` for all dev and test runs. Real model turns cost ~$0.012 and `python -m app.evals` costs ~$0.15; always ask the user before running real LLM calls.
+- **Checkpoint Assignments (`assignments.py`):**
+  - `assignment_verify` (helper) is the only call that sees the active checkpoint's `target_answer`/`rubric`; `assignment_tutor` gets the problem, established (passed/skipped) results and the stage (`nudge`/`hint`/`advance`/`complete`), never solution notes or unreached answers. `assignment_gen` (tutor model) is the only call that sees solution notes.
+  - Every tutor reply is checked with `guard.short_answer_leaks` (whole target, unseen numbers, shingles) and `tutor._llm_leak` (fail closed) against all unreached answers; leaks become `_safe_reply` and are tagged `leak_blocked`.

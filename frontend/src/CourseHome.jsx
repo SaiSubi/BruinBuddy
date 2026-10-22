@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, fileUrl } from './api.js'
 import { courseCodeTag, RailIcon } from './CanvasShell.jsx'
+import { AssignmentList } from './GuidedAssignments.jsx'
 import { day, when } from './format.js'
 import { navigate } from './router.js'
 import { Badge, Banner, ErrorText, Meter, Modal, useAction } from './ui.jsx'
@@ -275,6 +276,7 @@ export default function CourseHome({ course, preview, reload, section = 'home', 
                   )}
                 </div>
               </div>
+              <AssignmentList course={course} compact />
             </div>
           )}
 

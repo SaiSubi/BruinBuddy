@@ -121,24 +121,28 @@ def _limit(status: int, message: str, until: float | None = None):
     raise HTTPException(status, {"message": message, "until": until})
 
 
-def _check_turn_gates(c: dict, kb: knowledge.CourseKnowledge, m: Member, user: dict) -> None:
-    """Enforce pre-turn gates (course active, materials present, pause window, student allowance, course budget, daily limit)."""
+def _check_turn_gates(c: dict, kb: knowledge.CourseKnowledge | None, m: Member, user: dict, *,
+                      pause: bool = True) -> None:
+    """Enforce pre-turn gates (course active, materials present, pause window, student allowance, course budget, daily limit).
+    `kb=None` skips the materials check (assignments carry their own problem); `pause=False` is for staff authoring."""
     if c["status"] != "active":
         raise HTTPException(409, "This course isn't active yet.")
-    if not kb.has_material:
+    if kb is not None and not kb.has_material:
         raise HTTPException(409, "Your instructor hasn't added course materials yet, so the tutor isn't open.")
     with db() as conn:
-        pause = pause_state(conn, c["id"])
-        if pause["active"]:
-            _limit(423, pause["message"] or "The tutor is paused by your instructor.", pause["until"])
+        p = pause_state(conn, c["id"])
+        if pause and p["active"]:
+            _limit(423, p["message"] or "The tutor is paused by your instructor.", p["until"])
         if m.role == "student":
             a = allowance(conn, c, user["id"])
             if a["reached"]:
                 _limit(429, f"You've used your tutor allowance for this {a['period']}.", a["frees_at"])
         if course_tokens(conn, c) >= c["token_ceiling"]:
             _limit(429, "This course has used its plan's AI allowance. Let your instructor know.")
-        day = conn.execute("SELECT COUNT(*) AS n FROM messages WHERE role='user' AND created_at>?",
-                           (time.time() - 86400,)).fetchone()["n"]
+        since = time.time() - 86400
+        day = (conn.execute("SELECT COUNT(*) AS n FROM messages WHERE role='user' AND created_at>?", (since,)).fetchone()["n"]
+               + conn.execute("SELECT COUNT(*) AS n FROM assignment_messages WHERE role='user' AND created_at>?",
+                              (since,)).fetchone()["n"])
         if day >= config.GLOBAL_DAILY_LIMIT:
             _limit(429, "BruinBuddy has reached its daily limit for everyone. Please try again tomorrow.")
 

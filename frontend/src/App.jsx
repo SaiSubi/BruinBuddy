@@ -10,6 +10,7 @@ import Welcome from './Welcome.jsx'
 import CreateCourse from './CreateCourse.jsx'
 import CourseHome from './CourseHome.jsx'
 import ChatView from './ChatView.jsx'
+import GuidedAssignments from './GuidedAssignments.jsx'
 const StaffConsole = lazy(() => import('./staff/StaffConsole.jsx')) // students never load the staff screens
 import About from './About.jsx'
 
@@ -227,6 +228,26 @@ function CourseRoute({ id, rest, me, cfg, onLogOut, reloadMe }) {
         fullHeight
       >
         <ChatView key={sub} course={course} chatId={Number(sub)} preview={staff} onCourseChange={load} />
+      </CanvasShell>
+    )
+  }
+  if (view === 'assignments') {
+    return (
+      <CanvasShell
+        me={me}
+        course={course}
+        courseId={id}
+        activeSection="assignments"
+        onSelectCourseSection={(sec) => {
+          setSubSection(sec)
+          navigate(`/c/${id}${staff ? '/preview' : ''}`)
+        }}
+        breadcrumb="AI-Guided Assignments"
+        onLogOut={onLogOut}
+      >
+        <div className="content wide">
+          <GuidedAssignments course={course} assignmentId={sub ? Number(sub) : null} preview={staff} />
+        </div>
       </CanvasShell>
     )
   }

@@ -206,6 +206,30 @@ def _mock_complete(purpose: str, messages: list[dict], attr: dict | None) -> str
         return json.dumps({"questions": [f"What are the key ideas in {t}?" for t in titles]})
     if purpose == "mismatch":
         return json.dumps({"category": "", "warning": ""})
+    if purpose == "assignment_gen":
+        steps = [("Set up the model", "Which quantities does the problem give you, and what are you asked to find?",
+                  "The given quantities and the unknown, named with the course's notation", 30),
+                 ("Apply the key rule", "Which rule or formula connects the given quantities to the unknown?",
+                  "The rule that links them, written out", 30),
+                 ("Final Answer", "Put it together: what is the final answer?", "The final answer from the notes", 40)]
+        return json.dumps({"checkpoints": [
+            {"title": f"Checkpoint {i + 1}: {t}" if t != "Final Answer" else t, "prompt": p, "target_answer": a,
+             "rubric": f"Accept an answer equivalent to: {a}", "hint": "Re-read the problem statement carefully.",
+             "points": pts} for i, (t, p, a, pts) in enumerate(steps)]})
+    if purpose == "assignment_verify":
+        target = last.split("CONFIDENTIAL TARGET ANSWER:", 1)[-1].split("\n\n", 1)[0].strip()
+        said = last.split("STUDENT MESSAGE:", 1)[-1]
+        ok = bool(target) and re.sub(r"\s+", "", target).lower() in re.sub(r"\s+", "", said).lower()
+        return json.dumps({"passed": ok, "feedback": "" if ok else "Revisit what the problem gives you."})
+    if purpose == "assignment_tutor":
+        system = messages[0]["content"]
+        if "STAGE: complete" in system:
+            return "(mock tutor) Well done, you finished the assignment. Here is the path you took, step by step."
+        if "STAGE: advance" in system:
+            return "(mock tutor) Nice work, that checkpoint is done. On to the next question: what comes next?"
+        if "STAGE: hint" in system:
+            return "(mock tutor) Here's a nudge: re-read the problem statement. What does it give you?"
+        return "(mock tutor) Not quite yet. What does the problem tell you, and what is it asking for?"
     if purpose == "illustrate_route":
         low = last.lower()
         if any(w in low for w in ("remotion", "motion graphics", "kinetic", "spring", "metric", "counter")):

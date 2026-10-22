@@ -103,7 +103,7 @@ One login can hold several roles: an owner of one course, a student in another. 
 **Agreed (2026-10-20):**
 - *Pricing (built):* one payment per course per 10-week term, no subscription: $19 base + $9 per staff account (owner free) + $2 per student seat for each 100k tokens of weekly allowance (minimum $0.50 per seat). Example: 40 students, 2 staff, 100k tokens a week = $117. The course's total AI budget is (students + staff + 1) × weekly allowance × 10 weeks. Details: TECHNICAL.md §5.
 - *Cap period (built):* a rolling week by default; the owner can choose day, week or term at setup and change it later.
-- *Privacy (built):* staff see aggregates only, never individual chats (as §3.6 says).
+- *Privacy (built):* staff see aggregates only, never individual chats (as §3.6 says). Exception: AI-guided assignment conversations are graded work and visible to staff, and students are told so (§3.11).
 - *Retention (not built):* keep chats until the end of the term plus 30 days, then delete them; removed students' chats follow the same rule. Today nothing is deleted automatically.
 - *Term end or lapse (not built):* after the term the course becomes read-only for students (history visible, no new questions) until renewed. Today a course stays active indefinitely.
 
@@ -233,6 +233,15 @@ Practice question generation, LMS sync, OCR, reading individual student chats, p
 - *Mode change mid-chat:* applies from the next message.
 - *"Not covered" signal:* the tutor starts such replies with a hidden `[NC]` marker (a phrase check is the fallback); turns about a problem set never count as unanswered. Measure its accuracy on the evaluation set before relying on the dashboard list.
 - *Solution files:* uploaded solutions are stored in the private bucket and served only to staff, or to students once every problem set they cover is open. Deleting or re-categorising one of a solution's sets unlinks it, so it stays tutor-only until relinked. The 18.05 demo solutions exist as text only.
+
+### 3.11 AI-guided checkpoint assignments (issue #14)
+A staff member writes one problem and its solution notes, clicks **Auto-generate checkpoints with AI** to draft 3–4 sequential checkpoints (each a question, a hidden target answer and rubric, a hint and points, adding up to 100), reviews and edits them, and publishes. Students open it in a **guided workspace**: the problem, a checkpoint stepper (Passed, Active, Skipped, Locked) and a Socratic chat.
+- An answer checker decides whether the student's message reaches the active checkpoint. Reaching it earns **all of that checkpoint's points** and opens the next; the tutor congratulates, restates the result and asks the next question.
+- Otherwise the tutor nudges with a question about the active checkpoint only. It is never given an answer the student hasn't reached, and its reply is checked in code and by the leak check before the student sees it.
+- **Request hint** gives the instructor's hint in the tutor's words. **Skip & reveal** gives 0 points for the step, shows its result so the student isn't blocked, and opens the next step.
+- Turns follow the same gates as the tutor (pause, allowance, course budget, daily limit); skipping is refused during a pause.
+- **Privacy exception:** an assignment is graded work, so staff see each student's score, step-by-step progress and the assignment conversation in a gradebook. The workspace says so. Tutor chats stay aggregate-only (§3.6).
+- Not in this version: editing a published assignment, due dates, drafts, exporting grades, LMS grade sync.
 
 ---
 
