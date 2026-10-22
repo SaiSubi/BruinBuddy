@@ -10,7 +10,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from . import auth, config, jobs, knowledge, llm, starters, storage
+from . import auth, config, embeddings, jobs, knowledge, llm, starters, storage
 from .courses import Member, get_member, get_staff
 from .db import db, now
 from .extract import NoText, chunk_pages, extract_pages
@@ -95,6 +95,11 @@ def process_document(doc_id: str, data: bytes | None = None) -> None:
         _set_status(doc_id, "failed", f"Couldn't read this file ({type(e).__name__}). Check that it opens, then retry.")
         return
     digest = hashlib.sha256(data).hexdigest()
+    # before the transaction, so the chunks are searchable by meaning as soon as they're saved; None leaves them
+    # to BM25 until the backfill fills them in
+    blobs = embeddings.embed_texts([embeddings.chunk_text(doc["title"], doc["kind"], p, t) for p, t in chunks],
+                                   {"course_id": doc["course_id"]})
+    model = llm.embed_model() if blobs else None
     with db() as conn:
         current = conn.execute("SELECT file_hash, kind FROM documents WHERE id=?", (doc_id,)).fetchone()
         if not current or current["file_hash"] != digest:
@@ -106,9 +111,9 @@ def process_document(doc_id: str, data: bytes | None = None) -> None:
                          (f"This course has reached its limit of {config.MAX_PAGES_PER_COURSE:,} pages.", doc_id))
             return
         conn.execute("DELETE FROM chunks WHERE doc_id=?", (doc_id,))
-        for page, text in chunks:
-            conn.execute("INSERT INTO chunks(doc_id,page,text,tutor_only) VALUES(?,?,?,?)",
-                         (doc_id, page, text, int(current["kind"] == "solution")))
+        for i, (page, text) in enumerate(chunks):
+            conn.execute("INSERT INTO chunks(doc_id,page,text,tutor_only,embedding,embed_model) VALUES(?,?,?,?,?,?)",
+                         (doc_id, page, text, int(current["kind"] == "solution"), blobs[i] if blobs else None, model))
         conn.execute("UPDATE documents SET status='ready', status_detail=NULL, pages=?, warning=NULL, "
                      "updated_at=? WHERE id=?", (len(pages), now(), doc_id))
         bump_content(conn, doc["course_id"])

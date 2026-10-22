@@ -9,3 +9,4 @@ pyjwt[crypto]>=2.8      # verifies Supabase Auth access tokens (ES256 via JWKS)
 stripe>=10              # Stripe Checkout (test mode) and webhook signatures
 python-multipart>=0.0.9 # course material uploads
 pymupdf>=1.24           # PDF text extraction for uploads (and the 18.05 seed)
+numpy>=1.26             # in-memory embedding search (hybrid retrieval)

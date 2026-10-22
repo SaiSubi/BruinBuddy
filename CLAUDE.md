@@ -51,11 +51,12 @@ python3 -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requir
 cd frontend && npm install && npm run build && cd ..                                              # frontend build (the backend serves it)
 BB_MOCK_LLM=1 backend/.venv/bin/python -m uvicorn app.main:app --app-dir backend --port 8000      # run with a fake tutor (no key, no cost)
 cd frontend && npm run dev                                   # frontend dev server on :5173, proxies /api to :8000
-cd backend && ../backend/.venv/bin/python -m pytest -q       # 102 tests; temp SQLite DB, mock model, no keys needed
+cd backend && ../backend/.venv/bin/python -m pytest -q       # 110 tests; temp SQLite DB, mock model, no keys needed
 TEST_DATABASE_URL=postgresql://... ../backend/.venv/bin/python -m pytest -q   # same suite on a throw-away Postgres (UTF-8 DB)
 ../backend/.venv/bin/python -m app.ingest --owner-email you@example.edu       # 18.05 demo course (needs 18.05-spring-2022/)
 ../backend/.venv/bin/python -m app.seed                                        # sample dashboard data (labelled as sample)
 ../backend/.venv/bin/python -m app.evals --course-id 1 --pset "Problem Set 04" # leak prompts vs the REAL model (~$0.15): ask first
+BB_MOCK_LLM=0 ../backend/.venv/bin/python -m app.retrieval_eval --course-id 1    # retrieval quality: BM25 vs embeddings vs hybrid (embeddings only, <$0.01)
 ```
 Local mode needs no Supabase or Stripe: `AUTH_PROVIDER` empty means local email/password accounts, no `STRIPE_SECRET_KEY` means a built-in test checkout page. Both are refused in production.
 
@@ -68,12 +69,12 @@ Local mode needs no Supabase or Stripe: `AUTH_PROVIDER` empty means local email/
 | `members.py` | Roster (remove, block), single-use staff codes |
 | `billing.py` | Price formula, Stripe Checkout, webhook, confirm-on-return, dev test checkout |
 | `materials.py`, `extract.py`, `storage.py` | Uploads, background processing, mismatch warnings, library, files in Supabase Storage or `data/uploads` |
-| `knowledge.py`, `retrieval.py`, `guard.py` | Per-course index of what students may see, problem set modes, leak guard |
+| `knowledge.py`, `retrieval.py`, `embeddings.py`, `guard.py` | Per-course hybrid index (BM25 + embeddings) of what students may see, problem set modes, chunk embeddings and backfill, leak guard |
 | `tutor.py`, `chats.py`, `illustrate.py` | The tutor pipeline, concept illustration engine (Anatomy / Manim 3B1B / Explainer Video skills), chat/SSE/illustrate endpoints with their gates; `/files` and `/api/sources` |
 | `dashboard.py` | Staff aggregates with the small-group rule |
 | `llm.py`, `memory.py`, `starters.py`, `jobs.py` | OpenRouter client + mock, per-course memory, starter questions, background jobs |
 | `db.py` | Schema (`illustrations`, `chats`, `messages`, etc.), in-place migration from v0, SQL helpers |
-| `ingest.py`, `seed.py`, `evals.py` | 18.05 demo course, sample data, real-model leak evaluation |
+| `ingest.py`, `seed.py`, `evals.py`, `retrieval_eval.py` | 18.05 demo course, sample data, real-model leak evaluation, retrieval evaluation |
 | `backend/tests/` | Synthetic course fixtures in `conftest.py`; `test_hardening.py` holds the review regressions; `test_illustrate.py` tests the Illustrate feature |
 | `frontend/src/` | `App.jsx` (boot, routing), `auth.js`, `api.js` (all HTTP), `CourseHome`/`ChatView`/`IllustratePane` (students), `staff/` (console tabs) |
 | `.claude/` | Specialized agents (`agents/`), persistent memories (`memory/`), visual skills (`skills/`), slash commands (`commands/`), rules (`rules/`), and [COLLABORATION.md](.claude/COLLABORATION.md) |

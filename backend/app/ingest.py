@@ -17,7 +17,7 @@ import secrets
 import sys
 from collections import Counter
 
-from . import auth, billing, config
+from . import auth, billing, config, embeddings
 from .courses import new_student_code
 from .db import db, init_db, now
 from .extract import split_page
@@ -185,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  pages with little/no text: {len(weak)}")
     print(f"  solutions without a linked problem set: {unmatched}")
     print(f"  student code: {code}")
+    print(f"  chunks embedded for hybrid retrieval: {embeddings.backfill(course_id)}")
     return 0
 
 

@@ -48,7 +48,7 @@ cd backend
 
 - **No OpenRouter key?** Set `BB_MOCK_LLM=1` to try everything with a fake tutor (no cost, not real answers).
 - **Frontend dev server:** `cd frontend && npm run dev` (port 5173, proxies to the backend on 8000).
-- **Tests:** `cd backend && ../backend/.venv/bin/python -m pytest` (98 tests on a synthetic course with a mock model; no keys or course export needed). They also run in GitHub Actions on pull requests and before every deploy. Set `TEST_DATABASE_URL` to run them against a throw-away Postgres.
+- **Tests:** `cd backend && ../backend/.venv/bin/python -m pytest` (110 tests on a synthetic course with a mock model; no keys or course export needed). They also run in GitHub Actions on pull requests and before every deploy. Set `TEST_DATABASE_URL` to run them against a throw-away Postgres.
 - **Coming from v0?** The first start migrates the local database in place (v0 users and chats are kept as `v0_*` tables). Then run the ingest command above to attach the 18.05 materials to the demo course.
 - **Leak check with the real model:** `cd backend && ../backend/.venv/bin/python -m app.evals --course-id 1 --pset "Problem Set 04"` sends 10 pressure prompts to a Graded set and reports any solution text that got through (about $0.15).
 - Spend is logged per call, with course and student, in the `usage_log` table.

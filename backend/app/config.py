@@ -19,12 +19,18 @@ OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/ap
 TUTOR_MODEL = os.getenv("TUTOR_MODEL", "anthropic/claude-sonnet-5.5")
 HELPER_MODEL = os.getenv("HELPER_MODEL", "anthropic/claude-haiku-5.5")
 TUTOR_FALLBACK_MODEL = os.getenv("TUTOR_FALLBACK_MODEL", "").strip()  # tried once if the tutor fails before any text
+EMBED_MODEL = os.getenv("EMBED_MODEL", "openai/text-embedding-3-small")
+# chunks less similar than this never come from the embedding side. Set for text-embedding-3-small on 18.05:
+# off-topic questions peaked at 0.30, course questions started at 0.40. Recalibrate if EMBED_MODEL changes.
+EMBED_MIN_SIMILARITY = float(os.getenv("EMBED_MIN_SIMILARITY", "0.35"))
 MOCK_LLM = os.getenv("BB_MOCK_LLM", "0") == "1"
 LLM_TIMEOUT_SECONDS = 60
 SYNC_JOBS = os.getenv("BB_SYNC_JOBS", "0") == "1"  # tests: run background jobs inline
 
 TOP_K = 6
 MIN_RETRIEVAL_SCORE = 3.0  # BM25 is not calibrated: this only drops near-empty matches; the tutor judges relevance
+HYBRID_POOL = 30           # candidates each retriever (BM25, embeddings) contributes before rank fusion
+RRF_K = 60                 # reciprocal rank fusion constant: score = sum of 1 / (RRF_K + rank)
 HISTORY_TURNS = 8
 MAX_MEMORY_NOTES = 15
 TUTOR_MAX_TOKENS = 1500

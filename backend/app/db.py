@@ -95,6 +95,8 @@ ADDED_COLUMNS = {
         "created_at": "DOUBLE PRECISION", "updated_at": "DOUBLE PRECISION",
     },
     "usage_log": {"course_id": "INTEGER", "user_id": "INTEGER", "chat_id": "INTEGER", "total_tokens": "INTEGER"},
+    "courses": {"index_version": "INTEGER NOT NULL DEFAULT 0"},  # bumped when chunk embeddings are filled in
+    "chunks": {"embedding": "BYTEA" if config.DATABASE_URL else "BLOB", "embed_model": "TEXT"},  # float32 vector
 }
 
 INDEXES = """
