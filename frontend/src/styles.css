@@ -1723,3 +1723,7 @@ form.inline input { min-width: 0; }
 @media (max-width: 900px) {
   .qna-inbox { grid-template-columns: 1fr; }
 }
+
+/* Problem set chat: the set's own problems instead of "paste your problem" */
+.problem-picks { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; text-align: left; }
+.problem-pick { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; }

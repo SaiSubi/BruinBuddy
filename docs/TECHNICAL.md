@@ -259,7 +259,7 @@ All routes except the public ones need `Authorization: Bearer <token>`. Course r
 | `GET`, `POST /api/courses/{id}/staff-codes`, `DELETE …/staff-codes/{cid}` | owner | Single-use staff codes |
 | `GET /api/courses/{id}/dashboard` | staff | §11 |
 | `GET`, `POST /api/courses/{id}/chats` | member | List or create the caller's chats (`kind`, `doc_id`) |
-| `GET /api/chats/{id}`, `POST /api/chats/{id}/messages` | chat owner, active member | Read; send (SSE: `delta`, optional `replace`, `done` with citations and the problem set rule, or `error`) |
+| `GET /api/chats/{id}`, `POST /api/chats/{id}/messages` | chat owner, active member | Read (problem set chats include the set's numbered problems from `knowledge.problems`); send (SSE: `delta`, optional `replace`, `done` with citations and the problem set rule, or `error`) |
 | `GET /api/chats/{id}/illustrations`, `POST /api/chats/{id}/illustrate` | chat owner, active member | List or generate interactive concept illustrations (routes across `anatomy_isometric`, `manim_3b1b`, `explainer_diagram`, `explainer_storyboard`, gated by `_check_turn_gates` and leak guard) |
 | `GET /api/illustrations/{id}/download?format=html|svg|py` | chat owner, active member | Download standalone interactive HTML, vector SVG, or ManimCE Python script |
 | `GET /api/sources/{chunk}` | member of the chunk's course | A citation's passage, only if public now |

@@ -104,6 +104,7 @@ def get_chat(chat_id: int, user: dict = Depends(current_user)):
     return {"id": chat["id"], "course_id": chat["course_id"], "title": chat["title"], "kind": chat["kind"],
             "doc_id": chat["doc_id"], "is_preview": bool(chat["is_preview"]), "messages": msgs,
             "illustrations": [_format_illustration(r) for r in ill_rows],
+            "problems": kb.problems(chat["doc_id"]) if chat["kind"] == "pset" else [],
             "rule": kb.rule(chat["doc_id"] if chat["kind"] == "pset" else last_problem)}
 
 

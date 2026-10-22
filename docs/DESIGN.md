@@ -51,7 +51,7 @@ Top bar: course switcher · Join or create · name and Log out · About
 - **Quiz me** → optional topic → a chat opens and the tutor asks the first question.
 - **Browse materials** → documents by category; opening one opens the source. Solutions appear only once their set is open.
 
-**F10. Chat.** As in v0 (streaming, numbered citation chips, source panel, AI-generated label, "Used memory"), plus the problem set **rule line** under the title when a set applies ("Problem Set 04 · Graded: hints only"). A set detected mid-chat shows its rule from that reply on.
+**F10. Chat.** As in v0 (streaming, numbered citation chips, source panel, AI-generated label, "Used memory"), plus the problem set **rule line** under the title when a set applies ("Problem Set 04 · Graded: hints only"). A set detected mid-chat shows its rule from that reply on. An empty problem set chat lists that set's own problems ("Problem 1", "Problem 2"… with the start of each statement, read from the uploaded file); picking one starts the chat on it. A set without numbered problems asks which problem the student is on.
 
 **F11. Dashboard.** Range selector (7 days · 30 days · Whole term). Panels: usage overview, most-asked materials, unanswered questions, where students are stuck, student usage. Panels that would identify fewer than 5 students show "Not enough students yet to show this without identifying anyone." A "Sample data" badge shows when the course has seeded sample students.
 
