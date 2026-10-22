@@ -134,3 +134,39 @@ def test_off_without_keys(app):
     t = tracing.Trace("x", {"course_id": 1}, "hi")
     assert "trace_id" not in t.attr
     t.end("ok")
+
+
+def test_an_illustration_is_one_trace(app, lf):
+    owner = new_user(app)
+    c = setup_course(owner)
+    s = student_in(app, c)
+    chat = new_chat(s, c["id"])
+    ask(s, chat, "Can you explain Bayes theorem and conditional probability?")
+    ill = s.post(f"/api/chats/{chat}/illustrate", json={}).json()
+    root = next(o for o in lf.obs if o.kind == "span" and o.name == "illustration")
+    assert root.ended and root.trace["session_id"] == f"chat-{chat}" and root.trace["trace_name"] == "illustration"
+    assert root.fields["output"]["skill"] == ill["skill"] and root.fields["metadata"]["illustration_id"] == ill["id"]
+    assert root.fields["metadata"]["routed"] is True and root.fields["metadata"]["retrieved"]
+    gens = {o.name for o in lf.obs if o.kind == "generation" and o.trace_id == root.trace_id}
+    assert {"illustrate_route", "illustrate_gen"} <= gens
+    outcome = next(o for o in lf.obs if o.name == "outcome" and o.trace_id == root.trace_id)
+    assert f"skill:{ill['skill']}" in outcome.trace["tags"]
+
+
+def test_leak_blocked_illustration_is_tagged(app, lf, monkeypatch):
+    from app import llm
+    owner = new_user(app)
+    c = setup_course(owner)
+    s = student_in(app, c)
+    chat = new_chat(s, c["id"], "pset", c["p1"])
+    ask(s, chat, "Help me with Problem 1 on tossing a fair coin three times.")
+    real = llm.complete
+    monkeypatch.setattr(llm, "complete", lambda purpose, messages, **kw: json.dumps(
+        {"title": "Leak", "subtitle": SOL1, "formula": "3/8", "beats": [{"step": 1, "heading": "Answer", "caption": SOL1}]})
+        if purpose == "illustrate_gen" else real(purpose, messages, **kw))
+    assert s.post(f"/api/chats/{chat}/illustrate", json={}).status_code == 200
+    root = next(o for o in lf.obs if o.kind == "span" and o.name == "illustration")
+    assert root.fields["metadata"]["leaked"] is True and root.fields["level"] == "WARNING"
+    outcome = next(o for o in lf.obs if o.name == "outcome" and o.trace_id == root.trace_id)
+    assert {"leak-blocked", "mode:graded"} <= set(outcome.trace["tags"])
+    assert all(SOLUTION_PHRASE not in json.dumps(o.fields.get("input"), default=str) for o in lf.obs)
