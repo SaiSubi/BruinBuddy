@@ -202,6 +202,7 @@ The empty chat shows the starter questions. On a phone the chat list is a menu a
 - **Color:** neutral light and dark themes following the system setting, one green accent for buttons, chips and focus; amber for warnings, red for errors. No UCLA blue or gold, no UCLA marks.
 - **Components:** button (primary, secondary, danger, link), text input, select, checkbox, card, tabs, table, badge (role, status, mode), banner (info, warning), meter, modal, citation chip, message bubble, source panel.
 - **Math:** KaTeX inline and block, in answers and source excerpts.
+- **App icon:** an original bear face in gold on the app blue (`frontend/public/favicon.svg`, with 32 px and 180 px Apple touch PNGs rendered from it); not the UCLA Bruin mark.
 - **Responsive:** usable on a phone (PRD §4.7): the chat list becomes a menu, the source panel a bottom sheet, staff tabs scroll horizontally, tables scroll inside their card.
 
 ## 7. Accessibility

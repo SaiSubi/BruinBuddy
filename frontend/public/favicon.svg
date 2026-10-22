@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BruinBuddy">
+  <rect width="64" height="64" rx="14" fill="#2774AE"/>
+  <circle cx="17.5" cy="20" r="9" fill="#FFD100"/>
+  <circle cx="46.5" cy="20" r="9" fill="#FFD100"/>
+  <circle cx="17.5" cy="20" r="4.6" fill="#E0A400"/>
+  <circle cx="46.5" cy="20" r="4.6" fill="#E0A400"/>
+  <ellipse cx="32" cy="36.5" rx="21" ry="19.5" fill="#FFD100"/>
+  <circle cx="24" cy="32" r="2.9" fill="#003B5C"/>
+  <circle cx="40" cy="32" r="2.9" fill="#003B5C"/>
+  <ellipse cx="32" cy="43.5" rx="10" ry="7.5" fill="#FFF3C4"/>
+  <ellipse cx="32" cy="40.6" rx="4" ry="2.9" fill="#003B5C"/>
+  <path d="M32 43.2v2.4M32 45.6c-1.2 1.6-3.3 1.9-4.6.9M32 45.6c1.2 1.6 3.3 1.9 4.6.9" fill="none" stroke="#003B5C" stroke-width="1.6" stroke-linecap="round"/>
+</svg>
