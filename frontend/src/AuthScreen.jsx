@@ -151,7 +151,9 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
         {cfg.auth.provider === 'local' && (
           <p className="muted small">Development sign-in: accounts are stored on this server. Production uses Supabase Auth.</p>
         )}
-        <p className="muted small"><a href="#/about">About BruinBuddy</a></p>
+        <p className="muted small">
+          <a href="#/about">About BruinBuddy</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a>
+        </p>
       </form>
     </main>
   )

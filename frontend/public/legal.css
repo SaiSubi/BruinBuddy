@@ -1,0 +1,12 @@
+/* Privacy policy and terms: plain static pages, reachable without signing in. */
+:root { --bg: #ffffff; --text: #1f2933; --muted: #5f6b76; --link: #2774ae; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14181d; --text: #e6e9ec; --muted: #9aa5b1; --link: #8bb8e8; }
+}
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { margin: 8px 0 0; }
+h2 { margin-top: 28px; font-size: 1.15rem; }
+a { color: var(--link); }
+.muted { color: var(--muted); }
+li { margin-bottom: 6px; }

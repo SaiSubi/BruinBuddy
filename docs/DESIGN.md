@@ -88,7 +88,7 @@ Top bar: course switcher · Join or create · name and Log out · About
 │  Forgot password? · Create account│
 └──────────────────────────────────┘
 ```
-The first step asks whether you are a student or an instructor; log in and sign up (email or Google) follow, and "Change" goes back to the choice. The role only shapes a new account: an email sign-up stores it with the account, and a Google sign-in carries it across the redirect and applies it to a fresh account (no courses yet) through `PUT /api/me/account-type`. Existing accounts keep their type. Students still join with the course code afterwards. Sign up adds a name field. "Forgot password" asks for an email and confirms that a link was sent. The link returns to a "Set a new password" form. In local development the Google button and password reset are hidden.
+The first step asks whether you are a student or an instructor; log in and sign up (email or Google) follow, and "Change" goes back to the choice. The role only shapes a new account: an email sign-up stores it with the account, and a Google sign-in carries it across the redirect and applies it to a fresh account (no courses yet) through `PUT /api/me/account-type`. Existing accounts keep their type. Students still join with the course code afterwards. Sign up adds a name field. "Forgot password" asks for an email and confirms that a link was sent. The link returns to a "Set a new password" form. In local development the Google button and password reset are hidden. The footer links to About and to the static `/privacy.html` and `/terms.html` pages (reachable without signing in; Google's OAuth consent screen points at them).
 
 ### 4.2 Create a course
 ```
