@@ -1,0 +1,37 @@
+
+47 questions, 1102 public chunks (1102 embedded, 0 just now), top 6, openai/text-embedding-3-small, similarity floor 0.35
+
+hit@6                     all (47)      keyword (15)   paraphrase (19)     notation (13)
+  bm25 (before)               0.83              1.00              0.74              0.77
+  embeddings                  0.94              1.00              0.84              1.00
+  hybrid (app)                0.91              1.00              0.79              1.00
+
+MRR                       all (47)      keyword (15)   paraphrase (19)     notation (13)
+  bm25 (before)               0.65              0.82              0.57              0.59
+  embeddings                  0.81              1.00              0.58              0.91
+  hybrid (app)                0.82              0.97              0.66              0.87
+
+precision@6               all (47)      keyword (15)   paraphrase (19)     notation (13)
+  bm25 (before)               0.45              0.76              0.25              0.40
+  embeddings                  0.65              0.87              0.46              0.67
+  hybrid (app)                0.63              0.89              0.45              0.60
+
+Misses (no relevant chunk in the top 6):
+  bm25 (before): 8
+    - If a medical test is 99% accurate, why is a positive result still probably wrong when the disease is rare?
+    - If I flip a coin until I get heads, how many flips should I expect on average?
+    - Why does the average of more and more die rolls settle down to 3.5?
+    - When two quantities tend to go up together, how do I put a number on that?
+    - How do I find the chance of A or B when they can both happen?
+    - What does $f(x) = \lambda e^{-\lambda x}$ describe?
+    - What is $t = (\bar{x}-\mu_0)/(s/\sqrt{n})$?
+    - How do I estimate $\beta_1$ in $y = \beta_0 + \beta_1 x$?
+  embeddings: 3
+    - If I flip a coin until I get heads, how many flips should I expect on average?
+    - Why does the average of more and more die rolls settle down to 3.5?
+    - How can I get a range for the mean when I don't know the population variance and have a small sample?
+  hybrid (app): 4
+    - If I flip a coin until I get heads, how many flips should I expect on average?
+    - Why does the average of more and more die rolls settle down to 3.5?
+    - How do I find the chance of A or B when they can both happen?
+    - If I square a random variable, how do I find its new density?

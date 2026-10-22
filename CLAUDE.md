@@ -75,6 +75,7 @@ Local mode needs no Supabase or Stripe: `AUTH_PROVIDER` empty means local email/
 | `llm.py`, `memory.py`, `starters.py`, `jobs.py` | OpenRouter client + mock, per-course memory, starter questions, background jobs |
 | `db.py` | Schema (`illustrations`, `chats`, `messages`, etc.), in-place migration from v0, SQL helpers |
 | `ingest.py`, `seed.py`, `evals.py`, `retrieval_eval.py` | 18.05 demo course, sample data, real-model leak evaluation, retrieval evaluation |
+| `evals/` | What each eval measures, how to run it, latest results (`README.md`) and saved runs (`results/`) |
 | `backend/tests/` | Synthetic course fixtures in `conftest.py`; `test_hardening.py` holds the review regressions; `test_illustrate.py` tests the Illustrate feature |
 | `frontend/src/` | `App.jsx` (boot, routing), `auth.js`, `api.js` (all HTTP), `CourseHome`/`ChatView`/`IllustratePane` (students), `staff/` (console tabs) |
 | `.claude/` | Specialized agents (`agents/`), persistent memories (`memory/`), visual skills (`skills/`), slash commands (`commands/`), rules (`rules/`), and [COLLABORATION.md](.claude/COLLABORATION.md) |

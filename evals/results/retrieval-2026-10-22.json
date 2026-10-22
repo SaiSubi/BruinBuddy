@@ -1,0 +1,2023 @@
+[
+ {
+  "q": "What is the formula for permutations versus combinations?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 1b: Counting and Sets p.7",
+    "Class 01 Slides: Introduction, Counting, and Sets p.31",
+    "Class 01 Slides: Introduction, Counting, and Sets p.32",
+    "Reading 1b: Counting and Sets p.6",
+    "Reading 1b: Counting and Sets p.6",
+    "Class 01 Slides: Introduction, Counting, and Sets p.26"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 1b: Counting and Sets p.7",
+    "Class 01 Slides: Introduction, Counting, and Sets p.32",
+    "Class 01 Slides: Introduction, Counting, and Sets p.31",
+    "Class 01 Slides: Introduction, Counting, and Sets p.26",
+    "Reading 1b: Counting and Sets p.6",
+    "Class 01 Slides: Introduction, Counting, and Sets p.28"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 1b: Counting and Sets p.7",
+    "Class 01 Slides: Introduction, Counting, and Sets p.31",
+    "Class 01 Slides: Introduction, Counting, and Sets p.32",
+    "Class 01 Slides: Introduction, Counting, and Sets p.26",
+    "Reading 1b: Counting and Sets p.6",
+    "Reading 1b: Counting and Sets p.6"
+   ]
+  }
+ },
+ {
+  "q": "State Bayes' theorem",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.25,
+   "p": 0.5,
+   "top": [
+    "Reading 10a: Introduction to Statistics p.3",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.1",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.5",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.4",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.1",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.17"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.17",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.11",
+    "Reading 12b: Bayesian Updating: Odds p.9",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.5",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.10"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.17",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.5",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.11",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.7",
+    "Reading 11: Bayesian Updating with Discrete Priors p.1"
+   ]
+  }
+ },
+ {
+  "q": "What is the law of total probability?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.5,
+   "top": [
+    "Reading 13a: Bayesian Updating with Continuous Priors p.4",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.4",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.4",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.7",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.1",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.7",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.4",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.4",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3",
+    "Class 02 Slides: Probability Basics p.13",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.7",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.4",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.4",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.5",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.4"
+   ]
+  }
+ },
+ {
+  "q": "What is the expected value of a binomial random variable?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.25",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.2",
+    "Reading 4b: Discrete Random Variables: Expected Value p.1",
+    "Reading 4b: Discrete Random Variables: Expected Value p.3",
+    "Reading 4b: Discrete Random Variables: Expected Value p.2",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.30"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 4b: Discrete Random Variables: Expected Value p.1",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.20",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.19",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.25",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.21",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.18"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 4b: Discrete Random Variables: Expected Value p.1",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.25",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.21",
+    "Reading 4b: Discrete Random Variables: Expected Value p.7",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.11",
+    "Reading 4b: Discrete Random Variables: Expected Value p.2"
+   ]
+  }
+ },
+ {
+  "q": "Explain the central limit theorem",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 06b Slides: Central Limit Theorem p.2",
+    "Class 06b Slides: Central Limit Theorem p.7",
+    "Class 06b Slides: Central Limit Theorem p.1",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Class 06b Slides: Central Limit Theorem p.6",
+    "Class 06b Slides: Central Limit Theorem p.14"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.7",
+    "Class 06b Slides: Central Limit Theorem p.7",
+    "Class 06b Slides: Central Limit Theorem p.1",
+    "Class 06b Slides: Central Limit Theorem p.6",
+    "Class 06b Slides: Central Limit Theorem p.10"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Class 06b Slides: Central Limit Theorem p.7",
+    "Class 06b Slides: Central Limit Theorem p.1",
+    "Class 06b Slides: Central Limit Theorem p.6",
+    "Class 06b Slides: Central Limit Theorem p.2",
+    "Class 06b Slides: Central Limit Theorem p.20"
+   ]
+  }
+ },
+ {
+  "q": "How do you compute the covariance of two random variables?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 7b: Covariance and Correlation p.1",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.29",
+    "Reading 7a: Joint Distributions, Independence p.1",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.21",
+    "Reading 7b: Covariance and Correlation p.4",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.17"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 7b: Covariance and Correlation p.1",
+    "Reading 7b: Covariance and Correlation p.2",
+    "Reading 7b: Covariance and Correlation p.3",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.21",
+    "Reading 7b: Covariance and Correlation p.4",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.22"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 7b: Covariance and Correlation p.1",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.21",
+    "Reading 7b: Covariance and Correlation p.4",
+    "Reading 7b: Covariance and Correlation p.3",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.29",
+    "Reading 7b: Covariance and Correlation p.5"
+   ]
+  }
+ },
+ {
+  "q": "What is a maximum likelihood estimate?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.14",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.2",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.17",
+    "Reading 10b: Maximum Likelihood Estimates p.9",
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.15"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.14",
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.4",
+    "Reading 10b: Maximum Likelihood Estimates p.2",
+    "Reading 10b: Maximum Likelihood Estimates p.2"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.14",
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.9",
+    "Reading 10b: Maximum Likelihood Estimates p.2",
+    "Reading 10b: Maximum Likelihood Estimates p.4",
+    "Reading 10b: Maximum Likelihood Estimates p.1"
+   ]
+  }
+ },
+ {
+  "q": "Why is the beta distribution a conjugate prior?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.9",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.2",
+    "Reading 15: Conjugate priors: Beta and normal p.1",
+    "Reading 15: Conjugate priors: Beta and normal p.4"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.1",
+    "Reading 15: Conjugate priors: Beta and normal p.5",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.4"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.9",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.1",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.4"
+   ]
+  }
+ },
+ {
+  "q": "What is a p-value?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.16666666666666666,
+   "p": 0.16666666666666666,
+   "top": [
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.24",
+    "Reading 4b: Discrete Random Variables: Expected Value p.2",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.11",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.26",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.25",
+    "Class 18 Slides: NHST II p.5"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 17b: Null Hypothesis Significance Testing I p.12",
+    "Class 18 Slides: NHST II p.5",
+    "Class 18 Slides: NHST II p.11",
+    "Reading 18: Null Hypothesis Significance Testing II p.2",
+    "Class 18 Slides: NHST II p.8",
+    "Class 18 Slides: NHST II p.13"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 18 Slides: NHST II p.5",
+    "Reading 17b: Null Hypothesis Significance Testing I p.12",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.21",
+    "Reading 17b: Null Hypothesis Significance Testing I p.13",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.22",
+    "Reading 18: Null Hypothesis Significance Testing II p.4"
+   ]
+  }
+ },
+ {
+  "q": "How does the bootstrap confidence interval work?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 24 Slides: Bootstrap Confidence Intervals p.2",
+    "Reading 24: Bootstrap confidence intervals p.9",
+    "Reading 24: Bootstrap confidence intervals p.5",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.7",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.6",
+    "Reading 24: Bootstrap confidence intervals p.11"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 24 Slides: Bootstrap Confidence Intervals p.1",
+    "Reading 24: Bootstrap confidence intervals p.1",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.7",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.8",
+    "Reading 24: Bootstrap confidence intervals p.11",
+    "Reading 24: Bootstrap confidence intervals p.7"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 24 Slides: Bootstrap Confidence Intervals p.7",
+    "Reading 24: Bootstrap confidence intervals p.1",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.8",
+    "Reading 24: Bootstrap confidence intervals p.11",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.1",
+    "Reading 24: Bootstrap confidence intervals p.5"
+   ]
+  }
+ },
+ {
+  "q": "What is the chi-square goodness of fit test?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 19: Null Hypothesis Significance Testing III p.10",
+    "Reading 19: Null Hypothesis Significance Testing III p.14",
+    "Class 19 Slides: NHST III p.10",
+    "Reading 17b: Null Hypothesis Significance Testing I p.15",
+    "Class 26 Slides: Linear Regression p.16",
+    "Reading 26: Linear regression p.10"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 19: Null Hypothesis Significance Testing III p.10",
+    "Reading 19: Null Hypothesis Significance Testing III p.14",
+    "Class 19 Slides: NHST III p.7",
+    "Reading 19: Null Hypothesis Significance Testing III p.11",
+    "Reading 19: Null Hypothesis Significance Testing III p.14",
+    "Reading 19: Null Hypothesis Significance Testing III p.11"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 19: Null Hypothesis Significance Testing III p.10",
+    "Reading 19: Null Hypothesis Significance Testing III p.14",
+    "Reading 17b: Null Hypothesis Significance Testing I p.15",
+    "Class 19 Slides: NHST III p.7",
+    "Reading 19: Null Hypothesis Significance Testing III p.11",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.10"
+   ]
+  }
+ },
+ {
+  "q": "What is the probability density function of an exponential distribution?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 5c: Gallery of Continuous Random Variables p.2",
+    "Reading 10b: Maximum Likelihood Estimates p.4",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 7a: Joint Distributions, Independence p.3",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.7",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Class 05b Slides: Gallery of Continuous Variables, Histograms p.3",
+    "Class 05a Slides: Variance and Continuous Random Variables p.23",
+    "Reading 5c: Gallery of Continuous Random Variables p.3",
+    "Reading 5c: Gallery of Continuous Random Variables p.3",
+    "Reading 10b: Maximum Likelihood Estimates p.7",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.6"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 5c: Gallery of Continuous Random Variables p.2",
+    "Class 05a Slides: Variance and Continuous Random Variables p.23",
+    "Class 05b Slides: Gallery of Continuous Variables, Histograms p.3",
+    "Reading 10b: Maximum Likelihood Estimates p.7",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 10b: Maximum Likelihood Estimates p.4"
+   ]
+  }
+ },
+ {
+  "q": "What are Type I and Type II errors?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 18: Null Hypothesis Significance Testing II p.2",
+    "Class 18 Slides: NHST II p.17",
+    "Reading 17b: Null Hypothesis Significance Testing I p.5",
+    "Class 18 Slides: NHST II p.27",
+    "Class 18 Slides: NHST II p.29",
+    "Class 18 Slides: NHST II p.28"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Class 18 Slides: NHST II p.27",
+    "Class 18 Slides: NHST II p.28",
+    "Class 20: Problems p.2",
+    "Reading 18: Null Hypothesis Significance Testing II p.2",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.8",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.7"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 18: Null Hypothesis Significance Testing II p.2",
+    "Class 18 Slides: NHST II p.27",
+    "Class 18 Slides: NHST II p.28",
+    "Reading 17b: Null Hypothesis Significance Testing I p.5",
+    "Class 18 Slides: NHST II p.17",
+    "Class 18 Slides: NHST II p.29"
+   ]
+  }
+ },
+ {
+  "q": "How do we fit a line using least squares regression?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 26: Linear regression p.3",
+    "Reading 26: Linear regression p.2",
+    "Reading 26: Linear regression p.9",
+    "Class 26 Slides: Linear Regression p.6",
+    "Class 26 Slides: Linear Regression p.15",
+    "Reading 26: Linear regression p.1"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 26: Linear regression p.3",
+    "Class 26 Slides: Linear Regression p.6",
+    "Reading 26: Linear regression p.9",
+    "Reading 26: Linear regression p.5",
+    "Reading 26: Linear regression p.2",
+    "Reading 26: Linear regression p.1"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 26: Linear regression p.3",
+    "Class 26 Slides: Linear Regression p.6",
+    "Reading 26: Linear regression p.9",
+    "Reading 26: Linear regression p.2",
+    "Reading 26: Linear regression p.5",
+    "Class 26 Slides: Linear Regression p.15"
+   ]
+  }
+ },
+ {
+  "q": "What are odds and the Bayes factor?",
+  "style": "keyword",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.14",
+    "Reading 12b: Bayesian Updating: Odds p.4",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.2",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.15",
+    "Class 12: Problems p.2",
+    "Reading 12b: Bayesian Updating: Odds p.5"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.14",
+    "Reading 12b: Bayesian Updating: Odds p.1",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.10",
+    "Reading 12b: Bayesian Updating: Odds p.4",
+    "Reading 12b: Bayesian Updating: Odds p.8",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.11"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.14",
+    "Reading 12b: Bayesian Updating: Odds p.4",
+    "Reading 12b: Bayesian Updating: Odds p.1",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.15",
+    "Reading 12b: Bayesian Updating: Odds p.8",
+    "Reading 12b: Bayesian Updating: Odds p.7"
+   ]
+  }
+ },
+ {
+  "q": "How many ways can I pick a committee of 3 from 10 people when order doesn't matter?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Class 01 Slides: Introduction, Counting, and Sets p.29",
+    "Problem Set 10 p.2",
+    "Reading 24: Bootstrap confidence intervals p.2",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.10",
+    "Reading 1b: Counting and Sets p.8",
+    "Class 01: Problems p.1"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 01 Slides: Introduction, Counting, and Sets p.29",
+    "Class 01 Slides: Introduction, Counting, and Sets p.28",
+    "Class 01 Slides: Introduction, Counting, and Sets p.33",
+    "Reading 1b: Counting and Sets p.8",
+    "Class 01 Slides: Introduction, Counting, and Sets p.23",
+    "Class 01 Slides: Introduction, Counting, and Sets p.30"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Class 01 Slides: Introduction, Counting, and Sets p.29",
+    "Reading 1b: Counting and Sets p.8",
+    "Class 01: Problems p.2",
+    "Class 03: Problems p.2",
+    "Problem Set 04 p.1",
+    "Reading 1b: Counting and Sets p.7"
+   ]
+  }
+ },
+ {
+  "q": "If a medical test is 99% accurate, why is a positive result still probably wrong when the disease is rare?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 10a: Introduction to Statistics p.4",
+    "Reading 12b: Bayesian Updating: Odds p.2",
+    "Reading 11: Bayesian Updating with Discrete Priors p.7",
+    "Reading 23a: Confidence Intervals: Three Views p.9",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.5",
+    "Reading 11: Bayesian Updating with Discrete Priors p.8"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.2,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 10a: Introduction to Statistics p.4",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.15",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.5",
+    "Reading 23a: Confidence Intervals: Three Views p.9",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.10",
+    "Problem Set 10 p.2"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.16666666666666666,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 10a: Introduction to Statistics p.4",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.5",
+    "Reading 23a: Confidence Intervals: Three Views p.9",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.15",
+    "Reading 11: Bayesian Updating with Discrete Priors p.7",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.10"
+   ]
+  }
+ },
+ {
+  "q": "If I flip a coin until I get heads, how many flips should I expect on average?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Class 01: Problems p.2",
+    "Reading 11: Bayesian Updating with Discrete Priors p.6",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.2",
+    "Reading 15: Conjugate priors: Beta and normal p.5",
+    "Problem Set 07 p.2",
+    "Class 01 Slides: Introduction, Counting, and Sets p.33"
+   ]
+  },
+  "embeddings": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Class 01 Slides: Introduction, Counting, and Sets p.12",
+    "Class 02 Slides: Probability Basics p.20",
+    "Class 01 Slides: Introduction, Counting, and Sets p.33",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.7",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.4",
+    "Reading 17b: Null Hypothesis Significance Testing I p.3"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Class 01 Slides: Introduction, Counting, and Sets p.33",
+    "Reading 17b: Null Hypothesis Significance Testing I p.3",
+    "Class 02 Slides: Probability Basics p.20",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.4",
+    "Problem Set 02 p.2",
+    "Problem Set 08 p.1"
+   ]
+  }
+ },
+ {
+  "q": "How spread out is a random variable around its average, and how do I measure it?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 5a: Variance of Discrete Random Variables p.1",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.1",
+    "Reading 5c: Gallery of Continuous Random Variables p.4",
+    "Reading 5a: Variance of Discrete Random Variables p.2",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.4",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.11"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 5a: Variance of Discrete Random Variables p.1",
+    "Class 06b Slides: Central Limit Theorem p.3",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 5a: Variance of Discrete Random Variables p.2",
+    "Class 06b Slides: Central Limit Theorem p.9",
+    "Class 06b Slides: Central Limit Theorem p.10"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 5a: Variance of Discrete Random Variables p.1",
+    "Reading 5a: Variance of Discrete Random Variables p.2",
+    "Reading 4b: Discrete Random Variables: Expected Value p.2",
+    "Class 06b Slides: Central Limit Theorem p.3",
+    "Class 05a Slides: Variance and Continuous Random Variables p.4",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1"
+   ]
+  }
+ },
+ {
+  "q": "Why do averages of many samples look bell-shaped even when the data isn't?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.16666666666666666,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 24: Bootstrap confidence intervals p.11",
+    "Reading 19: Null Hypothesis Significance Testing III p.2",
+    "Reading 5c: Gallery of Continuous Random Variables p.4",
+    "Class 19 Slides: NHST III p.15",
+    "Reading 16b: Probability intervals p.3",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Class 06b Slides: Central Limit Theorem p.3",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.12",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.11",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.6"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.10",
+    "Reading 24: Bootstrap confidence intervals p.11",
+    "Class 06b Slides: Central Limit Theorem p.3",
+    "Reading 19: Null Hypothesis Significance Testing III p.2"
+   ]
+  }
+ },
+ {
+  "q": "Why does the average of more and more die rolls settle down to 3.5?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 10a: Introduction to Statistics p.3",
+    "Reading 4b: Discrete Random Variables: Expected Value p.1",
+    "Class 06b Slides: Central Limit Theorem p.15",
+    "Problem Set 02 p.1",
+    "Problem Set 07 p.4",
+    "Reading 12b: Bayesian Updating: Odds p.7"
+   ]
+  },
+  "embeddings": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Class 02 Slides: Probability Basics p.16",
+    "Class 06b Slides: Central Limit Theorem p.15",
+    "Reading 16a: Choosing priors p.2",
+    "Reading 4b: Discrete Random Variables: Expected Value p.1",
+    "Class 02 Slides: Probability Basics p.18",
+    "Class 06b Slides: Central Limit Theorem p.16"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Class 06b Slides: Central Limit Theorem p.15",
+    "Reading 4b: Discrete Random Variables: Expected Value p.1",
+    "Problem Set 07 p.4",
+    "Class 06b Slides: Central Limit Theorem p.16",
+    "Class 02 Slides: Probability Basics p.16",
+    "Problem Set 02 p.1"
+   ]
+  }
+ },
+ {
+  "q": "When two quantities tend to go up together, how do I put a number on that?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 7a: Joint Distributions, Independence p.7",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.2",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.4",
+    "Reading 2: Probability: Terminology and Examples p.2",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 6c: Appendix p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 7b: Covariance and Correlation p.7",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.3",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.11",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.2"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.1",
+    "Reading 7a: Joint Distributions, Independence p.7",
+    "Reading 7b: Covariance and Correlation p.7",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.2",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.4",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.3"
+   ]
+  }
+ },
+ {
+  "q": "How do I pick the parameter value that makes my observed data most probable?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 26: Linear regression p.7",
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.2",
+    "Reading 23a: Confidence Intervals: Three Views p.8",
+    "Reading 19: Null Hypothesis Significance Testing III p.12",
+    "Reading 10b: Maximum Likelihood Estimates p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.2",
+    "Reading 16a: Choosing priors p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.6",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.14"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 10b: Maximum Likelihood Estimates p.1",
+    "Reading 10b: Maximum Likelihood Estimates p.2",
+    "Reading 11: Bayesian Updating with Discrete Priors p.3",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.6",
+    "Reading 26: Linear regression p.7",
+    "Reading 10b: Maximum Likelihood Estimates p.1"
+   ]
+  }
+ },
+ {
+  "q": "After seeing some data, how should I change how much I believe each hypothesis?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 13a: Bayesian Updating with Continuous Priors p.6",
+    "Reading 18: Null Hypothesis Significance Testing II p.1",
+    "Reading 16a: Choosing priors p.2",
+    "Problem Set 09 p.1",
+    "Reading 23a: Confidence Intervals: Three Views p.4",
+    "Reading 17a: The Frequentist School of Statistics p.1"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 17b: Null Hypothesis Significance Testing I p.1",
+    "Reading 16a: Choosing priors p.2",
+    "Reading 11: Bayesian Updating with Discrete Priors p.3",
+    "Class 13 Slides: Bayesian Updating with Continuous Priors, Discrete Data p.7",
+    "Reading 16a: Choosing priors p.3",
+    "Reading 16a: Choosing priors p.1"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 16a: Choosing priors p.1",
+    "Reading 11: Bayesian Updating with Discrete Priors p.3",
+    "Reading 18: Null Hypothesis Significance Testing II p.3",
+    "Reading 19: Null Hypothesis Significance Testing III p.1",
+    "Reading 13a: Bayesian Updating with Continuous Priors p.6",
+    "Reading 17b: Null Hypothesis Significance Testing I p.1"
+   ]
+  }
+ },
+ {
+  "q": "What's the chance the next coin toss is heads given what I've seen so far?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.7",
+    "Class 12: Problems p.1",
+    "Class 13 Slides: Bayesian Updating with Continuous Priors, Discrete Data p.4",
+    "Reading 2: Probability: Terminology and Examples p.4",
+    "Reading 10b: Maximum Likelihood Estimates p.2",
+    "Reading 4a: Discrete Random Variables p.11"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.7",
+    "Class 02 Slides: Probability Basics p.20",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.8",
+    "Reading 12a: Bayesian Updating: Probabilistic Prediction p.3",
+    "Reading 17b: Null Hypothesis Significance Testing I p.3",
+    "Class 02 Slides: Probability Basics p.21"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.7",
+    "Class 12: Problems p.1",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.8",
+    "Reading 12a: Bayesian Updating: Probabilistic Prediction p.3",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.17",
+    "Class 13 Slides: Bayesian Updating with Continuous Priors, Discrete Data p.4"
+   ]
+  }
+ },
+ {
+  "q": "How do I decide whether my result is surprising enough to reject the boring explanation?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.5,
+   "top": [
+    "Class 19 Slides: NHST III p.6",
+    "Reading 17b: Null Hypothesis Significance Testing I p.2",
+    "Problem Set 10 p.2",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.24",
+    "Problem Set 07 p.1",
+    "Reading 17b: Null Hypothesis Significance Testing I p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.3333333333333333,
+   "top": [
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.4",
+    "Reading 19: Null Hypothesis Significance Testing III p.12",
+    "Reading 17b: Null Hypothesis Significance Testing I p.1",
+    "Reading 16a: Choosing priors p.2",
+    "Reading 17b: Null Hypothesis Significance Testing I p.3",
+    "Reading 23a: Confidence Intervals: Three Views p.6"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 17b: Null Hypothesis Significance Testing I p.2",
+    "Reading 17b: Null Hypothesis Significance Testing I p.2",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.4",
+    "Reading 17b: Null Hypothesis Significance Testing I p.1",
+    "Reading 17b: Null Hypothesis Significance Testing I p.8",
+    "Reading 17b: Null Hypothesis Significance Testing I p.6"
+   ]
+  }
+ },
+ {
+  "q": "How likely is my test to catch a real effect when there is one?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 17b: Null Hypothesis Significance Testing I p.9",
+    "Reading 19: Null Hypothesis Significance Testing III p.7",
+    "Reading 19: Null Hypothesis Significance Testing III p.7",
+    "Problem Set 08 p.2",
+    "Class 19 Slides: NHST III p.3",
+    "Reading 16a: Choosing priors p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.25,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 10a: Introduction to Statistics p.4",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.15",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.4",
+    "Reading 17b: Null Hypothesis Significance Testing I p.9",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.6",
+    "Reading 17b: Null Hypothesis Significance Testing I p.4"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 17b: Null Hypothesis Significance Testing I p.9",
+    "Reading 19: Null Hypothesis Significance Testing III p.7",
+    "Reading 16a: Choosing priors p.3",
+    "Reading 19: Null Hypothesis Significance Testing III p.7",
+    "Reading 17b: Null Hypothesis Significance Testing I p.8",
+    "Reading 17b: Null Hypothesis Significance Testing I p.3"
+   ]
+  }
+ },
+ {
+  "q": "How can I get a range for the mean when I don't know the population variance and have a small sample?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.16666666666666666,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 19: Null Hypothesis Significance Testing III p.5",
+    "Reading 23a: Confidence Intervals: Three Views p.3",
+    "Reading 19: Null Hypothesis Significance Testing III p.2",
+    "Reading 23a: Confidence Intervals: Three Views p.9",
+    "Problem Set 10 p.2",
+    "Reading 22: Confidence intervals based on normal data p.10"
+   ]
+  },
+  "embeddings": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 23b: Confidence Intervals for the Mean of Non-normal Data p.3",
+    "Reading 23b: Confidence Intervals for the Mean of Non-normal Data p.4",
+    "Reading 23b: Confidence Intervals for the Mean of Non-normal Data p.6",
+    "Reading 23b: Confidence Intervals for the Mean of Non-normal Data p.2",
+    "Reading 23b: Confidence Intervals for the Mean of Non-normal Data p.4",
+    "Reading 5a: Variance of Discrete Random Variables p.1"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 23a: Confidence Intervals: Three Views p.3",
+    "Reading 22: Confidence intervals based on normal data p.11",
+    "Reading 22: Confidence intervals based on normal data p.10",
+    "Problem Set 04 p.2",
+    "Reading 19: Null Hypothesis Significance Testing III p.5",
+    "Reading 23b: Confidence Intervals for the Mean of Non-normal Data p.3"
+   ]
+  }
+ },
+ {
+  "q": "How can I estimate uncertainty by resampling my own data over and over?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 24: Bootstrap confidence intervals p.7",
+    "Reading 24: Bootstrap confidence intervals p.1",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.2",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.5",
+    "Reading 22: Confidence intervals based on normal data p.1",
+    "Class 16 Slides: Choosing Priors; Probability Intervals p.17"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 24 Slides: Bootstrap Confidence Intervals p.4",
+    "Reading 24: Bootstrap confidence intervals p.3",
+    "Reading 24: Bootstrap confidence intervals p.3",
+    "Reading 24: Bootstrap confidence intervals p.1",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.5",
+    "Reading 24: Bootstrap confidence intervals p.7"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 24: Bootstrap confidence intervals p.1",
+    "Reading 24: Bootstrap confidence intervals p.7",
+    "Class 24 Slides: Bootstrap Confidence Intervals p.5",
+    "Reading 24: Bootstrap confidence intervals p.3",
+    "Reading 24: Bootstrap confidence intervals p.3",
+    "Reading 24: Bootstrap confidence intervals p.4"
+   ]
+  }
+ },
+ {
+  "q": "What's the difference between how Bayesians and frequentists think about probability?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 23a: Confidence Intervals: Three Views p.9",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.1",
+    "Reading 17a: The Frequentist School of Statistics p.1",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.4",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.3",
+    "Reading 17a: The Frequentist School of Statistics p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 17a: The Frequentist School of Statistics p.2",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.2",
+    "Reading 17a: The Frequentist School of Statistics p.1",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.2",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.3",
+    "Reading 17a: The Frequentist School of Statistics p.2"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 17a: The Frequentist School of Statistics p.1",
+    "Reading 17a: The Frequentist School of Statistics p.2",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.1",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.2",
+    "Reading 20: Comparison of frequentist and Bayesian inference p.3",
+    "Class 20 Slides: Comparison of Frequentist and Bayesian Inference p.3"
+   ]
+  }
+ },
+ {
+  "q": "Does knowing one event happened change the chance of another? How do I check?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.7",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.1",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.6",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.22",
+    "Class 02 Slides: Probability Basics p.17",
+    "Problem Set 04 p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.25,
+   "p": 0.5,
+   "top": [
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.9",
+    "Reading 12b: Bayesian Updating: Odds p.6",
+    "Class 02 Slides: Probability Basics p.9",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.10",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.7",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.7"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.7",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.1",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.7",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.6",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3",
+    "Class 02 Slides: Probability Basics p.10"
+   ]
+  }
+ },
+ {
+  "q": "How do I find the chance of A or B when they can both happen?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.22",
+    "Class 04: Problems p.1",
+    "Reading 17b: Null Hypothesis Significance Testing I p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.5",
+    "Class 06a: Problems p.2",
+    "Reading 12a: Bayesian Updating: Probabilistic Prediction p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.5,
+   "top": [
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.6",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.2",
+    "Class 02 Slides: Probability Basics p.21",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Reading 2: Probability: Terminology and Examples p.6",
+    "Reading 2: Probability: Terminology and Examples p.5"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.22",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.6",
+    "Class 04: Problems p.1",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.2",
+    "Reading 17b: Null Hypothesis Significance Testing I p.4"
+   ]
+  }
+ },
+ {
+  "q": "If I square a random variable, how do I find its new density?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 5d: Manipulating Continuous Random Variables p.1",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.1",
+    "Reading 5b: Continuous Random Variables p.7",
+    "Reading 7a: Joint Distributions, Independence p.5",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.6",
+    "Reading 5c: Gallery of Continuous Random Variables p.4"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.11",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 5d: Manipulating Continuous Random Variables p.3",
+    "Reading 5b: Continuous Random Variables p.4",
+    "Class 06b Slides: Central Limit Theorem p.16",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.5"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 5b: Continuous Random Variables p.7",
+    "Reading 5b: Continuous Random Variables p.4",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.6",
+    "Reading 5b: Continuous Random Variables p.3",
+    "Reading 5b: Continuous Random Variables p.2",
+    "Reading 4a: Discrete Random Variables p.1"
+   ]
+  }
+ },
+ {
+  "q": "How do I get a single variable's distribution from a table of two variables?",
+  "style": "paraphrase",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 7a: Joint Distributions, Independence p.7",
+    "Class 06b Slides: Central Limit Theorem p.15",
+    "Reading 5a: Variance of Discrete Random Variables p.1",
+    "Reading 4a: Discrete Random Variables p.9",
+    "Reading 4a: Discrete Random Variables p.7",
+    "Reading 10b: Maximum Likelihood Estimates p.1"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.24",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.23",
+    "Reading 7a: Joint Distributions, Independence p.7",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.19",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.16",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.10"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 7a: Joint Distributions, Independence p.7",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.29",
+    "Reading 7a: Joint Distributions, Independence p.1",
+    "Reading 24: Bootstrap confidence intervals p.2",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.24",
+    "Class 06b Slides: Central Limit Theorem p.15"
+   ]
+  }
+ },
+ {
+  "q": "What is $E[X]$ when $P(X=1)=p$ and $P(X=0)=1-p$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 5a: Variance of Discrete Random Variables p.6",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.17",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.16",
+    "Reading 4b: Discrete Random Variables: Expected Value p.4",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.15",
+    "Reading 7b: Covariance and Correlation p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.11",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.24",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.18",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.14",
+    "Reading 4b: Discrete Random Variables: Expected Value p.4",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.15"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 4b: Discrete Random Variables: Expected Value p.4",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.15",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.16",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.14",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.17",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.24"
+   ]
+  }
+ },
+ {
+  "q": "Is $\\mathrm{Var}(X+Y) = \\mathrm{Var}(X) + \\mathrm{Var}(Y)$ always true?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Reading 7b: Covariance and Correlation p.1",
+    "Reading 7b: Covariance and Correlation p.9",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.22",
+    "Class 05a Slides: Variance and Continuous Random Variables p.11",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.5",
+    "Reading 5a: Variance of Discrete Random Variables p.5"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Class 05a Slides: Variance and Continuous Random Variables p.11",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.5",
+    "Reading 7b: Covariance and Correlation p.3",
+    "Reading 6c: Appendix p.3",
+    "Class 05a Slides: Variance and Continuous Random Variables p.6",
+    "Reading 7b: Covariance and Correlation p.9"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 05a Slides: Variance and Continuous Random Variables p.11",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.5",
+    "Reading 7b: Covariance and Correlation p.9",
+    "Reading 5a: Variance of Discrete Random Variables p.5",
+    "Class 05a Slides: Variance and Continuous Random Variables p.6",
+    "Reading 7b: Covariance and Correlation p.1"
+   ]
+  }
+ },
+ {
+  "q": "What does $f(x) = \\lambda e^{-\\lambda x}$ describe?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 24: Bootstrap confidence intervals p.10",
+    "Reading 13b: Notational conventions p.1",
+    "Reading 4a: Discrete Random Variables p.3",
+    "Reading 7a: Joint Distributions, Independence p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Class 05b Slides: Gallery of Continuous Variables, Histograms p.3",
+    "Reading 10b: Maximum Likelihood Estimates p.7",
+    "Class 05a Slides: Variance and Continuous Random Variables p.23",
+    "Class 26 Slides: Linear Regression p.5",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.7",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.2"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Class 05b Slides: Gallery of Continuous Variables, Histograms p.3",
+    "Class 05a Slides: Variance and Continuous Random Variables p.23",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.2",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.6",
+    "Reading 5c: Gallery of Continuous Random Variables p.2",
+    "Reading 24: Bootstrap confidence intervals p.10"
+   ]
+  }
+ },
+ {
+  "q": "How do I use $P(B|A)$ to get $P(A|B)$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Class 11: Problems p.2",
+    "Class 18: Problems p.3",
+    "Class 20: Problems p.2",
+    "Class 18 Slides: NHST II p.28"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.17",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.2",
+    "Reading 11: Bayesian Updating with Discrete Priors p.2",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.5"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.8",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.3",
+    "Reading 3: Conditional Probability, Independence and Bayes' Theorem p.2",
+    "Class 03 Slides: Conditional Probability, Independence, and Bayes' Theorem p.17",
+    "Class 11: Problems p.2",
+    "Class 18: Problems p.3"
+   ]
+  }
+ },
+ {
+  "q": "What is $\\Phi(z)$ and how do I use it?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 5c: Gallery of Continuous Random Variables p.6",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.25",
+    "Class 06b Slides: Central Limit Theorem p.5",
+    "Reading 18: Null Hypothesis Significance Testing II p.4",
+    "Reading 23a: Confidence Intervals: Three Views p.2",
+    "Reading 17b: Null Hypothesis Significance Testing I p.14"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 5c: Gallery of Continuous Random Variables p.6",
+    "Reading 5d: Manipulating Continuous Random Variables p.4",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.5",
+    "Reading 5c: Gallery of Continuous Random Variables p.5",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.25",
+    "Reading 18: Null Hypothesis Significance Testing II p.5"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 5c: Gallery of Continuous Random Variables p.6",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.25",
+    "Reading 5c: Gallery of Continuous Random Variables p.5",
+    "Reading 5d: Manipulating Continuous Random Variables p.4",
+    "Class 06b Slides: Central Limit Theorem p.5",
+    "Reading 6a: Expectation, Variance and Standard Deviation for Continuous Random Variables p.5"
+   ]
+  }
+ },
+ {
+  "q": "If $X_i \\sim N(\\mu, \\sigma^2)$, what is the distribution of $\\bar{X}$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.3333333333333333,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 16b: Probability intervals p.2",
+    "Reading 5a: Variance of Discrete Random Variables p.2",
+    "Reading 19: Null Hypothesis Significance Testing III p.4",
+    "Reading 19: Null Hypothesis Significance Testing III p.5",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.4"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 06b Slides: Central Limit Theorem p.7",
+    "Class 06b Slides: Central Limit Theorem p.12",
+    "Class 06b Slides: Central Limit Theorem p.13",
+    "Class 22 Slides: Confidence Intervals Based on Normal Data p.7",
+    "Class 06b Slides: Central Limit Theorem p.4",
+    "Class 05b Slides: Gallery of Continuous Variables, Histograms p.6"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.16666666666666666,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 23a: Confidence Intervals: Three Views p.3",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.10",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.13",
+    "Reading 5c: Gallery of Continuous Random Variables p.4",
+    "Class 18 Slides: NHST II p.23",
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12"
+   ]
+  }
+ },
+ {
+  "q": "Why is the posterior $\\propto$ likelihood $\\times$ prior?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.2,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 15: Conjugate priors: Beta and normal p.5",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.7",
+    "Reading 15: Conjugate priors: Beta and normal p.2",
+    "Reading 15: Conjugate priors: Beta and normal p.2",
+    "Reading 11: Bayesian Updating with Discrete Priors p.4",
+    "Class 15: Problems p.1"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.16666666666666666,
+   "top": [
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.18",
+    "Reading 11: Bayesian Updating with Discrete Priors p.4",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.19",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.13",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.14"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 11: Bayesian Updating with Discrete Priors p.4",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.18",
+    "Class 12 Slides: Bayesian Updating: Probabilistic Prediction; Odds p.14",
+    "Reading 15: Conjugate priors: Beta and normal p.2",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Reading 15: Conjugate priors: Beta and normal p.5"
+   ]
+  }
+ },
+ {
+  "q": "With a $\\mathrm{Beta}(a,b)$ prior and $k$ successes in $n$ trials, what's the posterior?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.8",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Class 15: Problems p.3",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Class 04 Slides: Discrete Random Variables: Expected Value p.25"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.8",
+    "Class 13 Slides: Bayesian Updating with Continuous Priors, Discrete Data p.22",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.5"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.8",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.3",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.19",
+    "Reading 15: Conjugate priors: Beta and normal p.5"
+   ]
+  }
+ },
+ {
+  "q": "What is $\\bar{x} \\pm z_{\\alpha/2} \\sigma/\\sqrt{n}$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 22: Confidence intervals based on normal data p.4",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.13",
+    "Reading 16b: Probability intervals p.2",
+    "Reading 23a: Confidence Intervals: Three Views p.2",
+    "Reading 22: Confidence intervals based on normal data p.5"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 22 Slides: Confidence Intervals Based on Normal Data p.13",
+    "Class 22 Slides: Confidence Intervals Based on Normal Data p.7",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.13",
+    "Reading 23a: Confidence Intervals: Three Views p.2",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.18",
+    "Class 22 Slides: Confidence Intervals Based on Normal Data p.6"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.13",
+    "Reading 23a: Confidence Intervals: Three Views p.2",
+    "Class 22 Slides: Confidence Intervals Based on Normal Data p.13",
+    "Class 22 Slides: Confidence Intervals Based on Normal Data p.6",
+    "Reading 22: Confidence intervals based on normal data p.4",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.21"
+   ]
+  }
+ },
+ {
+  "q": "What is $\\rho = \\mathrm{Cov}(X,Y)/(\\sigma_X \\sigma_Y)$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.22",
+    "Reading 7b: Covariance and Correlation p.3",
+    "Reading 7b: Covariance and Correlation p.1",
+    "Reading 7b: Covariance and Correlation p.9",
+    "Reading 7b: Covariance and Correlation p.4",
+    "Reading 7b: Covariance and Correlation p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.25",
+    "Reading 7b: Covariance and Correlation p.5",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.21",
+    "Reading 7b: Covariance and Correlation p.4",
+    "Reading 7b: Covariance and Correlation p.6",
+    "Reading 7b: Covariance and Correlation p.1"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 1.0,
+   "top": [
+    "Reading 7b: Covariance and Correlation p.5",
+    "Reading 7b: Covariance and Correlation p.1",
+    "Reading 7b: Covariance and Correlation p.4",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.22",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.25",
+    "Reading 7b: Covariance and Correlation p.3"
+   ]
+  }
+ },
+ {
+  "q": "How do I find $F(x)$ from $f(x)$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 1.0,
+   "mrr": 0.5,
+   "p": 0.16666666666666666,
+   "top": [
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.15",
+    "Reading 5b: Continuous Random Variables p.6",
+    "Reading 7a: Joint Distributions, Independence p.8",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.6",
+    "Problem Set 05 p.1",
+    "Class 07: Problems p.2"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 0.3333333333333333,
+   "p": 0.3333333333333333,
+   "top": [
+    "Class 26 Slides: Linear Regression p.5",
+    "Reading 5d: Manipulating Continuous Random Variables p.2",
+    "Reading 5b: Continuous Random Variables p.6",
+    "Class 05a Slides: Variance and Continuous Random Variables p.16",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.13",
+    "Reading 10b: Maximum Likelihood Estimates p.7"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.16666666666666666,
+   "top": [
+    "Reading 5b: Continuous Random Variables p.6",
+    "Class 07 Slides: Joint Distributions, Independence, Covariance and Correlation p.15",
+    "Class 26 Slides: Linear Regression p.5",
+    "Reading 5d: Manipulating Continuous Random Variables p.2",
+    "Reading 7a: Joint Distributions, Independence p.8",
+    "Class 06a Slides: Continuous Expectation and Variance, Quantiles, and Law of Large Numbers p.6"
+   ]
+  }
+ },
+ {
+  "q": "What is $t = (\\bar{x}-\\mu_0)/(s/\\sqrt{n})$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 6b: Central Limit Theorem and the Law of Large Numbers p.12",
+    "Reading 19: Null Hypothesis Significance Testing III p.4",
+    "Reading 19: Null Hypothesis Significance Testing III p.5",
+    "Reading 19: Null Hypothesis Significance Testing III p.7",
+    "Reading 16b: Probability intervals p.2",
+    "Reading 23a: Confidence Intervals: Three Views p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.5,
+   "top": [
+    "Reading 22: Confidence intervals based on normal data p.10",
+    "Class 18 Slides: NHST II p.23",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.14",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.14",
+    "Class 17 Slides: The Frequentist School of Statistics; NHST I p.13",
+    "Reading 18: Null Hypothesis Significance Testing II p.6"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.6666666666666666,
+   "top": [
+    "Reading 22: Confidence intervals based on normal data p.10",
+    "Class 23 Slides: Confidence Intervals: Three Views; Non-normal Data p.14",
+    "Class 18 Slides: NHST II p.23",
+    "Reading 19: Null Hypothesis Significance Testing III p.5",
+    "Reading 22: Confidence intervals based on normal data p.11",
+    "Reading 18: Null Hypothesis Significance Testing II p.6"
+   ]
+  }
+ },
+ {
+  "q": "How do I estimate $\\beta_1$ in $y = \\beta_0 + \\beta_1 x$?",
+  "style": "notation",
+  "bm25 (before)": {
+   "hit": 0.0,
+   "mrr": 0.0,
+   "p": 0.0,
+   "top": [
+    "Reading 16b: Probability intervals p.5",
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.9",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.19",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Reading 15: Conjugate priors: Beta and normal p.3"
+   ]
+  },
+  "embeddings": {
+   "hit": 1.0,
+   "mrr": 1.0,
+   "p": 0.8333333333333334,
+   "top": [
+    "Class 26 Slides: Linear Regression p.14",
+    "Reading 26: Linear regression p.7",
+    "Class 26 Slides: Linear Regression p.9",
+    "Reading 26: Linear regression p.1",
+    "Class 26 Slides: Linear Regression p.15",
+    "Reading 14: Continuous Data with Continuous Priors p.7"
+   ]
+  },
+  "hybrid (app)": {
+   "hit": 1.0,
+   "mrr": 0.2,
+   "p": 0.3333333333333333,
+   "top": [
+    "Class 10 Slides: Introduction to Statistics; Maximum Likelihood Estimates p.9",
+    "Reading 15: Conjugate priors: Beta and normal p.4",
+    "Class 15 Slides: Conjugate Priors: Beta and Normal p.7",
+    "Reading 16b: Probability intervals p.5",
+    "Class 26 Slides: Linear Regression p.14",
+    "Reading 26: Linear regression p.7"
+   ]
+  }
+ }
+]
