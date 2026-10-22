@@ -19,3 +19,6 @@
 - **Checkpoint Assignments (`assignments.py`):**
   - `assignment_verify` (helper) is the only call that sees the active checkpoint's `target_answer`/`rubric`; `assignment_tutor` gets the problem, established (passed/skipped) results and the stage (`nudge`/`hint`/`advance`/`complete`), never solution notes or unreached answers. `assignment_gen` (tutor model) is the only call that sees solution notes.
   - Every tutor reply is checked with `guard.short_answer_leaks` (whole target, unseen numbers, shingles) and `tutor._llm_leak` (fail closed) against all unreached answers; leaks become `_safe_reply` and are tagged `leak_blocked`.
+- **AI TA Q&A (`qna.py`):**
+  - `qna_extract` (helper) turns documents into pending pairs; `qna_classify` (helper) routes by category; `qna_answer` (tutor model) answers from approved pairs + public chunks with `[S#]` citations and `[NC]`.
+  - The problem set rule comes from `kb.turn_pset`. Every answer passes `kb.guard.leaks`, and Graded sets also `_llm_leak` on `solution_chunks_for`; leaks become `qna.SAFE_REPLY`. Staff instructions go below the safety rules (`TA_RULES`).

@@ -206,6 +206,22 @@ def _mock_complete(purpose: str, messages: list[dict], attr: dict | None) -> str
         return json.dumps({"questions": [f"What are the key ideas in {t}?" for t in titles]})
     if purpose == "mismatch":
         return json.dumps({"category": "", "warning": ""})
+    if purpose == "qna_classify":
+        q = last.split("QUESTION:", 1)[-1].lower()
+        for cat, words in (("grades", ("grade", "regrade", "score")), ("extensions", ("extension", "late", "accommodation")),
+                           ("personal", ("sick", "family", "personal")), ("logistics", ("deadline", "exam", "office hours", "due")),
+                           ("assignments", ("problem set", "pset", "homework", "assignment"))):
+            if any(w in q for w in words):
+                return json.dumps({"category": cat})
+        return json.dumps({"category": "concepts"})
+    if purpose == "qna_extract":
+        pairs = re.findall(r"^Q:\s*(.+?)\s*\nA:\s*(.+?)\s*$", last, re.M)
+        return json.dumps({"pairs": [{"question": q, "answer": a} for q, a in pairs]})
+    if purpose == "qna_answer":
+        system = messages[0]["content"]
+        if "[S1]" in system:
+            return "(mock TA) Here is what the course staff have said about this before. [S1]"
+        return "[NC] (mock TA) I couldn't find an answer to that in the course's Q&A or materials."
     if purpose == "assignment_gen":
         steps = [("Set up the model", "Which quantities does the problem give you, and what are you asked to find?",
                   "The given quantities and the unknown, named with the course's notation", 30),

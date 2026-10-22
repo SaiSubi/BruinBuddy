@@ -142,6 +142,8 @@ def _check_turn_gates(c: dict, kb: knowledge.CourseKnowledge | None, m: Member, 
         since = time.time() - 86400
         day = (conn.execute("SELECT COUNT(*) AS n FROM messages WHERE role='user' AND created_at>?", (since,)).fetchone()["n"]
                + conn.execute("SELECT COUNT(*) AS n FROM assignment_messages WHERE role='user' AND created_at>?",
+                              (since,)).fetchone()["n"]
+               + conn.execute("SELECT COUNT(*) AS n FROM qa_messages WHERE role='student' AND created_at>?",
                               (since,)).fetchone()["n"])
         if day >= config.GLOBAL_DAILY_LIMIT:
             _limit(429, "BruinBuddy has reached its daily limit for everyone. Please try again tomorrow.")

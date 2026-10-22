@@ -18,7 +18,7 @@ Log in / Sign up / Forgot password / Set new password
    ▼
 Home ─┬─ no courses ─────────► Welcome: [Join a course] [Create a course]
       ├─ student in a course ► Course home ──► Chat (sidebar of chats + conversation + source panel)
-      └─ owner or staff ─────► Staff console ─ Setup · Materials · Problem sets · AI assignments · Guidelines ·
+      └─ owner or staff ─────► Staff console ─ Setup · Materials · Problem sets · AI assignments · Q&A assistant · Guidelines ·
                                                Members · Dashboard · Pause · Plan & limits
                                              └ Preview as student ──► Course home (preview) ──► Chat
 Top bar: course switcher · Join or create · name and Log out · About
@@ -58,6 +58,13 @@ Top bar: course switcher · Join or create · name and Log out · About
 **F13. AI-guided assignment (staff).** Staff console → AI assignments → New assignment → title, problem statement, solution notes → "Auto-generate checkpoints with AI" → edit each checkpoint (title, question, target answer, rubric, hint, points; reorder, add, remove) → "Publish assignment". The list shows started, completed and average score per assignment, with Gradebook (per-student score, per-checkpoint status and tries, expandable transcripts), "Try as student" and Delete.
 
 **F14. AI-guided assignment (student).** Course menu → AI Assignments (`#/c/12/assignments`), also listed under Problem Sets → a card per assignment with progress and score → the workspace (`#/c/12/assignments/3`): left, the problem and a vertical checkpoint stepper (Passed, Active, Skipped, Locked; points; the active question; results of done steps); right, a banner with the active checkpoint, the Socratic chat, "Request hint", "Skip & reveal step (0 pts)" (with a confirm dialog) and the composer. The score sits in the header, with "Your instructor can see this assignment’s conversation and your score." On a phone the two panels stack.
+
+**F15. Ask the course (student).** Course menu → Ask the Course (`#/c/12/qna`). The page has a question box, the topics the staff always answer, the FAQ, and "Your questions" with a status for each (Answered by AI, With course staff, Staff replied, Resolved). A thread (`#/c/12/qna/5`) shows the question and the assistant's answer with its sources (a past Q&A or a page of the materials), plus two buttons: "This answered my question" and "Not satisfied? Ask the course staff" (with an optional note). The thread says who can see it. Staff replies appear in the thread with the staff member's name.
+
+**F16. AI teaching assistant (staff).** Staff console → Q&A assistant, with three views:
+- **Inbox:** counts and the escalated threads, waiting ones first. Open one to read it and reply (Send, or Send and mark resolved), then "Save to the knowledge base", with an option to publish it to the FAQ.
+- **Knowledge base:** upload Q&A documents (with a rights and privacy confirmation) and see each one's status and pairs found. Below that, the review queue (edit, Approve, Approve all, Delete), the approved pairs with an FAQ toggle, and "Add a Q&A pair".
+- **Rules:** the assistant on or off, "Who answers" for each kind of question, and instructions with a character counter.
 
 **F12. Errors and limits** (PRD §4.8): every failure keeps the student's message in the thread and says what to do next — Retry for AI failures; allowance reached with when it frees up; tutor paused with until when; removed or blocked with "contact your instructor"; session expired returns to log in and keeps the draft.
 

@@ -30,7 +30,7 @@ Whenever auditing changes before a commit or PR, systematically verify:
    - Does `tutor.py` keep protected solutions out of the generator prompt?
    - Are Graded turns still buffered through both `guard.py` text checks and the model leak check?
 3. **Gate & Billing Integrity:**
-   - Are pause windows, student allowances, course budget, and app-wide limits enforced in `chats._check_turn_gates` (shared by `post_message`, `post_illustrate` and `assignments.post_turn`) *before* any model call?
+   - Are pause windows, student allowances, course budget, and app-wide limits enforced in `chats._check_turn_gates` (shared by `post_message`, `post_illustrate`, `assignments.post_turn` and `qna._respond`) *before* any model call?
    - Does course activation only happen via `billing._activate` after `_pays_for` passes?
 4. **SQL Portability & Concurrency:**
    - Are all SQL queries using `?` placeholders without SQLite-only functions?

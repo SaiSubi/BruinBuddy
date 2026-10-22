@@ -26,7 +26,7 @@ Before modifying any backend code, read:
 
 ## Non-Negotiable Invariants
 1. **Tenancy:** Every course-scoped endpoint must depend on `get_member`, `get_staff`, or `get_owner`. Chat routes must also verify `chat.user_id == current_user.id`. Non-members receive `404`; removed or blocked members receive `403`. Never trust role claims from request bodies or query params.
-2. **Gate Ordering:** All pre-turn gates (course pause windows, student token allowances, course AI budget, app-wide limit) must be enforced in `chats._check_turn_gates` (shared by `post_message`, `post_illustrate` and `assignments.post_turn`) *before* any model call.
+2. **Gate Ordering:** All pre-turn gates (course pause windows, student token allowances, course AI budget, app-wide limit) must be enforced in `chats._check_turn_gates` (shared by `post_message`, `post_illustrate`, `assignments.post_turn` and `qna._respond`) *before* any model call.
 3. **Payment Activation:** A course becomes active *only* through `billing._activate` after a verified Stripe webhook or server-side Stripe session lookup passes `_pays_for` (matching metadata, paid status, full USD amount).
 4. **Portable SQL:** Always use `?` parameter placeholders (auto-translated for `psycopg`; literal `%` is escaped automatically), standard `ON CONFLICT`, and `RETURNING`. Never use SQLite-only functions like `group_concat`. Use `db.lock_row` before count-then-insert seat checks.
 5. **Production Safety:** Never weaken `config.check_production_settings`.

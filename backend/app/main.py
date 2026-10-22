@@ -1,4 +1,4 @@
-"""FastAPI app: accounts, courses and memberships, billing, materials, chats, assignments, dashboard.
+"""FastAPI app: accounts, courses and memberships, billing, materials, chats, assignments, Q&A, dashboard.
 
 Each course is a tenant. Routes check an active membership in the course (courses.get_member) before touching
 anything in it; roles come only from memberships."""
@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from . import accounts, assignments, billing, chats, config, courses, dashboard, materials, members
+from . import accounts, assignments, billing, chats, config, courses, dashboard, materials, members, qna
 from .db import init_db
 
 _google = {"at": 0.0, "enabled": False}
@@ -30,7 +30,7 @@ app = FastAPI(title="BruinBuddy", lifespan=lifespan,
 app.add_middleware(CORSMiddleware, allow_origins=config.ALLOWED_ORIGINS,
                    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type"], max_age=600)
-for module in (accounts, courses, members, billing, materials, chats, assignments, dashboard):
+for module in (accounts, courses, members, billing, materials, chats, assignments, qna, dashboard):
     app.include_router(module.router)
 
 

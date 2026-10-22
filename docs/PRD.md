@@ -103,7 +103,7 @@ One login can hold several roles: an owner of one course, a student in another. 
 **Agreed (2026-10-20):**
 - *Pricing (built):* one payment per course per 10-week term, no subscription: $19 base + $9 per staff account (owner free) + $2 per student seat for each 100k tokens of weekly allowance (minimum $0.50 per seat). Example: 40 students, 2 staff, 100k tokens a week = $117. The course's total AI budget is (students + staff + 1) × weekly allowance × 10 weeks. Details: TECHNICAL.md §5.
 - *Cap period (built):* a rolling week by default; the owner can choose day, week or term at setup and change it later.
-- *Privacy (built):* staff see aggregates only, never individual chats (as §3.6 says). Exception: AI-guided assignment conversations are graded work and visible to staff, and students are told so (§3.11).
+- *Privacy (built):* staff see aggregates only, never individual chats (as §3.6 says). Exception: AI-guided assignment conversations are graded work and visible to staff, and students are told so (§3.11). Q&A questions become visible to staff once the student, or a staff rule, sends them to staff (§3.12).
 - *Retention (not built):* keep chats until the end of the term plus 30 days, then delete them; removed students' chats follow the same rule. Today nothing is deleted automatically.
 - *Term end or lapse (not built):* after the term the course becomes read-only for students (history visible, no new questions) until renewed. Today a course stays active indefinitely.
 
@@ -242,6 +242,14 @@ A staff member writes one problem and its solution notes, clicks **Auto-generate
 - Turns follow the same gates as the tutor (pause, allowance, course budget, daily limit); skipping is refused during a pause.
 - **Privacy exception:** an assignment is graded work, so staff see each student's score, step-by-step progress and the assignment conversation in a gradebook. The workspace says so. Tutor chats stay aggregate-only (§3.6).
 - Not in this version: editing a published assignment, due dates, drafts, exporting grades, LMS grade sync.
+
+### 3.12 AI teaching assistant Q&A (issue #20)
+Professors change TAs every term, but the content, the assignments and the questions students ask stay much the same. The course keeps its Q&A knowledge from term to term, so a new TA (and the AI) starts with it.
+- **Knowledge base:** staff upload past Q&A documents (PDF, Word, text). The AI extracts question-answer pairs, which staff approve or edit before they are used. Staff can also add pairs by hand, and save any reply they give with one click, so the knowledge base grows every term.
+- **Rules:** staff choose which kinds of questions the AI may answer and which always go to staff (by default grades, extensions and personal matters), and write instructions for it. Rules can't unlock solutions or change problem set modes.
+- **Students** ask in "Ask the course". The AI answers right away from the knowledge base and materials, cites its sources, and says when it can't answer. "Not satisfied? Ask the course staff" sends the question to a shared inbox, where any professor or TA can reply.
+- **Privacy:** a question is private to the student until it is escalated. After that, course staff can read that thread. Good answers can be published to a course FAQ without the asker's name.
+- Not in this version: email notifications, assigning threads to a specific TA, Piazza/Ed and CSV importers, a public class board.
 
 ---
 

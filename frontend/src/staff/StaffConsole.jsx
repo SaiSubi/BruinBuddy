@@ -6,6 +6,7 @@ import Setup from './Setup.jsx'
 import Materials from './Materials.jsx'
 import ProblemSets from './ProblemSets.jsx'
 import Assignments from './Assignments.jsx'
+import QnA from './QnA.jsx'
 import Guidelines from './Guidelines.jsx'
 import Members from './Members.jsx'
 import Dashboard from './Dashboard.jsx'
@@ -14,7 +15,7 @@ import Plan from './Plan.jsx'
 
 const TABS = [
   ['setup', 'Setup'], ['materials', 'Materials'], ['problem-sets', 'Problem sets'], ['assignments', 'AI assignments'],
-  ['guidelines', 'Guidelines'],
+  ['qna', 'Q&A assistant'], ['guidelines', 'Guidelines'],
   ['members', 'Members'], ['dashboard', 'Dashboard'], ['pause', 'Pause'], ['plan', 'Plan & limits'],
 ]
 
@@ -42,7 +43,7 @@ export default function StaffConsole({ course, tab, reload, cfg }) {
   const props = { course, reload, cfg }
   const panels = {
     setup: <Setup {...props} />, materials: <Materials {...props} />, 'problem-sets': <ProblemSets {...props} />,
-    assignments: <Assignments {...props} />,
+    assignments: <Assignments {...props} />, qna: <QnA {...props} />,
     guidelines: <Guidelines {...props} />, members: <Members {...props} />, dashboard: <Dashboard {...props} />,
     pause: <Pause {...props} />, plan: <Plan {...props} />,
   }
