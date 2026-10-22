@@ -1,0 +1,24 @@
+# Memory — `backend-architect`
+
+*Last updated: 2026-10-20*
+
+## 1. Core Backend Architecture (`backend/app/`)
+- **Entrypoint:** `main.py` mounts API routers and serves static frontend assets from `frontend/dist` when built.
+- **Auth (`accounts.py`, `auth.py`):**
+  - Dual-mode: In production (`AUTH_PROVIDER=supabase`), verifies Supabase JWTs via JWKS and requires `SUPABASE_ANON_KEY`. Locally (`AUTH_PROVIDER` empty), uses local email/password accounts stored in SQLite.
+  - Mints short-lived signed tokens for `/files` access (`public` scope for students, `staff` scope for staff).
+- **Multi-Tenancy (`courses.py`, `members.py`):**
+  - Dependencies: `get_member`, `get_staff`, `get_owner`.
+  - Non-members receive HTTP `404` (prevents course enumeration); removed or blocked members receive HTTP `403`.
+  - Roles (`owner`, `staff`, `student`) are read exclusively from the `memberships` table.
+- **Billing (`billing.py`):**
+  - Course activation happens *only* in `billing._activate` after either the signed Stripe webhook (`/api/stripe/webhook`) or server-side session verification passes `_pays_for` (checks metadata, paid state, and full USD price).
+  - Local dev test checkout is only enabled when Stripe keys are unset and outside production.
+- **Database (`db.py`):**
+  - Tables: `users`, `courses`, `memberships`, `staff_codes`, `documents`, `solution_links`, `chunks`, `guidelines`, `pauses`, `chats`, `messages`, `illustrations`, `memories`, `usage_log`, `stripe_events`.
+  - Uses `?` placeholders everywhere; `db.py` translates `?` to `%s` (and escapes literal `%`) when connected to Postgres (`psycopg`).
+  - Use `db.lock_row` before seat-count checks or other count-then-insert operations to prevent race conditions.
+- **Pre-Turn Gates (`chats.py`):**
+  - `chats._check_turn_gates` checks course active status, ready materials, course pause windows, per-student token allowances, course AI budget, and app-wide limits *before* invoking `tutor.run_turn` or `illustrate.generate_illustration`.
+- **Illustrations (`illustrate.py`, `chats.py`):**
+  - `GET /api/chats/{chat_id}/illustrations`, `POST /api/chats/{chat_id}/illustrate`, and `GET /api/illustrations/{id}/download?format=html|svg|py` all enforce `_own_chat`.

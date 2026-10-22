@@ -129,3 +129,42 @@ def test_config_exposes_auth_provider(app, supabase, monkeypatch):
     assert cfg["auth"] == {"provider": "supabase", "supabase_url": SUPA, "supabase_anon_key": "public-anon-key",
                            "google": True}
     assert cfg["billing"]["mode"] == "mock" and "cap_presets" in cfg["plans"]
+
+
+def test_student_vs_instructor_signup_and_course_creation_guard(app):
+    c = TestClient(app)
+    stu_email = email("student_role")
+    r_stu = c.post(
+        "/api/auth/signup",
+        json={"email": stu_email, "password": "password123", "name": "Bruin Student", "account_type": "student"},
+    )
+    assert r_stu.status_code == 200, r_stu.text
+    stu_token = r_stu.json()["token"]
+    assert r_stu.json()["user"]["account_type"] == "student"
+
+    me_stu = c.get("/api/me", headers={"Authorization": f"Bearer {stu_token}"}).json()
+    assert me_stu["account_type"] == "student"
+
+    # Students cannot create courses (403 Forbidden)
+    r_create_blocked = c.post(
+        "/api/courses",
+        headers={"Authorization": f"Bearer {stu_token}"},
+        json={"name": "Blocked Course", "student_seats": 30, "staff_seats": 2, "token_cap": 100_000, "cap_period": "week"},
+    )
+    assert r_create_blocked.status_code == 403
+
+    # Instructors / Tutors can create courses
+    inst_email = email("inst_role")
+    r_inst = c.post(
+        "/api/auth/signup",
+        json={"email": inst_email, "password": "password123", "name": "Prof Bruin", "account_type": "instructor"},
+    )
+    assert r_inst.status_code == 200, r_inst.text
+    inst_token = r_inst.json()["token"]
+    assert r_inst.json()["user"]["account_type"] == "instructor"
+    r_create_ok = c.post(
+        "/api/courses",
+        headers={"Authorization": f"Bearer {inst_token}"},
+        json={"name": "Allowed Course", "student_seats": 30, "staff_seats": 2, "token_cap": 100_000, "cap_period": "week"},
+    )
+    assert r_create_ok.status_code == 200, r_create_ok.text

@@ -1,14 +1,17 @@
 import { useState } from 'react'
+import { useAccessibility } from './accessibility.jsx'
 import { canResetPassword, sendPasswordReset, signIn, signInWithGoogle, signUp, updatePassword } from './auth.js'
 import { Banner, ErrorText, useAction } from './ui.jsx'
 
 // Log in, create an account, forgot password, and set a new password (after the emailed reset link).
 export default function AuthScreen({ cfg, notice, initialMode = 'login', onSignedIn, onDone }) {
   const [mode, setMode] = useState(initialMode)
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', account_type: 'student' })
   const [info, setInfo] = useState('')
   const { busy, error, run, setError } = useAction()
+  const { openA11yModal, activeBadgeCount } = useAccessibility()
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+  const setRole = (role) => setForm((prev) => ({ ...prev, account_type: role }))
   const go = (m) => { setMode(m); setError(null); setInfo('') }
   const google = cfg.auth.google
 
@@ -40,9 +43,18 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
   const titles = { login: 'Log in', signup: 'Create your account', forgot: 'Reset your password', reset: 'Set a new password' }
   return (
     <main className="signin">
-      <form onSubmit={submit} className="card" noValidate>
+      <div className="signin-top-a11y">
+        <button type="button" className="canvas-a11y-pill" onClick={openA11yModal}>
+          Appearance & Accessibility{activeBadgeCount > 0 ? ` (${activeBadgeCount})` : ''}
+        </button>
+      </div>
+      <form onSubmit={submit} className="card signin-ucla-card" noValidate>
+        <div className="signin-ucla-banner">
+          <span className="ucla-signin-logo">UCLA</span>
+          <span className="ucla-signin-pill">BRUIN LEARN · AI STUDIO</span>
+        </div>
         <h1>BruinBuddy</h1>
-        <p className="muted">An AI tutor that teaches from your course’s own materials.</p>
+        <p className="muted">An AI tutor & visual concept studio that teaches from your course’s own materials.</p>
         {notice && <Banner kind="warning">{notice}</Banner>}
         {info && <Banner>{info}</Banner>}
         <h2 className="formtitle">{titles[mode]}</h2>
@@ -58,6 +70,34 @@ export default function AuthScreen({ cfg, notice, initialMode = 'login', onSigne
 
         {mode === 'signup' && (
           <>
+            <label>I am signing up as</label>
+            <div className="role-selector-grid" role="radiogroup" aria-label="Account role">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={form.account_type === 'student'}
+                className={`role-option-card ${form.account_type === 'student' ? 'active' : ''}`}
+                onClick={() => setRole('student')}
+              >
+                <span className="role-option-title">I am a Student</span>
+                <span className="role-option-desc">
+                  Join a course with your class code, ask the AI Tutor, and generate concept animations.
+                </span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={form.account_type === 'instructor'}
+                className={`role-option-card ${form.account_type === 'instructor' ? 'active' : ''}`}
+                onClick={() => setRole('instructor')}
+              >
+                <span className="role-option-title">I am an Instructor / Tutor</span>
+                <span className="role-option-desc">
+                  Create and manage courses, upload materials, set problem modes, and view analytics.
+                </span>
+              </button>
+            </div>
+
             <label htmlFor="name">Your name</label>
             <input id="name" value={form.name} onChange={set('name')} autoComplete="name" maxLength={60} required />
           </>

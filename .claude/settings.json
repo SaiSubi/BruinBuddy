@@ -1,0 +1,48 @@
+{
+  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "env": {
+    "BB_MOCK_LLM": "1",
+    "GIT_TERMINAL_PROMPT": "0"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(*pytest*)",
+      "Bash(npm run build*)",
+      "Bash(npm run dev*)",
+      "Bash(npm ci*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(git push -u origin *)",
+      "Bash(git push origin *)",
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(gh repo view*)",
+      "Bash(gh auth status*)"
+    ],
+    "deny": [
+      "Bash(git add -A*)",
+      "Bash(git add .)",
+      "Bash(git push origin main*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(fly deploy*)",
+      "Bash(flyctl deploy*)",
+      "Bash(fly secrets*)",
+      "Bash(vercel --prod*)",
+      "Read(./.env)",
+      "Read(./.env.production)"
+    ]
+  }
+}

@@ -20,7 +20,8 @@ Still a retrieve-then-answer tutor with small helper calls. No agents, no tool l
 | 5 | Memory update | Add, update or remove the student's notes for this course | Every turn, in the background | Haiku 5.5 |
 | 6 | **Starter questions** (new) | Write 3–4 course-specific questions for the home and empty chats | Once per course after materials change | Haiku 5.5 |
 | 7 | **Mismatch check** (new) | Does this file look like the category it was uploaded as? Warn only. | Once per uploaded file | Haiku 5.5 |
-| 8 | **Embeddings** (new) | Vectors for hybrid retrieval: each chunk once at upload, the query once per turn | Uploads; every turn | text-embedding-3-small |
+| 8 | **Illustrate router & generator** | Route a chat concept to the best visual skill (`anatomy_isometric`, `manim_3b1b`, `explainer_diagram`, `explainer_storyboard`) and build an interactive animation spec | When student clicks Illustrate | Haiku 5.5 |
+| 9 | **Embeddings** (new) | Vectors for hybrid retrieval: each chunk once at upload, the query once per turn | Uploads; every turn | text-embedding-3-small |
 
 No generative model is used for: problem set detection (title references and word overlap), retrieval (BM25 + embedding similarity, no reranker), the text-overlap leak guard, gates and limits, or the dashboard.
 

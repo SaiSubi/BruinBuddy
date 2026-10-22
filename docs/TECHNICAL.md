@@ -192,6 +192,7 @@ NFKC normalisation (math-italic letters become plain letters), folding table cel
 | `pauses` | `course_id`, `starts_at`, `ends_at`, `message` |
 | `chats` | `course_id`, `user_id`, `title`, `kind` (`chat`/`pset`/`review`/`quiz`), `doc_id` (attached material), `is_preview` |
 | `messages` | v0 fields + on questions: `course_id`, `user_id`, `is_preview`, `doc_ids` (cited, JSON), `problem_doc_id`, `attempt_status`, `not_covered`, `leak_blocked` |
+| `illustrations` | `id`, `chat_id`, `message_id`, `course_id`, `user_id`, `concept`, `skill`, `modality`, `title`, `rationale`, `spec_json`, `artifact_html`, `manim_code`, `created_at` |
 | `memories` | `course_id`, `user_id`, `text` |
 | `usage_log` | v0 fields + `course_id`, `user_id`, `chat_id`, `total_tokens` |
 | `stripe_events` | `id` (Stripe event id), `type`, `created_at` (webhook idempotency) |
@@ -228,6 +229,8 @@ All routes except the public ones need `Authorization: Bearer <token>`. Course r
 | `GET /api/courses/{id}/dashboard` | staff | §11 |
 | `GET`, `POST /api/courses/{id}/chats` | member | List or create the caller's chats (`kind`, `doc_id`) |
 | `GET /api/chats/{id}`, `POST /api/chats/{id}/messages` | chat owner, active member | Read; send (SSE: `delta`, optional `replace`, `done` with citations and the problem set rule, or `error`) |
+| `GET /api/chats/{id}/illustrations`, `POST /api/chats/{id}/illustrate` | chat owner, active member | List or generate interactive concept illustrations (routes across `anatomy_isometric`, `manim_3b1b`, `explainer_diagram`, `explainer_storyboard`, gated by `_check_turn_gates` and leak guard) |
+| `GET /api/illustrations/{id}/download?format=html|svg|py` | chat owner, active member | Download standalone interactive HTML, vector SVG, or ManimCE Python script |
 | `GET /api/sources/{chunk}` | member of the chunk's course | A citation's passage, only if public now |
 
 Errors are `{detail}` with standard codes: 401 not signed in, 403 wrong role, 404 not found or not a member, 409 not ready (pending course, no materials), 413 too large, 422 invalid input, 423 paused, 429 limit reached, 502 storage or payment provider unavailable.

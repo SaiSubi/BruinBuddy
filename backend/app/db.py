@@ -13,13 +13,14 @@ from contextlib import contextmanager
 from . import config
 
 TABLES = ["users", "courses", "memberships", "staff_codes", "documents", "solution_links", "chunks", "guidelines",
-          "pauses", "chats", "messages", "memories", "usage_log", "stripe_events"]
+          "pauses", "chats", "messages", "illustrations", "memories", "usage_log", "stripe_events"]
 V0_CONVERSATION_TABLES = ["users", "chats", "messages", "memories"]  # replaced in v1; archived as v0_*
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(
   id {PK}, auth_id TEXT NOT NULL UNIQUE, email TEXT NOT NULL, name TEXT NOT NULL,
-  password_hash TEXT, is_sample INTEGER NOT NULL DEFAULT 0, created_at DOUBLE PRECISION NOT NULL);
+  password_hash TEXT, account_type TEXT NOT NULL DEFAULT 'instructor',
+  is_sample INTEGER NOT NULL DEFAULT 0, created_at DOUBLE PRECISION NOT NULL);
 CREATE TABLE IF NOT EXISTS courses(
   id {PK}, name TEXT NOT NULL, slug TEXT UNIQUE, owner_id INTEGER NOT NULL REFERENCES users(id),
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','active')),
@@ -66,6 +67,12 @@ CREATE TABLE IF NOT EXISTS messages(
   course_id INTEGER, user_id INTEGER, is_preview INTEGER NOT NULL DEFAULT 0, doc_ids TEXT NOT NULL DEFAULT '[]',
   problem_doc_id TEXT, attempt_status TEXT, not_covered INTEGER NOT NULL DEFAULT 0,
   leak_blocked INTEGER NOT NULL DEFAULT 0, created_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS illustrations(
+  id {PK}, chat_id INTEGER NOT NULL REFERENCES chats(id), message_id INTEGER REFERENCES messages(id),
+  course_id INTEGER NOT NULL REFERENCES courses(id), user_id INTEGER NOT NULL REFERENCES users(id),
+  concept TEXT NOT NULL, skill TEXT NOT NULL, modality TEXT NOT NULL, title TEXT NOT NULL,
+  rationale TEXT NOT NULL DEFAULT '', spec_json TEXT NOT NULL DEFAULT '{}',
+  artifact_html TEXT NOT NULL, manim_code TEXT NOT NULL DEFAULT '', created_at DOUBLE PRECISION NOT NULL);
 CREATE TABLE IF NOT EXISTS memories(
   id {PK}, course_id INTEGER NOT NULL, user_id INTEGER NOT NULL REFERENCES users(id), text TEXT NOT NULL,
   created_at DOUBLE PRECISION NOT NULL, updated_at DOUBLE PRECISION NOT NULL);
@@ -78,6 +85,7 @@ CREATE TABLE IF NOT EXISTS stripe_events(
 
 # Columns added to tables that v0 databases already have (added in place, idempotently).
 ADDED_COLUMNS = {
+    "users": {"account_type": "TEXT NOT NULL DEFAULT 'instructor'"},
     "documents": {
         "course_id": "INTEGER", "status": "TEXT NOT NULL DEFAULT 'ready'", "status_detail": "TEXT",
         "storage_path": "TEXT", "content_type": "TEXT", "pages": "INTEGER", "size_bytes": "INTEGER",
@@ -101,6 +109,7 @@ CREATE INDEX IF NOT EXISTS ix_chats_course_user ON chats(course_id, user_id);
 CREATE INDEX IF NOT EXISTS ix_messages_chat ON messages(chat_id);
 CREATE INDEX IF NOT EXISTS ix_messages_course ON messages(course_id, created_at);
 CREATE INDEX IF NOT EXISTS ix_messages_created ON messages(created_at);
+CREATE INDEX IF NOT EXISTS ix_illustrations_chat ON illustrations(chat_id, id);
 CREATE INDEX IF NOT EXISTS ix_memories_course_user ON memories(course_id, user_id);
 CREATE INDEX IF NOT EXISTS ix_usage_course_user ON usage_log(course_id, user_id, ts);
 CREATE INDEX IF NOT EXISTS ix_usage_ts ON usage_log(ts)
@@ -196,6 +205,14 @@ def init_db() -> None:
         conn.execute("UPDATE documents SET kind='solution' WHERE kind='problem_set_solution'")
         conn.execute("INSERT INTO solution_links(solution_id,pset_id) SELECT id, linked_doc_id FROM documents "
                      "WHERE linked_doc_id IS NOT NULL ON CONFLICT DO NOTHING")  # v0 kept one link per solution
+        # Migrate existing users: any user who has student memberships and no owner/staff memberships is a student.
+        conn.execute(
+            "UPDATE users SET account_type='student' WHERE id IN ("
+            "  SELECT user_id FROM memberships WHERE role='student' AND status='active'"
+            ") AND id NOT IN ("
+            "  SELECT user_id FROM memberships WHERE role IN ('owner','staff') AND status='active'"
+            ")"
+        )
         for st in _statements(INDEXES):
             conn.execute(st)
         if IS_PG:

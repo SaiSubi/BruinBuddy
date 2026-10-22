@@ -64,7 +64,7 @@ def _extra(effort: str) -> dict:
 
 
 def complete(purpose: str, messages: list[dict], *, model: str | None = None, max_tokens: int = 600,
-             effort: str = "low", attr: dict | None = None) -> str:
+             effort: str = "low", attr: dict | None) -> str:
     if config.MOCK_LLM:
         return _mock_complete(purpose, messages, attr)
     model = model or config.HELPER_MODEL
@@ -206,4 +206,68 @@ def _mock_complete(purpose: str, messages: list[dict], attr: dict | None) -> str
         return json.dumps({"questions": [f"What are the key ideas in {t}?" for t in titles]})
     if purpose == "mismatch":
         return json.dumps({"category": "", "warning": ""})
+    if purpose == "illustrate_route":
+        low = last.lower()
+        if any(w in low for w in ("remotion", "motion graphics", "kinetic", "spring", "metric", "counter")):
+            skill = "remotion_motion"
+        elif any(w in low for w in ("galton", "urn", "machine", "apparatus", "coin", "dice", "isometric")):
+            skill = "anatomy_isometric"
+        elif any(w in low for w in ("workflow", "flowchart", "pipeline", "hypothesis", "markov", "step")):
+            skill = "explainer_diagram"
+        elif any(w in low for w in ("whiteboard", "story", "overview", "summary")):
+            skill = "explainer_storyboard"
+        else:
+            skill = "manim_3b1b"
+        return json.dumps({
+            "skill": skill,
+            "concept": "Probability & Conditioning Intuition",
+            "title": "Visualizing Probability & Conditioning",
+            "rationale": f"Selected {skill} to render an interactive visual model of the concept.",
+        })
+    if purpose == "illustrate_gen":
+        return json.dumps({
+            "title": "Visualizing Probability & Conditioning",
+            "subtitle": "How prior belief and likelihood combine to shape the distribution",
+            "formula": "P(A|B) = P(B|A) · P(A) / P(B)",
+            "param_label": "Parameter p",
+            "param_min": 0.1,
+            "param_max": 0.9,
+            "param_step": 0.05,
+            "param_default": 0.5,
+            "secondary_label": "Trials N",
+            "secondary_min": 4,
+            "secondary_max": 18,
+            "secondary_step": 1,
+            "secondary_default": 10,
+            "beats": [
+                {
+                    "step": 1,
+                    "heading": "1. Prior Setup",
+                    "caption": "Start with the baseline distribution before conditioning on new observations.",
+                    "highlight": "Prior P(A)",
+                    "value_hint": 0.35,
+                },
+                {
+                    "step": 2,
+                    "heading": "2. Likelihood Weighting",
+                    "caption": "Each outcome is scaled by how likely it is to produce the observed evidence.",
+                    "highlight": "Likelihood P(B|A)",
+                    "value_hint": 0.55,
+                },
+                {
+                    "step": 3,
+                    "heading": "3. Interactive Sweep",
+                    "caption": "Drag the parameter slider to see how shifting p moves the center of mass.",
+                    "highlight": "Parameter Sweep",
+                    "value_hint": 0.75,
+                },
+                {
+                    "step": 4,
+                    "heading": "4. Renormalized Posterior",
+                    "caption": "Dividing by P(B) restores total probability to 1 across the restricted sample space.",
+                    "highlight": "Posterior P(A|B)",
+                    "value_hint": 0.5,
+                },
+            ],
+        })
     return ""
