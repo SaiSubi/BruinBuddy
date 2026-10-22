@@ -51,7 +51,7 @@ python3 -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requir
 cd frontend && npm install && npm run build && cd ..                                              # frontend build (the backend serves it)
 BB_MOCK_LLM=1 backend/.venv/bin/python -m uvicorn app.main:app --app-dir backend --port 8000      # run with a fake tutor (no key, no cost)
 cd frontend && npm run dev                                   # frontend dev server on :5173, proxies /api to :8000
-cd backend && ../backend/.venv/bin/python -m pytest -q       # 129 tests; temp SQLite DB, mock model, no keys needed
+cd backend && ../backend/.venv/bin/python -m pytest -q       # 141 tests; temp SQLite DB, mock model, no keys needed
 TEST_DATABASE_URL=postgresql://... ../backend/.venv/bin/python -m pytest -q   # same suite on a throw-away Postgres (UTF-8 DB)
 ../backend/.venv/bin/python -m app.ingest --owner-email you@example.edu       # 18.05 demo course (needs 18.05-spring-2022/)
 ../backend/.venv/bin/python -m app.seed                                        # sample dashboard data (labelled as sample)
@@ -75,6 +75,7 @@ Local mode needs no Supabase or Stripe: `AUTH_PROVIDER` empty means local email/
 | `qna.py` | AI teaching assistant Q&A: Q&A knowledge base (extraction, review, FAQ), rules, answering, escalation to the staff inbox |
 | `dashboard.py` | Staff aggregates with the small-group rule |
 | `llm.py`, `memory.py`, `starters.py`, `jobs.py` | OpenRouter client + mock, per-course memory, starter questions, background jobs |
+| `tracing.py` | Optional Langfuse tracing: one trace per answer via `attr["trace_id"]`, confidential prompts withheld, off without keys |
 | `db.py` | Schema (`illustrations`, `chats`, `messages`, etc.), in-place migration from v0, SQL helpers |
 | `ingest.py`, `seed.py`, `evals.py`, `retrieval_eval.py` | 18.05 demo course, sample data, real-model leak evaluation, retrieval evaluation |
 | `evals/` | What each eval measures, how to run it, latest results (`README.md`) and saved runs (`results/`) |

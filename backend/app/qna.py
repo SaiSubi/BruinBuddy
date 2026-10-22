@@ -16,7 +16,7 @@ import re
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from . import config, jobs, knowledge, llm
+from . import config, jobs, knowledge, llm, tracing
 from .embeddings import query_vector
 from .accounts import current_user
 from .chats import _check_turn_gates
@@ -399,6 +399,8 @@ def _respond(thread: dict, m: Member, question: str, history: list[dict]) -> Non
             _add(conn, tid, "system", f"The AI assistant can't answer right now: {msg} You can still send your question "
                                       "to the course staff.")
         return
+    trace = tracing.Trace("qna_answer", attr, question)
+    attr = trace.attr
     try:
         category = sensitive or (_classify(question, attr) if first else thread["category"])
         if first:
@@ -408,9 +410,15 @@ def _respond(thread: dict, m: Member, question: str, history: list[dict]) -> Non
             with db() as conn:
                 _escalate(conn, tid, f"Questions about {CATEGORIES[category].lower()} go to the course staff, so I've "
                                      "sent yours to them. You'll see their reply here.")
+            trace.end(None, tags=["escalated"], category=category, escalated=True, thread_id=tid)
             return
         reply = _answer(c, rules, kb, history, question, attr)
+        trace.end(reply["content"], tags=(["leak-blocked"] if reply["leaked"] else [])
+                  + (["not-covered"] if reply["not_covered"] else []),
+                  category=category, leaked=reply["leaked"], not_covered=reply["not_covered"], thread_id=tid,
+                  cited=[c.get("chunk_id") for c in reply["citations"]])
     except Exception as e:
+        trace.end(None, error=type(e).__name__)
         detail = str(e) if isinstance(e, llm.LLMUnavailable) else "something went wrong."
         with db() as conn:
             _add(conn, tid, "system", f"The AI assistant couldn't answer: {detail} Try again, or send your question "

@@ -10,7 +10,7 @@ from typing import Iterator
 
 import numpy as np
 
-from . import config, embeddings, jobs, llm
+from . import config, embeddings, jobs, llm, tracing
 from .courses import load_guidelines
 from .db import db, now
 from .knowledge import CourseKnowledge
@@ -244,7 +244,15 @@ def _citations(text: str, sources: dict) -> tuple[str, list[dict]]:
 
 
 def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
-    course_id, chat_id, attr = t.course["id"], t.chat["id"], t.attr
+    trace = tracing.Trace("tutor_turn", t.attr, message)
+    try:
+        yield from _run_turn(kb, t, message, trace)
+    finally:
+        trace.end(error=True)  # no-op once the turn ended normally
+
+
+def _run_turn(kb: CourseKnowledge, t: Turn, message: str, trace: tracing.Trace) -> Iterator[dict]:
+    course_id, chat_id, attr = t.course["id"], t.chat["id"], trace.attr
     with db() as conn:
         history = _history(conn, chat_id, config.HISTORY_TURNS)
         q_id = conn.execute("INSERT INTO messages(chat_id,role,content,course_id,user_id,is_preview,created_at) "
@@ -318,6 +326,12 @@ def run_turn(kb: CourseKnowledge, t: Turn, message: str) -> Iterator[dict]:
                          "WHERE id=?", (json.dumps(sorted({c["doc_id"] for c in citations})), problem_doc,
                                         verdict["attempt_status"] if verdict else None, int(not_covered), int(leaked), q_id))
             conn.execute("UPDATE chats SET updated_at=? WHERE id=?", (now(), chat_id))
+        trace.end(text, tags=[f"mode:{mode or 'none'}"] + (["leak-blocked"] if leaked else [])
+                  + (["not-covered"] if not_covered else []),
+                  mode=mode, problem_doc=problem_doc, attempt_status=verdict["attempt_status"] if verdict else None,
+                  leaked=leaked, not_covered=not_covered, message_id=msg_id, preview=t.is_preview,
+                  retrieved=[{"chunk_id": c.id, "title": c.title, "page": c.page} for c in sources.values()],
+                  cited=[c["chunk_id"] for c in citations])
         yield {"type": "done", "message": {"id": msg_id, "role": "assistant", "content": text, "citations": citations,
                                            "memory_used": notes, "rule": rule}}
         jobs.run(update_memory, course_id, t.user_id, message, text, attr)

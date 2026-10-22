@@ -15,6 +15,7 @@
   - Uses only `public` chunks, passes explicit `attr` on `illustrate_route` and `illustrate_gen` calls, and runs `kb.guard.leaks` + `_llm_leak` on Graded problem sets, sanitizing to a conceptual walkthrough if any solution overlap is detected.
 - **LLM Attribution & Cost Control (`llm.py`):**
   - Every `llm` call requires explicit `attr={"course_id": ..., "user_id": ..., "chat_id": ...}` (logged to `usage_log` for allowance enforcement). Never use `contextvars` because streaming turns cross thread boundaries.
+  - Optional Langfuse tracing (`tracing.py`): an answer opens `tracing.Trace(name, attr, input)` and uses `trace.attr` (which carries `trace_id`/`span_id`) for its model calls, then `trace.end(output, tags=..., **metadata)`. Any purpose whose prompt carries solution text must be in `tracing.SECRET_PURPOSES` (input withheld); `test_tracing.py` checks none reaches Langfuse.
   - Default to `BB_MOCK_LLM=1` for all dev and test runs. Real model turns cost ~$0.012 and `python -m app.evals` costs ~$0.15; always ask the user before running real LLM calls.
 - **Checkpoint Assignments (`assignments.py`):**
   - `assignment_verify` (helper) is the only call that sees the active checkpoint's `target_answer`/`rubric`; `assignment_tutor` gets the problem, established (passed/skipped) results and the stage (`nudge`/`hint`/`advance`/`complete`), never solution notes or unreached answers. `assignment_gen` (tutor model) is the only call that sees solution notes.

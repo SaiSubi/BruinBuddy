@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from . import accounts, assignments, billing, chats, config, courses, dashboard, materials, members, qna
+from . import accounts, assignments, billing, chats, config, courses, dashboard, materials, members, qna, tracing
 from .db import init_db
 
 _google = {"at": 0.0, "enabled": False}
@@ -22,6 +22,7 @@ async def lifespan(app: FastAPI):
     init_db()
     materials.recover_interrupted()
     yield
+    tracing.flush()
 
 
 app = FastAPI(title="BruinBuddy", lifespan=lifespan,
