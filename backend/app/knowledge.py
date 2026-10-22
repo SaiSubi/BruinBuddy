@@ -57,6 +57,8 @@ _SET_REF = re.compile(r"\b(?:problem\s*sets?|psets?|homeworks?|hw|assignments?)\
 # "class 7 problems", "class 5a in-class problem" (in messages); "Class 07: Problems" (in titles)
 _CLASS_REF_MSG = re.compile(r"\bclass\s*#?\s*0*(\d{1,3})([a-z]?)\s*(?:in[- ]class\s*)?(?:problems?|psets?)\b", re.I)
 _CLASS_REF_TITLE = re.compile(r"\bclass\s*#?\s*0*(\d{1,3})([a-z]?)\b", re.I)
+# a problem heading at the start of a line: "Problem 2.", "Question 3:", "Exercise 4)", "Q5."
+_PROBLEM_HEAD = re.compile(r"(?:^|\n)[ \t]*(?:problem|question|exercise|q)[ \t]*#?[ \t]*0*(\d{1,2})\b[ \t]*[.:)\-]?", re.I)
 
 
 def _message_refs(text: str) -> list[tuple[str, int, str]]:
@@ -101,6 +103,26 @@ class CourseKnowledge:
             return None
         return {"doc_id": d.id, "title": d.title, "mode": d.mode, "label": MODE_LABELS[d.mode],
                 "confirm_answers": d.confirm_answers}
+
+    def problems(self, pset_id: str, preview: int = 180) -> list[dict]:
+        """The numbered problems of a problem set ("Problem 1", "Question 2"...), each with the start of its statement,
+        so a chat can offer them instead of asking the student to paste one. Statements are public; solutions aren't read."""
+        d = self.docs.get(pset_id or "")
+        if not d or d.kind != "problem_set" or not self.is_public(d.id):
+            return []
+        text = "\n".join(c.text for c in self.index.first_chunks(d.id, 500))
+        heads = list(_PROBLEM_HEAD.finditer(text))
+        out, seen = [], set()
+        for i, m in enumerate(heads):
+            n = int(m.group(1))
+            if n in seen:
+                continue
+            seen.add(n)
+            body = text[m.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)]
+            body = re.sub(r"\s+", " ", body).strip(" .:)-")
+            out.append({"number": n, "label": f"Problem {n}",
+                        "preview": body[:preview].rsplit(" ", 1)[0] + "…" if len(body) > preview else body})
+        return out
 
     def psets_from_references(self, text: str) -> list[str]:
         """Problem sets named in a message: "pset 4", "homework 3", "class 7 problems"."""

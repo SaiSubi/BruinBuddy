@@ -332,3 +332,17 @@ def test_problem_set_turns_are_not_counted_as_unanswered(app, monkeypatch):
     done = ask(s, chat, "help with problem 9")[-1]["message"]
     assert not done["content"].startswith("[NC]")
     assert q1("SELECT not_covered FROM messages WHERE chat_id=? AND role='user'", chat)["not_covered"] == 0
+
+
+def test_pset_chat_lists_the_sets_own_problems(app):
+    owner = new_user(app, "Prof")
+    course = setup_course(owner)
+    student = student_in(app, course)
+    chat = student.get(f"/api/chats/{new_chat(student, course['id'], 'pset', course['p1'])}").json()
+    assert [p["label"] for p in chat["problems"]] == ["Problem 1", "Problem 2"]
+    assert chat["problems"][0]["preview"].startswith("A fair coin is tossed three times")
+    assert chat["problems"][1]["preview"].startswith("A diagnostic screening test")
+    assert "three eighths" not in json.dumps(chat)  # statements only, never the linked solution
+    other = student.get(f"/api/chats/{new_chat(student, course['id'], 'pset', course['p2'])}").json()
+    assert [p["label"] for p in other["problems"]] == ["Problem 1"] and "fair six sided die" in other["problems"][0]["preview"]
+    assert student.get(f"/api/chats/{new_chat(student, course['id'])}").json()["problems"] == []

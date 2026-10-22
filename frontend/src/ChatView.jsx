@@ -26,11 +26,14 @@ const takeOpenIllustrate = (id) => {
 }
 
 const INTRO = {
-  pset: 'Paste the problem you’re working on, or tell me where you’re stuck.',
+  pset: 'Pick the problem you’re working on, or tell me where you’re stuck.',
   review: 'Ask for a review plan, or tell me which part of this material is confusing.',
   quiz: 'Ask me to quiz you, and I’ll ask one question at a time.',
   chat: 'Ask about the course. I answer from the course materials, cite them, and guide you instead of handing over answers to graded problems.',
 }
+
+// a problem set whose problems aren't numbered "Problem 1", "Question 2"...
+const PSET_UNNUMBERED = 'Tell me which problem you’re working on (for example, “Problem 2”) and where you’re stuck.'
 
 export default function ChatView({ course, chatId, preview, onCourseChange }) {
   const [chats, setChats] = useState([])
@@ -222,7 +225,22 @@ export default function ChatView({ course, chatId, preview, onCourseChange }) {
           {messages.length === 0 ? (
             <div className="welcome">
               <h1>{chat?.kind === 'pset' ? chat.title : 'What are you studying?'}</h1>
-              <p className="muted">{INTRO[chat?.kind || 'chat']}</p>
+              <p className="muted">
+                {chat?.kind === 'pset' && !chat.problems?.length ? PSET_UNNUMBERED : INTRO[chat?.kind || 'chat']}
+              </p>
+              {chat?.kind === 'pset' && chat.problems?.length > 0 && (
+                <ul className="problem-picks" aria-label="Problems in this set">
+                  {chat.problems.map((p) => (
+                    <li key={p.number}>
+                      <button type="button" className="suggestion problem-pick" disabled={busy}
+                              onClick={() => ask(`Help me get started on Problem ${p.number}.`)}>
+                        <strong>{p.label}</strong>
+                        {p.preview && <span className="muted small">{p.preview}</span>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {chat?.kind === 'chat' && course.starter_questions?.length > 0 && (
                 <div className="suggest">
                   {course.starter_questions.map((s) => (
