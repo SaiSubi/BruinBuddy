@@ -51,7 +51,7 @@ python3 -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requir
 cd frontend && npm install && npm run build && cd ..                                              # frontend build (the backend serves it)
 BB_MOCK_LLM=1 backend/.venv/bin/python -m uvicorn app.main:app --app-dir backend --port 8000      # run with a fake tutor (no key, no cost)
 cd frontend && npm run dev                                   # frontend dev server on :5173, proxies /api to :8000
-cd backend && ../backend/.venv/bin/python -m pytest -q       # 110 tests; temp SQLite DB, mock model, no keys needed
+cd backend && ../backend/.venv/bin/python -m pytest -q       # 121 tests; temp SQLite DB, mock model, no keys needed
 TEST_DATABASE_URL=postgresql://... ../backend/.venv/bin/python -m pytest -q   # same suite on a throw-away Postgres (UTF-8 DB)
 ../backend/.venv/bin/python -m app.ingest --owner-email you@example.edu       # 18.05 demo course (needs 18.05-spring-2022/)
 ../backend/.venv/bin/python -m app.seed                                        # sample dashboard data (labelled as sample)
@@ -71,19 +71,20 @@ Local mode needs no Supabase or Stripe: `AUTH_PROVIDER` empty means local email/
 | `materials.py`, `extract.py`, `storage.py` | Uploads, background processing, mismatch warnings, library, files in Supabase Storage or `data/uploads` |
 | `knowledge.py`, `retrieval.py`, `embeddings.py`, `guard.py` | Per-course hybrid index (BM25 + embeddings) of what students may see, problem set modes, chunk embeddings and backfill, leak guard |
 | `tutor.py`, `chats.py`, `illustrate.py` | The tutor pipeline, concept illustration engine (Anatomy / Manim 3B1B / Explainer Video skills), chat/SSE/illustrate endpoints with their gates; `/files` and `/api/sources` |
+| `assignments.py` | AI-guided checkpoint assignments: AI-drafted checkpoints, verifier + Socratic tutor turns, skip & reveal, redacted student views, staff gradebook |
 | `dashboard.py` | Staff aggregates with the small-group rule |
 | `llm.py`, `memory.py`, `starters.py`, `jobs.py` | OpenRouter client + mock, per-course memory, starter questions, background jobs |
 | `db.py` | Schema (`illustrations`, `chats`, `messages`, etc.), in-place migration from v0, SQL helpers |
 | `ingest.py`, `seed.py`, `evals.py`, `retrieval_eval.py` | 18.05 demo course, sample data, real-model leak evaluation, retrieval evaluation |
 | `evals/` | What each eval measures, how to run it, latest results (`README.md`) and saved runs (`results/`) |
-| `backend/tests/` | Synthetic course fixtures in `conftest.py`; `test_hardening.py` holds the review regressions; `test_illustrate.py` tests the Illustrate feature |
-| `frontend/src/` | `App.jsx` (boot, routing), `auth.js`, `api.js` (all HTTP), `CourseHome`/`ChatView`/`IllustratePane` (students), `staff/` (console tabs) |
+| `backend/tests/` | Synthetic course fixtures in `conftest.py`; `test_hardening.py` holds the review regressions; `test_illustrate.py` tests the Illustrate feature; `test_assignments.py` the checkpoint assignments |
+| `frontend/src/` | `App.jsx` (boot, routing), `auth.js`, `api.js` (all HTTP), `CourseHome`/`ChatView`/`IllustratePane`/`GuidedAssignments` (students), `staff/` (console tabs) |
 | `.claude/` | Specialized agents (`agents/`), persistent memories (`memory/`), visual skills (`skills/`), slash commands (`commands/`), rules (`rules/`), and [COLLABORATION.md](.claude/COLLABORATION.md) |
 
 ## Rules that must not break
 1. **Tenancy.** Every course-scoped route depends on `get_member`, `get_staff` or `get_owner`; chat routes also check the chat's `user_id`. A non-member gets 404, a removed or blocked member 403. Roles come only from `memberships`, never from the request.
-2. **Students never get protected solution text.** What students may see is decided only in `knowledge.py` (`public`): solutions stay tutor-only until *all* their linked problem sets are open. The tutor model and illustration generator never receive protected solution text (only the checker does, via `solution_chunks_for`); Graded turns and illustrations pass the text guard and the model leak check before anything is sent; when several problem sets match a turn the strictest mode wins; removing a linked set unlinks its solutions. Don't loosen any of this. Student file links use the public scope; only staff listings mint staff-scoped links.
-3. **No model call past a gate.** Pause windows, student allowances, the course AI budget and the app-wide limit are checked in `chats._check_turn_gates` (used by `post_message` and `post_illustrate`) before running the tutor or illustration engine; keep new gates there.
+2. **Students never get protected solution text.** What students may see is decided only in `knowledge.py` (`public`): solutions stay tutor-only until *all* their linked problem sets are open. The tutor model and illustration generator never receive protected solution text (only the checker does, via `solution_chunks_for`); Graded turns and illustrations pass the text guard and the model leak check before anything is sent; assignment checkpoints follow the same pattern (target answers and rubrics go only to the verifier, every tutor reply is leak-checked against unreached answers, student responses never carry them); when several problem sets match a turn the strictest mode wins; removing a linked set unlinks its solutions. Don't loosen any of this. Student file links use the public scope; only staff listings mint staff-scoped links.
+3. **No model call past a gate.** Pause windows, student allowances, the course AI budget and the app-wide limit are checked in `chats._check_turn_gates` (used by `post_message`, `post_illustrate` and `assignments.post_turn`) before running the tutor or illustration engine; keep new gates there.
 4. **Payment.** A course becomes active only through `billing._activate`, after the signed webhook or a server-side Stripe lookup passes `_pays_for` (our metadata, paid, full amount in USD). The test checkout exists only without Stripe keys and outside production.
 5. **Guidelines shape tone, not rules.** They sit below the safety rules in the prompt and must never be able to unlock solutions or change modes.
 6. **Portable SQL.** Write `?` placeholders (translated for psycopg; a literal `%` is escaped for you), `ON CONFLICT`, `RETURNING`. No SQLite-only functions (e.g. `group_concat`). Run the suite on Postgres when you touch SQL. Seat counts and other count-then-insert logic take `db.lock_row` first.

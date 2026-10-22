@@ -16,7 +16,8 @@ export default function About({ onBack }) {
       <h2>Your privacy</h2>
       <p>
         Course staff see aggregate usage (for example how many questions were asked, which materials were cited most,
-        and questions the materials didn’t cover, without names). They do not see your individual chats. Your messages
+        and questions the materials didn’t cover, without names). They do not see your individual chats. AI-guided
+        assignments are graded work: staff see your score, your progress and that assignment’s conversation. Your messages
         and the relevant course text are sent to the AI model provider to generate answers; they are not used to train
         models. The tutor keeps short study notes about what you’re working on in each course so it can pick up where you
         left off.

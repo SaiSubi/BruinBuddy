@@ -4,7 +4,7 @@
 
 ## 1. Test Suite Architecture (`backend/tests/`)
 - **Command:** `cd backend && ../backend/.venv/bin/python -m pytest -q`
-- **Current Baseline:** 102 passing tests (98 core + 4 in `test_illustrate.py`) using `BB_MOCK_LLM=1` and a temporary SQLite database (or throw-away Postgres when `TEST_DATABASE_URL` is set). Zero external API keys required.
+- **Current Baseline:** 121 passing tests (incl. 4 in `test_illustrate.py` and 11 in `test_assignments.py`) using `BB_MOCK_LLM=1` and a temporary SQLite database (or throw-away Postgres when `TEST_DATABASE_URL` is set). Zero external API keys required.
 - **Key Test Files:**
   - `conftest.py` — Fixtures for synthetic courses, owners, staff, students, materials, problem sets, solutions, and mock LLM responses.
   - `test_hardening.py` — Regressions for security boundaries, tenancy enforcement (`404` vs `403`), solution protection, payment verification (`_pays_for`), and SQL portability.
@@ -15,3 +15,4 @@
 ## 2. Mandatory Regression Policy
 - Every bug fix must include a regression test that fails without the fix and passes with it.
 - Every new route must be tested for non-member (`404`), removed/blocked member (`403`), and student vs. staff role separation.
+- **`test_assignments.py` (11 tests):** checkpoint drafting (staff-only, points rescaled to 100), student payloads never contain `target_answer`/`rubric`/`hint`/`solution_notes` or unreached results, tutor prompt isolation, progression and scoring, hint requests skip the verifier, skip & reveal, leak replacement and fail-closed leak check, `short_answer_leaks`, pause (423) / allowance (429), tenancy (404/403), gradebook excludes staff previews. Baseline is now 121 tests.

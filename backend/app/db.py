@@ -13,7 +13,8 @@ from contextlib import contextmanager
 from . import config
 
 TABLES = ["users", "courses", "memberships", "staff_codes", "documents", "solution_links", "chunks", "guidelines",
-          "pauses", "chats", "messages", "illustrations", "memories", "usage_log", "stripe_events"]
+          "pauses", "chats", "messages", "illustrations", "memories", "usage_log", "stripe_events",
+          "assignments", "assignment_submissions", "assignment_messages"]
 V0_CONVERSATION_TABLES = ["users", "chats", "messages", "memories"]  # replaced in v1; archived as v0_*
 
 SCHEMA = """
@@ -80,7 +81,25 @@ CREATE TABLE IF NOT EXISTS usage_log(
   id {PK}, ts DOUBLE PRECISION NOT NULL, purpose TEXT NOT NULL, model TEXT NOT NULL,
   prompt_tokens INTEGER, completion_tokens INTEGER, cost DOUBLE PRECISION);
 CREATE TABLE IF NOT EXISTS stripe_events(
-  id TEXT PRIMARY KEY, type TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL)
+  id TEXT PRIMARY KEY, type TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS assignments(
+  id {PK}, course_id INTEGER NOT NULL REFERENCES courses(id), title TEXT NOT NULL,
+  problem_statement TEXT NOT NULL, solution_notes TEXT NOT NULL DEFAULT '',
+  total_points INTEGER NOT NULL DEFAULT 100, checkpoints_json TEXT NOT NULL DEFAULT '[]',
+  published INTEGER NOT NULL DEFAULT 1, created_by INTEGER NOT NULL REFERENCES users(id),
+  created_at DOUBLE PRECISION NOT NULL, updated_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS assignment_submissions(
+  id {PK}, assignment_id INTEGER NOT NULL REFERENCES assignments(id),
+  course_id INTEGER NOT NULL REFERENCES courses(id), user_id INTEGER NOT NULL REFERENCES users(id),
+  current_checkpoint INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'in_progress' CHECK(status IN ('in_progress','completed')),
+  score INTEGER NOT NULL DEFAULT 0, checkpoint_states_json TEXT NOT NULL DEFAULT '[]',
+  is_preview INTEGER NOT NULL DEFAULT 0,
+  created_at DOUBLE PRECISION NOT NULL, updated_at DOUBLE PRECISION NOT NULL, UNIQUE(assignment_id, user_id));
+CREATE TABLE IF NOT EXISTS assignment_messages(
+  id {PK}, submission_id INTEGER NOT NULL REFERENCES assignment_submissions(id),
+  checkpoint_index INTEGER NOT NULL, role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+  content TEXT NOT NULL, event_type TEXT NOT NULL DEFAULT 'chat', created_at DOUBLE PRECISION NOT NULL)
 """
 
 # Columns added to tables that v0 databases already have (added in place, idempotently).
@@ -112,7 +131,11 @@ CREATE INDEX IF NOT EXISTS ix_messages_created ON messages(created_at);
 CREATE INDEX IF NOT EXISTS ix_illustrations_chat ON illustrations(chat_id, id);
 CREATE INDEX IF NOT EXISTS ix_memories_course_user ON memories(course_id, user_id);
 CREATE INDEX IF NOT EXISTS ix_usage_course_user ON usage_log(course_id, user_id, ts);
-CREATE INDEX IF NOT EXISTS ix_usage_ts ON usage_log(ts)
+CREATE INDEX IF NOT EXISTS ix_usage_ts ON usage_log(ts);
+CREATE INDEX IF NOT EXISTS ix_assignments_course ON assignments(course_id);
+CREATE INDEX IF NOT EXISTS ix_asub_course_user ON assignment_submissions(course_id, user_id);
+CREATE INDEX IF NOT EXISTS ix_amsg_submission ON assignment_messages(submission_id, id);
+CREATE INDEX IF NOT EXISTS ix_amsg_created ON assignment_messages(created_at)
 """
 
 IS_PG = bool(config.DATABASE_URL)

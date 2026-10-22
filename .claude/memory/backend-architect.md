@@ -22,3 +22,7 @@
   - `chats._check_turn_gates` checks course active status, ready materials, course pause windows, per-student token allowances, course AI budget, and app-wide limits *before* invoking `tutor.run_turn` or `illustrate.generate_illustration`.
 - **Illustrations (`illustrate.py`, `chats.py`):**
   - `GET /api/chats/{chat_id}/illustrations`, `POST /api/chats/{chat_id}/illustrate`, and `GET /api/illustrations/{id}/download?format=html|svg|py` all enforce `_own_chat`.
+- **AI-Guided Assignments (`assignments.py`, issue #14):**
+  - Tables `assignments` (checkpoints as JSON), `assignment_submissions` (unique per assignment+user, `checkpoint_states_json`, `is_preview`), `assignment_messages` (`event_type`).
+  - Routes: `POST /api/courses/{id}/assignments/generate-checkpoints` and `POST /api/courses/{id}/assignments` (`get_staff`), `GET /api/courses/{id}/assignments` (`get_member`), and `/api/assignments/{aid}` (`GET`, `POST …/turn`, `POST …/skip-checkpoint`, staff-only `GET …/submissions`, `DELETE`), each resolving membership via `assignments._open` → `member_of`.
+  - `_check_turn_gates(c, kb=None, …)` skips the materials check; `pause=False` only for staff drafting. Assignment user messages count toward `GLOBAL_DAILY_LIMIT`. Turn state changes run after `lock_row` on the submission and 409 if it moved meanwhile.

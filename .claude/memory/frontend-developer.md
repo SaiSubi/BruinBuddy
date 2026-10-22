@@ -21,3 +21,6 @@
   - Must **never** load or display staff-only endpoints, staff-scoped file URLs, or solution text.
 - **Verification:**
   - Always run `cd frontend && npm run build` after any JSX/CSS change.
+- **AI-Guided Assignments (`GuidedAssignments.jsx`, `staff/Assignments.jsx`):**
+  - Routes `#/c/:id/assignments` (list) and `#/c/:id/assignments/:aid` (workspace), handled in `App.jsx` `CourseRoute` before the staff branch so staff can preview. `AssignmentList` also renders under Problem Sets in `CourseHome.jsx`; course nav link "AI Assignments" in `CanvasShell.jsx`.
+  - Workspace: problem + `Stepper` (left), Socratic chat with Request hint / Skip & reveal (right). Builder + Gradebook live in the lazy staff chunk (console tab `assignments`). Styles use `.ga-*` classes and theme tokens; no emojis.

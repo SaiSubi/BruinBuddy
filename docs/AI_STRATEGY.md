@@ -22,6 +22,9 @@ Still a retrieve-then-answer tutor with small helper calls. No agents, no tool l
 | 7 | **Mismatch check** (new) | Does this file look like the category it was uploaded as? Warn only. | Once per uploaded file | Haiku 5.5 |
 | 8 | **Illustrate router & generator** | Route a chat concept to the best visual skill (`anatomy_isometric`, `manim_3b1b`, `explainer_diagram`, `explainer_storyboard`) and build an interactive animation spec | When student clicks Illustrate | Haiku 5.5 |
 | 9 | **Embeddings** (new) | Vectors for hybrid retrieval: each chunk once at upload, the query once per turn | Uploads; every turn | text-embedding-3-small |
+| 10 | **Checkpoint drafter** (new) | Turn a problem + solution notes into 3–4 checkpoints (question, target answer, rubric, hint, points) for staff to edit | Staff click "Auto-generate checkpoints" | Sonnet 5.5 |
+| 11 | **Checkpoint verifier** (new) | Does the student's message reach the active checkpoint's target answer and rubric? `{passed, feedback}`; unreadable = not passed | Every assignment turn (not hint requests) | Haiku 5.5 |
+| 12 | **Socratic assignment tutor** (new) | Nudge, hint, advance or wrap up, from the problem and established results only; buffered and leak-checked (same leak check as #4, against unreached checkpoint answers) | Every assignment turn | Sonnet 5.5 |
 
 No generative model is used for: problem set detection (title references and word overlap), retrieval (BM25 + embedding similarity, no reranker), the text-overlap leak guard, gates and limits, or the dashboard.
 
@@ -53,6 +56,7 @@ No generative model is used for: problem set detection (title references and wor
 | Review a topic | An ordered review plan for the chosen material, cited, then a check-for-understanding question |
 | Quiz me | One question at a time from lecture notes, readings and Practice or open sets (never Graded sets, which retrieval excludes); hint first after a wrong answer, a full explanation after an attempt or on request |
 | Free chat | v0 behaviour: concepts, study guidance, pasted problems (detected) |
+| AI-guided assignment | A separate workspace, not a chat type (TECHNICAL.md §9.1): verifier first, then the tutor. Like a Graded set, the tutor is never given an answer the student hasn't reached (the verifier holds the target answer and rubric, as the checker holds solutions), and every reply passes `guard.short_answer_leaks` and the model leak check before it is saved; a leak is replaced with a fixed nudge. Solution notes go only to the drafter. |
 
 **Professor guidelines** (PRD §3.3) are inserted after the rules, inside a delimited block: the general guideline, then tagged guidelines whose materials are among the retrieved sources or are the active problem set. A tagged guideline wins over the general one for its material. Length caps keep the prompt bounded (general 4,000 characters; up to 20 tagged guidelines of 1,000).
 

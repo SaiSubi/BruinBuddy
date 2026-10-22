@@ -105,7 +105,7 @@ export default function CanvasShell({
   me,
   course = null,
   courseId = null,
-  activeSection = 'home', // 'dashboard' | 'home' | 'chat' | 'psets' | 'materials' | 'staff' | 'join' | 'create' | 'about'
+  activeSection = 'home', // 'dashboard' | 'home' | 'chat' | 'psets' | 'assignments' | 'materials' | 'staff' | 'join' | 'create' | 'about'
   breadcrumb = null,
   onLogOut,
   onSelectCourseSection = null,
@@ -631,6 +631,14 @@ export default function CanvasShell({
                     }}
                   >
                     Problem Sets
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`#/c/${course.id}/assignments`}
+                    className={activeSection === 'assignments' ? 'active' : ''}
+                  >
+                    AI Assignments
                   </a>
                 </li>
                 <li>
