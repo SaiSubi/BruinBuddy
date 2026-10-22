@@ -132,6 +132,25 @@ def login(body: LoginIn):
     return {"token": auth.make_session_token(row["id"]), "user": _public(row)}
 
 
+class AccountTypeIn(BaseModel):
+    account_type: str = Field(max_length=32)
+
+
+@router.put("/api/me/account-type")
+def set_account_type(body: AccountTypeIn, user: dict = Depends(current_user)):
+    """Apply the role chosen before a Google sign-in, which can't carry it in the account's metadata.
+
+    Only a fresh account (no course memberships) may change it; course roles still come from memberships."""
+    acct_type = body.account_type.strip().lower()
+    if acct_type not in ACCOUNT_TYPES:
+        raise HTTPException(422, "Choose whether you are a student or an instructor.")
+    with db() as conn:
+        if conn.execute("SELECT 1 FROM memberships WHERE user_id=?", (user["id"],)).fetchone():
+            raise HTTPException(409, "This account already belongs to a course, so its type can't change.")
+        conn.execute("UPDATE users SET account_type=? WHERE id=?", (acct_type, user["id"]))
+    return me({**user, "account_type": acct_type})
+
+
 @router.get("/api/me")
 def me(user: dict = Depends(current_user)):
     with db() as conn:

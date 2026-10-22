@@ -21,7 +21,8 @@ export default function About({ onBack }) {
         is private until you, or a course rule, send it to the course staff. Your messages
         and the relevant course text are sent to the AI model provider to generate answers; they are not used to train
         models. The tutor keeps short study notes about what you’re working on in each course so it can pick up where you
-        left off.
+        left off. Full details are in the <a href="/privacy.html">Privacy Policy</a> and{' '}
+        <a href="/terms.html">Terms of Service</a>.
       </p>
       <h2>Demo course materials</h2>
       <p>

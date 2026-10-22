@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 
 from app import auth, config
-from conftest import create_course, email, new_user
+from conftest import create_course, email, join, new_user, q1
 
 SUPA = "https://proj.supabase.co"
 
@@ -168,3 +168,26 @@ def test_student_vs_instructor_signup_and_course_creation_guard(app):
         json={"name": "Allowed Course", "student_seats": 30, "staff_seats": 2, "token_cap": 100_000, "cap_period": "week"},
     )
     assert r_create_ok.status_code == 200, r_create_ok.text
+
+
+def test_google_account_takes_role_chosen_before_sign_in(app, supabase):
+    c = TestClient(app)
+    c.headers["Authorization"] = f"Bearer {_token(supabase, sub='5c1b3f2a-0000-4000-8000-0000000000aa')}"
+    assert c.get("/api/me").json()["account_type"] == "student"  # Google sends no role: a student by default
+    assert c.put("/api/me/account-type", json={"account_type": "admin"}).status_code == 422
+    r = c.put("/api/me/account-type", json={"account_type": "instructor"})
+    assert r.status_code == 200, r.text
+    assert r.json()["account_type"] == "instructor" and r.json()["courses"] == []
+    assert c.get("/api/me").json()["account_type"] == "instructor"
+    create_course(c)
+    # Once the account belongs to a course its type is settled.
+    assert c.put("/api/me/account-type", json={"account_type": "student"}).status_code == 409
+
+
+def test_course_member_cannot_change_account_type(app):
+    owner = new_user(app, "Owner")
+    course = create_course(owner)
+    stu = new_user(app, "Stu")
+    join(stu, q1("SELECT student_code FROM courses WHERE id=?", course)["student_code"])
+    assert stu.put("/api/me/account-type", json={"account_type": "instructor"}).status_code == 409
+    assert stu.get("/api/me").json()["account_type"] == "student"

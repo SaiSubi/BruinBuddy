@@ -6,6 +6,7 @@
 - **Entrypoint:** `main.py` mounts API routers and serves static frontend assets from `frontend/dist` when built.
 - **Auth (`accounts.py`, `auth.py`):**
   - Dual-mode: In production (`AUTH_PROVIDER=supabase`), verifies Supabase JWTs via JWKS and requires `SUPABASE_ANON_KEY`. Locally (`AUTH_PROVIDER` empty), uses local email/password accounts stored in SQLite.
+  - `users.account_type` (`student`/`instructor`) only gates course creation and the welcome screen, never course roles. Supabase users get it from signup metadata (default `student`); `PUT /api/me/account-type` lets a fresh account (no memberships, else 409) take the role picked before Google sign-in.
   - Mints short-lived signed tokens for `/files` access (`public` scope for students, `staff` scope for staff).
 - **Multi-Tenancy (`courses.py`, `members.py`):**
   - Dependencies: `get_member`, `get_staff`, `get_owner`.

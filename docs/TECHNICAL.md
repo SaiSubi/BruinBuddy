@@ -241,6 +241,7 @@ All routes except the public ones need `Authorization: Bearer <token>`. Course r
 | `GET /files/{doc_id}?t=` | signed link | Short-lived, document-bound link; redirects to Supabase Storage in production |
 | `GET`, `POST /api/billing/test-checkout/{id}` | signed link, development only | Stands in for Stripe Checkout when no Stripe keys are set; 404 in production |
 | `GET /api/me` | signed in | User and course memberships |
+| `PUT /api/me/account-type` | signed in, no memberships | Set `student` or `instructor` (the role picked before a Google sign-in); 409 once the account belongs to a course |
 | `POST /api/billing/quote` | signed in | Price and ceiling for a plan |
 | `POST /api/courses` | signed in | Create a pending course (caller becomes owner) |
 | `POST /api/join` | signed in | Join with a student or staff code |

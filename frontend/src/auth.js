@@ -61,7 +61,22 @@ export async function signIn({ email, password }) {
   if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message)
 }
 
-export async function signInWithGoogle() {
+// The role picked before sign-in. Google can't carry it in the account's metadata, so it waits here across the
+// redirect and App applies it to a fresh account (see PUT /api/me/account-type).
+const ROLE_KEY = 'bb_role'
+const PENDING_ROLE_KEY = 'bb_pending_role'
+export const lastRole = () => { try { return localStorage.getItem(ROLE_KEY) || '' } catch { return '' } }
+export const rememberRole = (role) => { try { localStorage.setItem(ROLE_KEY, role) } catch { /* ignore */ } }
+export function takePendingRole() {
+  try {
+    const role = localStorage.getItem(PENDING_ROLE_KEY)
+    localStorage.removeItem(PENDING_ROLE_KEY)
+    return role || ''
+  } catch { return '' }
+}
+
+export async function signInWithGoogle(role) {
+  try { localStorage.setItem(PENDING_ROLE_KEY, role) } catch { /* ignore */ }
   const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
   if (error) throw new Error(error.message)
 }

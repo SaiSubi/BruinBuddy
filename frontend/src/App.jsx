@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AccessibilityProvider } from './accessibility.jsx'
 import { api, setOnExpired } from './api.js'
-import { getToken, initAuth, signOut } from './auth.js'
+import { getToken, initAuth, signOut, takePendingRole } from './auth.js'
 import CanvasShell, { CanvasDashboard } from './CanvasShell.jsx'
 import { navigate, takeQueryParams, useRoute } from './router.js'
 import { Banner, Loading } from './ui.jsx'
@@ -39,7 +39,9 @@ function AppInner() {
   const loadMe = useCallback(async () => {
     if (!(await getToken())) { setMe(null); return null }
     try {
-      const m = await api.me()
+      let m = await api.me()
+      const role = takePendingRole() // set before a Google redirect; only a fresh account takes it
+      if (role && role !== m.account_type && !m.courses.length) m = await api.setAccountType(role).catch(() => m)
       signedIn.current = true
       setMe(m)
       return m

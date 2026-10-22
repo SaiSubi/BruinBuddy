@@ -13,6 +13,7 @@
 - **Appearance & Accessibility Engine (`accessibility.jsx`):**
   - Persists preferences in `localStorage` (`bb_a11y_prefs`) and synchronizes root `data-theme`, `data-colorblind`, `data-dyslexia`, `data-paper-tint`, `data-font-scale`, `data-underline-links`, and `data-reduced-motion` attributes on `<html>`.
   - Supports **Themes** (`light`, `dark`, `high-contrast`, `system`), **Colorblind Modes** (`none`, `protanopia`, `deuteranopia`, `tritanopia`, `monochrome`), **Dyslexia-Friendly Typography & Paper Tints** (`cream`, `sage`, `sky`), **Font Scaling** (`100%`–`130%`), and the **`📖 Immersive Reader`** modal with Text-to-Speech (`window.speechSynthesis`), Line Focus, and Syllable spacing.
+- **Sign-in (`AuthScreen.jsx`, `auth.js`):** Role picker (student / instructor) comes first, remembered in `bb_role`; then log in / sign up by email or Google. Google can't carry the role in metadata, so `signInWithGoogle(role)` stores `bb_pending_role` and `App.loadMe` applies it once via `api.setAccountType` when the account has no courses.
 - **HTTP & Streaming (`api.js`, `auth.js`):**
   - All backend calls go through `frontend/src/api.js` (attaches Bearer token, handles JSON, SSE streaming for chat messages, and `api.illustrate` / `api.illustrations` / `api.downloadIllustration`).
   - Never call `fetch` directly in React components.
