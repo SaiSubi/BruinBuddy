@@ -244,7 +244,7 @@ All routes except the public ones need `Authorization: Bearer <token>`. Course r
 | `PUT /api/me/account-type` | signed in, no memberships | Set `student` or `instructor` (the role picked before a Google sign-in); 409 once the account belongs to a course |
 | `POST /api/billing/quote` | signed in | Price and ceiling for a plan |
 | `POST /api/courses` | signed in | Create a pending course (caller becomes owner) |
-| `POST /api/join` | signed in | Join with a student or staff code |
+| `POST /api/join` | signed in | Join with a student or staff code (also used by `DEFAULT_COURSE_ID` auto-enrollment) |
 | `GET /api/courses/{id}` | member | Course view: role, status, pause, allowance (students), starter questions, setup checklist and code (staff) |
 | `PATCH /api/courses/{id}` | staff | Name, email domain, code expiry, token cap and period |
 | `POST /api/courses/{id}/code/rotate` | staff | New student code |
@@ -301,6 +301,7 @@ New settings (see `.env.example` and `.env.production.example`):
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | backend | Checkout and webhook (test-mode keys) |
 | `APP_URL` | backend | Default return URL for checkout |
 | `GLOBAL_DAILY_LIMIT` | backend | App-wide question limit (cost backstop) |
+| `DEFAULT_COURSE_ID` | backend | Demo: a student account with no course memberships joins this course on `GET /api/me`, with the same checks as a code (active, seats, blocked, email domain); 0 = off |
 | `EMBED_MODEL` | backend | Embedding model for hybrid retrieval (default `openai/text-embedding-3-small`) |
 | `EMBED_MIN_SIMILARITY` | backend | Cosine floor for embedding matches (default 0.35; recalibrate with `app.retrieval_eval` if the model changes) |
 

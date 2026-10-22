@@ -39,9 +39,10 @@ function AppInner() {
   const loadMe = useCallback(async () => {
     if (!(await getToken())) { setMe(null); return null }
     try {
-      let m = await api.me()
-      const role = takePendingRole() // set before a Google redirect; only a fresh account takes it
-      if (role && role !== m.account_type && !m.courses.length) m = await api.setAccountType(role).catch(() => m)
+      // A role picked before a Google redirect goes first, so a new instructor isn't enrolled as a student by
+      // /api/me; an account already in a course refuses it (409) and loads as usual.
+      const role = takePendingRole()
+      const m = (role && await api.setAccountType(role).catch(() => null)) || await api.me()
       signedIn.current = true
       setMe(m)
       return m
