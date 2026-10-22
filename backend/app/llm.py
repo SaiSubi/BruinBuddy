@@ -4,6 +4,7 @@ Every call takes `attr` ({course_id, user_id, chat_id}) so its token usage is at
 allowances and the course ceiling are computed from those rows. Attribution is passed explicitly (not through a
 context variable) because a streamed turn runs across several worker threads.
 """
+import hashlib
 import json
 import re
 from typing import Iterator
@@ -34,9 +35,10 @@ def client() -> OpenAI:
 
 
 def log_usage(purpose: str, model: str, prompt_tokens: int | None, completion_tokens: int | None,
-              cost: float | None, attr: dict | None) -> None:
+              cost: float | None, attr: dict | None, counted: bool = True) -> None:
+    """`counted=False` records the cost but leaves total_tokens at 0, so it doesn't use up allowances or the ceiling."""
     attr = attr or {}
-    total = (prompt_tokens or 0) + (completion_tokens or 0)
+    total = (prompt_tokens or 0) + (completion_tokens or 0) if counted else 0
     try:
         with db() as conn:
             conn.execute("INSERT INTO usage_log(ts,purpose,model,prompt_tokens,completion_tokens,cost,course_id,user_id,"
@@ -47,14 +49,14 @@ def log_usage(purpose: str, model: str, prompt_tokens: int | None, completion_to
         pass  # logging must never break a reply
 
 
-def _log(purpose: str, model: str, usage, attr: dict | None) -> None:
+def _log(purpose: str, model: str, usage, attr: dict | None, counted: bool = True) -> None:
     if not usage:
         return
     cost = getattr(usage, "cost", None)
     if cost is None and getattr(usage, "model_extra", None):
         cost = usage.model_extra.get("cost")
     log_usage(purpose, model, getattr(usage, "prompt_tokens", None), getattr(usage, "completion_tokens", None),
-              cost, attr)
+              cost, attr, counted)
 
 
 def _extra(effort: str) -> dict:
@@ -104,6 +106,34 @@ def stream(purpose: str, messages: list[dict], *, model: str | None = None, max_
         yield from _stream_once(purpose, messages, fallback, max_tokens, effort, attr)
 
 
+def can_embed() -> bool:
+    return config.MOCK_LLM or bool(config.OPENROUTER_API_KEY)
+
+
+def embed_model() -> str:
+    """Stored with each vector: vectors from different models can't be compared."""
+    return "mock" if config.MOCK_LLM else config.EMBED_MODEL
+
+
+def embed_floor() -> float:
+    """Minimum cosine similarity for an embedding match (the mock's hashed words: at least one shared word)."""
+    return 1e-6 if config.MOCK_LLM else config.EMBED_MIN_SIMILARITY
+
+
+def embed(purpose: str, texts: list[str], *, attr: dict | None = None) -> list[list[float]]:
+    """Embedding vectors, in order. Their usage is logged with its cost but not counted against token allowances:
+    embedding a whole course takes far more tokens than a tutor turn while costing about a cent."""
+    if config.MOCK_LLM:
+        log_usage(purpose, "mock", 10 * len(texts), 0, 0.0, attr, counted=False)
+        return [_mock_vector(t) for t in texts]
+    out: list[list[float]] = []
+    for i in range(0, len(texts), 128):
+        r = client().embeddings.create(model=config.EMBED_MODEL, input=texts[i:i + 128])
+        _log(purpose, config.EMBED_MODEL, r.usage, attr, counted=False)
+        out += [d.embedding for d in sorted(r.data, key=lambda d: d.index)]
+    return out
+
+
 def parse_json(text: str) -> dict:
     m = re.search(r"\{.*\}", text or "", re.S)
     if not m:
@@ -141,6 +171,15 @@ def mock_tutor_text(system: str) -> str:
     if has_source:
         return "(mock tutor) Here is what the course materials say about that. [S1] What part would you like to check? [S2]"
     return "[NC] (mock tutor) I can't find that in the course materials."
+
+
+def _mock_vector(text: str, dim: int = 4096) -> list[float]:
+    """Hashed bag of words: texts sharing words point the same way, so tests can exercise the dense path."""
+    from .retrieval import tokens
+    v = [0.0] * dim
+    for t in tokens(text):
+        v[int(hashlib.md5(t.encode()).hexdigest(), 16) % dim] += 1.0
+    return v
 
 
 def _mock_stream(messages: list[dict], attr: dict | None) -> Iterator[str]:

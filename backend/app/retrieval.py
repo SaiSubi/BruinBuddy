@@ -1,7 +1,10 @@
-"""BM25 retrieval over one course's public chunks, plus the one helper that touches tutor-only solutions.
+"""Hybrid retrieval over one course's public chunks, plus the one helper that touches tutor-only solutions.
 
-An `Index` only ever holds chunks students may see (knowledge.py decides which). Protected solution chunks are
-reachable only through `solution_chunks_for`, which feeds the checker and is never shown to the tutor.
+`Index.retrieve` fuses two rankings by reciprocal rank: BM25 (exact course terms, "Problem 3", names) and cosine
+similarity of chunk embeddings (paraphrases, notation; see embeddings.py). Without a query vector or chunk vectors
+it is BM25 alone. An `Index` only ever holds chunks students may see (knowledge.py decides which). Protected
+solution chunks are reachable only through `solution_chunks_for`, which feeds the checker and is never shown to the
+tutor.
 """
 import math
 import re
@@ -9,6 +12,9 @@ import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
+import numpy as np
+
+from . import config, llm
 from .db import db
 
 STOP = set("""a an and are as at be but by can do does for from how i if in is it its me my of on or so than that
@@ -43,7 +49,7 @@ class Chunk:
 class Index:
     k1, b = 1.5, 0.75
 
-    def __init__(self, chunks: list[Chunk]) -> None:
+    def __init__(self, chunks: list[Chunk], vectors: list[np.ndarray | None] | None = None) -> None:
         self.chunks = chunks
         self.by_id = {c.id: c for c in chunks}
         self.tok = [tokens((c.title + " ") * 3 + c.text) for c in chunks]
@@ -55,6 +61,18 @@ class Index:
                 self.post[term].append((i, tf))
         self.n = len(chunks)
         self.tokset = [set(t) for t in self.tok]
+        # unit vectors, one row per chunk; a chunk without one (or of another size) gets a zero row and never ranks
+        dims = Counter(len(v) for v in vectors or [] if v is not None)
+        self.dim = dims.most_common(1)[0][0] if dims else 0
+        self.vecs = np.zeros((self.n, self.dim), dtype=np.float32)
+        self.has_vec = np.zeros(self.n, dtype=bool)
+        for i, v in enumerate(vectors or []):
+            if v is not None and len(v) == self.dim:
+                self.vecs[i], self.has_vec[i] = v, True
+
+    @property
+    def dense(self) -> bool:
+        return bool(self.has_vec.any())
 
     def search(self, query: str, k: int = 6, *, exclude_docs: set[str] | frozenset = frozenset(),
                only_docs: set[str] | None = None) -> list[tuple[float, Chunk]]:
@@ -76,6 +94,44 @@ class Index:
             if len(out) >= k:
                 break
         return out
+
+    def _allowed(self, c: Chunk, exclude_docs, only_docs) -> bool:
+        return c.doc_id not in exclude_docs and (only_docs is None or c.doc_id in only_docs)
+
+    def dense_search(self, qvec: np.ndarray, k: int = 6, *, exclude_docs: set[str] | frozenset = frozenset(),
+                     only_docs: set[str] | None = None) -> list[tuple[float, Chunk]]:
+        if not self.dense or len(qvec) != self.dim:
+            return []
+        floor = llm.embed_floor()
+        sims = np.where(self.has_vec, self.vecs @ qvec, -np.inf)
+        out = []
+        for i in np.argsort(-sims):
+            if sims[i] < floor:
+                break  # weaker matches (and chunks without a vector) are left to BM25
+            c = self.chunks[i]
+            if self._allowed(c, exclude_docs, only_docs):
+                out.append((float(sims[i]), c))
+                if len(out) >= k:
+                    break
+        return out
+
+    def retrieve(self, query: str, qvec: np.ndarray | None, k: int = 6, *,
+                 exclude_docs: set[str] | frozenset = frozenset(), only_docs: set[str] | None = None) -> list[Chunk]:
+        """The top k chunks for a query: BM25 hits above the floor, fused with embedding hits by reciprocal rank."""
+        pool = max(k, config.HYBRID_POOL)
+        lexical = [c for s, c in self.search(query, pool, exclude_docs=exclude_docs, only_docs=only_docs)
+                   if s >= config.MIN_RETRIEVAL_SCORE]
+        semantic = ([c for _, c in self.dense_search(qvec, pool, exclude_docs=exclude_docs, only_docs=only_docs)]
+                    if qvec is not None else [])
+        if not semantic:
+            return lexical[:k]
+        score: dict[int, float] = defaultdict(float)
+        by_id: dict[int, Chunk] = {}
+        for ranking in (lexical, semantic):
+            for rank, c in enumerate(ranking):
+                score[c.id] += 1 / (config.RRF_K + rank + 1)
+                by_id[c.id] = c
+        return [by_id[i] for i in sorted(score, key=lambda i: -score[i])[:k]]
 
     def first_chunks(self, doc_id: str, k: int) -> list[Chunk]:
         """The opening chunks of one document (used when a query matches nothing in a focused material)."""

@@ -16,7 +16,7 @@ Backend (FastAPI, Python)
    ├─ Courses: memberships and roles, student code, staff codes, roster, settings, pause windows
    ├─ Billing ──────────────► Stripe Checkout (test mode) ──► webhook back to /api/stripe/webhook
    ├─ Materials: upload → background job (extract, chunk, mismatch check) ──► Supabase Storage
-   ├─ Knowledge: one BM25 index + leak guard per course, rebuilt when materials or modes change
+   ├─ Knowledge: one hybrid index (BM25 + embeddings) + leak guard per course, rebuilt when materials or modes change
    ├─ Chat API ──► Tutor pipeline ──► OpenRouter (tutor, checker, helpers)
    ├─ Memory worker (per course) ──► OpenRouter (cheap model)
    └─ Dashboard API (aggregates only)
@@ -32,7 +32,7 @@ Everything is one FastAPI service, as in v0. Each course is a tenant: every quer
 | Local development auth | A small email + password provider in the backend (`AUTH_PROVIDER=local`): scrypt password hashes and HMAC session tokens. Refused in production. | Lets the app and the test suite run with no Supabase project. |
 | Payments | **Stripe Checkout** (test mode) with inline `price_data`, plus a signed webhook. `stripe` Python SDK. | Hosted payment page; no card data touches our servers. |
 | Uploads | `python-multipart` for uploads; PyMuPDF moves into the runtime image for PDF text extraction. | Professors upload their own materials (PRD §3.2). |
-| Retrieval | Still BM25 in memory, now **one index per course**, cached and rebuilt when the course's materials or problem set modes change. | Free, fast, and good enough at course scale. |
+| Retrieval | **Hybrid**: BM25 plus embedding similarity, fused by reciprocal rank, in memory, **one index per course**, cached and rebuilt when the course's materials, problem set modes or embeddings change (§7.1). | BM25 alone missed paraphrased and notation-heavy questions; on 18.05 the hybrid finds a relevant chunk for 91% of labelled questions vs 83% (AI_STRATEGY.md §7). |
 | Routing (frontend) | A tiny hash router (`#/c/12/staff/materials`). | Works on Vercel and when the backend serves the build, with no rewrite rules. |
 
 Unchanged: FastAPI + React/Vite, KaTeX, OpenRouter through the `openai` SDK, SSE streaming, Postgres/SQLite with `?` placeholders, Fly.io + Vercel + Supabase.
@@ -102,7 +102,7 @@ Out of scope (PRD §2.8): live payments, refunds, proration, taxes, invoices, su
 **Processing** runs in a background thread per upload:
 1. Save the original: Supabase Storage at `courses/{course}/{doc}/{file}` in production, `data/uploads/…` locally. Insert the document as `processing`.
 2. Extract text per page (PyMuPDF for PDF; UTF-8 for `.txt`/`.md`, split into ~3,000-character parts). A PDF with no extractable text becomes `no_text` ("no text found; scanned PDFs are not supported").
-3. Clean and chunk exactly as in v0 (§6.1 below), store chunks, set `ready` (or `failed` with a short reason).
+3. Clean and chunk exactly as in v0 (§6.1 below), embed each chunk (§7.1), store chunks with their vectors, set `ready` (or `failed` with a short reason). If the embedding call fails the chunks are stored without vectors (BM25 still finds them) and the backfill fills them in later.
 4. **Mismatch check** (warns only): a filename and keyword heuristic, then one cheap model call on the first ~2,000 characters asking which category the file looks like. A disagreement is stored as `warning` ("This looks like a solution but is tagged as a reading"). The category is never changed automatically.
 5. Bump the course's `content_version`, so the course's index is rebuilt and its starter questions regenerate.
 
@@ -117,12 +117,19 @@ NFKC normalisation (math-italic letters become plain letters), folding table cel
 `python -m app.ingest --owner-email <email>` creates (or updates) the demo course from the local MIT OCW export: lecture notes, readings and class prep, problem sets, and solutions linked to their problem sets by file name. It is `active` with no payment, its term is dated to have started four weeks earlier (so sample data falls inside it), its problem sets default to Graded, and it gets a generated student code. Solution PDFs are not uploaded to Storage (their text lives in the database only). `python -m app.seed sample-data` adds sample students and questions for the dashboard (PRD §3.6), all flagged `is_sample`.
 
 ## 7. Knowledge per course
-`knowledge.py` keeps, per course, an in-memory **BM25 index of the chunks students may see** and a **leak guard** built from the solutions they may not see.
+`knowledge.py` keeps, per course, an in-memory **hybrid index (BM25 + chunk embeddings) of the chunks students may see** and a **leak guard** built from the solutions they may not see.
 
 - **What is public right now:** ready documents that are not solutions, plus solutions whose linked problem sets are all open. A problem set is open when its mode is `open` or its release date has passed.
-- **Cache key:** `(content_version, set of open problem sets)`. Each turn reads both with two small queries; if the key changed (an upload finished, a mode changed, a release date passed), the course's index and guard are rebuilt. This also works with more than one server process.
+- **Cache key:** `(content_version, set of open problem sets, index_version)`. Each turn reads them with two small queries; if the key changed (an upload finished, a mode changed, a release date passed, embeddings were filled in), the course's index and guard are rebuilt. This also works with more than one server process.
 - **Guard:** 6-word shingles of the protected solution chunks, minus any shingle that also appears in the course's public chunks (v0 logic). Solutions linked only to Practice sets are left out of the guard, because Practice allows worked explanations.
 - The checker reads protected solution chunks straight from the database (`solution_chunks_for`), never through the index.
+
+### 7.1 Hybrid retrieval and chunk embeddings
+- **Embeddings** (`embeddings.py`): each chunk is embedded once with `EMBED_MODEL` (default `openai/text-embedding-3-small` through OpenRouter), with a short header naming its material (`Reading: Reading 3: …, p. 2`) in front of the text. The unit vector is stored on the chunk (`chunks.embedding`, float32 bytes) with the model that made it (`chunks.embed_model`); vectors from another model are ignored. Solution chunks are embedded too, so they are ready when their sets open, but like their text they only enter the index once public.
+- **Backfill:** when the index is built and some ready chunks lack a current vector (data from before embeddings, a failed call, a changed model), a background job embeds them and bumps `courses.index_version`, which rebuilds the index without touching `content_version` (so starter questions aren't regenerated). It runs at most once per cache key, so an outage doesn't cause retry loops. The 18.05 seed (`app.ingest`) runs it directly.
+- **Search** (`Index.retrieve`): the turn's query (after the rewrite) is embedded; BM25 hits above `MIN_RETRIEVAL_SCORE` and embedding hits above `EMBED_MIN_SIMILARITY` (cosine; 0.35, set on 18.05, where off-topic questions peaked at 0.30 and course questions started at 0.40) each contribute their top 30, fused by reciprocal rank (`1/(60 + rank)` summed). With no query vector (embedding call failed) or no chunk vectors, or when nothing clears the embedding floor, it is BM25 alone, exactly as before. Vectors are searched with a numpy dot product: about 1,100 vectors for 18.05, well under a millisecond.
+- **Cost and limits:** embedding calls are logged in `usage_log` (purposes `embed`, `embed_query`) with their cost but with `total_tokens` 0, so they don't use up student allowances or the course ceiling (embedding all of 18.05 is ~500k tokens but about a cent). The query embedding adds one call of about 0.4–0.7 s per turn.
+- **Tenancy:** the vectors are loaded for the same public-only chunk list as BM25, so embedding search can't return a protected solution (`tests/test_retrieval.py`).
 
 ## 8. Tutor pipeline (one student message)
 0. **Gates**, in this order, each returning a clear message and making **no model call**: signed in → active member of an active course → course has a ready document → not inside a pause window (423) → student under their token allowance and the course under its ceiling (429) → app-wide daily safety limit (429). Save the question with its course, student and preview flag.
@@ -130,7 +137,7 @@ NFKC normalisation (math-italic letters become plain letters), folding table cel
 2. **Which problem set applies:** the candidates are the chat's attached set (opened from "Help with a problem set"), sets the message names ("pset 4", "problem set 04", "homework 3", "class 7 problems", matched against the course's titles), and a set whose text the message pastes (at least 8 content words, 60% of them in one problem set chunk). If the message brings none, the previous 3 student messages are checked. **When several match, the strictest mode wins**, so naming a Practice or open set can't unlock a pasted Graded problem.
 3. **Mode** of that problem set: Graded (default), Practice or Open (§9).
 4. **Rewrite the query** for short follow-ups (cheap model, as in v0).
-5. **Retrieve** the top 6 public chunks of this course. Quiz chats exclude Graded problem sets. Review chats take up to 4 chunks from the chosen material and fill the rest from the whole course. When a problem set applies, up to 2 chunks come from that set, and a problem the student names ("problem 2", "question 3") brings in the chunk that states it, so hints are about the right problem even when the wording doesn't match.
+5. **Retrieve** the top 6 public chunks of this course with hybrid search (§7.1). Quiz chats exclude Graded problem sets. Review chats take up to 4 chunks from the chosen material and fill the rest from the whole course. When a problem set applies, up to 2 chunks come from that set, and a problem the student names ("problem 2", "question 3") brings in the chunk that states it, so hints are about the right problem even when the wording doesn't match.
 6. **Check the attempt** (Graded and Practice only): the checker sees the linked solution excerpts and returns `{attempt_status, feedback}`. The tutor never sees solution text. In Practice mode the checker skips any solution file that also covers a Graded set.
 7. **Build the prompt:** core rules, the mode's rules and the "tell students if their final answer is correct" setting, the chat type (quiz, review), the professor's guidelines (general, plus tagged guidelines whose material is among the retrieved sources or is the problem set), memory notes, retrieved chunks `[S1]…[S6]`, the checker's note, history.
 8. **Generate.** Graded turns are buffered until the guard passes; other turns stream.
@@ -156,6 +163,7 @@ NFKC normalisation (math-italic letters become plain letters), folding table cel
 - **Course ceiling:** total tokens for the course, including staff preview chats and course-level helper calls (starter questions, mismatch checks). At the ceiling, students get "this course has used its plan's AI allowance".
 - **App-wide safety limit:** `GLOBAL_DAILY_LIMIT` questions per rolling 24 hours across all courses (cost backstop; default 600).
 - `usage_log` now records `course_id`, `user_id` and `chat_id` for every call; the background memory thread carries the same attribution.
+- Embedding calls are logged with their cost but count 0 tokens toward allowances and the ceiling (§7.1).
 
 ## 11. Dashboard
 `GET /api/courses/{id}/dashboard?range=7d|30d|term` (staff only). Preview chats are excluded. Nothing returns chat content except the unanswered list, which has no names and masks email addresses.
@@ -174,12 +182,12 @@ NFKC normalisation (math-italic letters become plain letters), folding table cel
 | Table | Key fields |
 |---|---|
 | `users` | `id`, `auth_id` (Supabase `sub`, or `local:…`), `email`, `name`, `password_hash` (local only), `is_sample` |
-| `courses` | `id`, `name`, `owner_id`, `status` (`pending`/`active`), plan (`student_seats`, `staff_seats`, `token_cap`, `cap_period`, `token_ceiling`, `price_cents`), access (`student_code`, `code_expires_at`, `email_domain`), `general_guideline`, `starter_questions`, `starter_version`, `content_version`, `setup` (checklist flags), `stripe_session_id`, `paid_at` |
+| `courses` | `id`, `name`, `owner_id`, `status` (`pending`/`active`), plan (`student_seats`, `staff_seats`, `token_cap`, `cap_period`, `token_ceiling`, `price_cents`), access (`student_code`, `code_expires_at`, `email_domain`), `general_guideline`, `starter_questions`, `starter_version`, `content_version`, `index_version` (bumped when chunk embeddings are filled in), `setup` (checklist flags), `stripe_session_id`, `paid_at` |
 | `memberships` | `course_id`, `user_id`, `role` (`owner`/`staff`/`student`), `status` (`active`/`removed`/`blocked`), unique per course and user |
 | `staff_codes` | `course_id`, `code_hash`, `last4`, `expires_at`, `used_by`, `used_at`, `revoked_at` |
 | `documents` | v0 fields + `course_id`, `status`, `status_detail`, `storage_path`, `content_type`, `pages`, `size_bytes`, `warning`, `rights_confirmed`, `mode`, `release_at`, `confirm_answers`, `uploaded_by`, timestamps |
 | `solution_links` | `solution_id`, `pset_id` (one solution can cover several sets) |
-| `chunks` | `id`, `doc_id`, `page`, `text`, `tutor_only` (1 for solution chunks) |
+| `chunks` | `id`, `doc_id`, `page`, `text`, `tutor_only` (1 for solution chunks), `embedding` (float32 unit vector; BLOB in SQLite, BYTEA in Postgres), `embed_model` |
 | `guidelines` | tagged guidelines: `course_id`, `text`, `doc_ids` (JSON). The general guideline is on `courses`. |
 | `pauses` | `course_id`, `starts_at`, `ends_at`, `message` |
 | `chats` | `course_id`, `user_id`, `title`, `kind` (`chat`/`pset`/`review`/`quiz`), `doc_id` (attached material), `is_preview` |
@@ -248,6 +256,8 @@ New settings (see `.env.example` and `.env.production.example`):
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | backend | Checkout and webhook (test-mode keys) |
 | `APP_URL` | backend | Default return URL for checkout |
 | `GLOBAL_DAILY_LIMIT` | backend | App-wide question limit (cost backstop) |
+| `EMBED_MODEL` | backend | Embedding model for hybrid retrieval (default `openai/text-embedding-3-small`) |
+| `EMBED_MIN_SIMILARITY` | backend | Cosine floor for embedding matches (default 0.35; recalibrate with `app.retrieval_eval` if the model changes) |
 
 ## 17. Production deployment
 Same layout as v0: Vercel (frontend, builds from `main`), Fly.io (backend, GitHub Actions on `main`), Supabase (Postgres, Storage, now Auth). See the README for the v1 go-live checklist: Supabase Auth settings, Stripe keys and webhook endpoint, new Fly secrets, the demo course owner, and the first-start migration.
@@ -264,7 +274,8 @@ Same layout as v0: Vercel (frontend, builds from `main`), Fly.io (backend, GitHu
 | Payment confirmation | Signed webhook, plus a server-side `retrieve` on return | Trust the success redirect |
 | Price | One payment per term, formula in §5 **(build default)** | Subscription or flat tiers |
 | Cap period | Rolling week **(build default)**, configurable per course | Per day or per term only |
-| Per-course retrieval | Separate in-memory BM25 per course, cache keyed by content version and open sets | A shared index filtered per query; embeddings |
+| Per-course retrieval | Separate in-memory hybrid index (BM25 + embeddings, reciprocal rank fusion) per course, cache keyed by content version, open sets and index version | A shared index filtered per query; pgvector; embeddings alone (lose exact matches like "Problem 3"); a reranker |
+| Embedding storage | Vectors as bytes on `chunks`, searched in memory with numpy | pgvector (would tie the code to Postgres; course-sized corpora don't need an ANN index) |
 | Solution release | Public only when all linked sets are open | Any linked set open |
 | Not-covered signal | `[NC]` marker from the tutor, phrase fallback | A separate classifier call per turn |
 | Uploads processing | Background thread in the API process | A job queue and worker |
@@ -272,5 +283,5 @@ Same layout as v0: Vercel (frontend, builds from `main`), Fly.io (backend, GitHu
 **Open questions**
 - Retention (chats kept for the term plus 30 days) and read-only courses after the term are agreed in PRD §2.7 but not built yet.
 - Background processing in the web process can be interrupted by a scale-to-zero stop; a real job queue is the upgrade if uploads grow.
-- BM25 still struggles with single-term questions; hybrid or embedding retrieval remains the main quality upgrade.
+- Retrieval still misses some paraphrases ("flip until heads" never reaches the geometric distribution). BM25 alone still returns weak matches for off-topic messages ("hi"); the tutor's `[NC]` rule handles those. A reranker is the next step if the retrieval eval shows a need.
 - PyMuPDF flattens math; LaTeX-aware or page-image extraction is still open.

@@ -2,14 +2,17 @@
 over the solutions they may not see.
 
 Cached per course and rebuilt when the course's `content_version` (bumped on uploads, deletes, re-categorising,
-relinking and mode changes) or its set of open problem sets (which also changes when a release date passes)
-differs from the cached copy. Both are read from the database on every turn, so this works across processes.
+relinking and mode changes), its `index_version` (bumped when chunk embeddings are filled in) or its set of open
+problem sets (which also changes when a release date passes) differs from the cached copy. All are read from the
+database on every turn, so this works across processes. A build that finds chunks without a current embedding
+starts a background backfill (embeddings.py).
 """
 import re
 import threading
 import time
 from dataclasses import dataclass, field
 
+from . import embeddings, llm
 from .db import db
 from .guard import LeakGuard
 from .retrieval import Chunk, Index
@@ -77,6 +80,7 @@ class CourseKnowledge:
     guarded: set[str]      # solutions that cover a Graded set (or no set): never used to explain anything
     index: Index
     guard: LeakGuard
+    unembedded: int = 0    # ready chunks (public or not) without a vector from the current embedding model
 
     @property
     def has_material(self) -> bool:
@@ -140,8 +144,9 @@ def _build(course_id: int, key: tuple) -> CourseKnowledge:
                              "WHERE course_id=? AND status='ready'", (course_id,)).fetchall()
         lrows = conn.execute("SELECT l.solution_id, l.pset_id FROM solution_links l JOIN documents d "
                              "ON d.id=l.solution_id WHERE d.course_id=?", (course_id,)).fetchall()
-        crows = conn.execute("SELECT c.id, c.doc_id, c.page, c.text FROM chunks c JOIN documents d ON d.id=c.doc_id "
-                             "WHERE d.course_id=? AND d.status='ready'", (course_id,)).fetchall()
+        crows = conn.execute("SELECT c.id, c.doc_id, c.page, c.text, c.embedding, c.embed_model FROM chunks c "
+                             "JOIN documents d ON d.id=c.doc_id WHERE d.course_id=? AND d.status='ready'",
+                             (course_id,)).fetchall()
     at = time.time()
     docs = {r["id"]: Doc(id=r["id"], title=r["title"], kind=r["kind"],
                          mode=effective_mode(r["mode"], r["release_at"], at), set_mode=r["mode"] or "graded",
@@ -164,12 +169,17 @@ def _build(course_id: int, key: tuple) -> CourseKnowledge:
         elif not linked or any(docs[p].mode == "graded" if p in docs else True for p in linked):
             guarded.add(d.id)  # solutions linked only to Practice sets may be explained, so they are not guarded
 
+    model = llm.embed_model()
+    crows = [r for r in crows if r["doc_id"] in docs]
+    vectors = {r["id"]: embeddings.from_blob(r["embedding"]) for r in crows
+               if r["embedding"] is not None and r["embed_model"] == model}
     chunks = [Chunk(id=r["id"], doc_id=r["doc_id"], title=docs[r["doc_id"]].title, kind=docs[r["doc_id"]].kind,
-                    page=r["page"], text=r["text"]) for r in crows if r["doc_id"] in docs]
-    index = Index([c for c in chunks if c.doc_id in public])
+                    page=r["page"], text=r["text"]) for r in crows]
+    shown = [c for c in chunks if c.doc_id in public]
+    index = Index(shown, [vectors.get(c.id) for c in shown])
     guard = LeakGuard((c.text for c in chunks if c.doc_id in guarded), (c.text for c in chunks if c.doc_id in public))
     return CourseKnowledge(course_id=course_id, key=key, docs=docs, public=public, guarded=guarded, index=index,
-                           guard=guard)
+                           guard=guard, unembedded=len(chunks) - len(vectors))
 
 
 class KnowledgeCache:
@@ -181,11 +191,12 @@ class KnowledgeCache:
     @staticmethod
     def _key(course_id: int) -> tuple:
         with db() as conn:
-            row = conn.execute("SELECT content_version FROM courses WHERE id=?", (course_id,)).fetchone()
+            row = conn.execute("SELECT content_version, index_version FROM courses WHERE id=?", (course_id,)).fetchone()
             rows = conn.execute("SELECT id FROM documents WHERE course_id=? AND kind='problem_set' AND status='ready' "
                                 "AND (mode='open' OR (release_at IS NOT NULL AND release_at<=?))",
                                 (course_id, time.time())).fetchall()
-        return (row["content_version"] if row else -1, frozenset(r["id"] for r in rows))
+        return (row["content_version"] if row else -1, frozenset(r["id"] for r in rows),
+                row["index_version"] if row else -1)
 
     def get(self, course_id: int) -> CourseKnowledge:
         key = self._key(course_id)
@@ -199,6 +210,8 @@ class KnowledgeCache:
             if not (kb and kb.key == key):
                 kb = _build(course_id, key)
                 self._cache[course_id] = kb
+        if kb.unembedded:
+            embeddings.schedule_backfill(course_id, key)
         return kb
 
 
