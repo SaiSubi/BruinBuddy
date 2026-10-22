@@ -55,6 +55,7 @@ APP_URL = os.getenv("APP_URL", "").strip().rstrip("/") or (ALLOWED_ORIGINS[0] if
 TOKEN_TTL_SECONDS = int(os.getenv("TOKEN_TTL_SECONDS", str(7 * 24 * 3600)))
 FILE_TOKEN_TTL_SECONDS = 3600
 GLOBAL_DAILY_LIMIT = int(os.getenv("GLOBAL_DAILY_LIMIT", "600"))  # questions, all courses, rolling 24h (cost backstop)
+DEFAULT_COURSE_ID = int(os.getenv("DEFAULT_COURSE_ID", "0") or 0)  # demo: new student accounts join this course; 0 = off
 
 # Supabase: Storage holds course files in production; Auth handles sign-up and login.
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")

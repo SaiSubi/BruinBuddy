@@ -325,22 +325,42 @@ def join(body: JoinIn, user: dict = Depends(current_user)):
             raise HTTPException(409, "This course isn't open yet. Try again once your instructor has finished setting it up.")
         if c["code_expires_at"] and c["code_expires_at"] <= now():
             raise HTTPException(410, "This course code has expired. Ask your instructor for the current one.")
-        existing = conn.execute("SELECT role, status FROM memberships WHERE course_id=? AND user_id=?",
-                                (c["id"], user["id"])).fetchone()
-        if existing and existing["status"] == "active":
-            return {"course_id": c["id"], "role": existing["role"], "already": True}
-        if existing and existing["status"] == "blocked":
-            raise HTTPException(403, "You can't rejoin this course. Contact your instructor.")
-        if not _email_allowed(user["email"], c["email_domain"]):
-            raise HTTPException(403, f"This course only accepts @{c['email_domain']} email addresses. "
-                                     "Sign up with your school email to join.")
-        lock_row(conn, "courses", c["id"])  # two students joining at once can't both take the last seat
-        used = conn.execute("SELECT COUNT(*) AS n FROM memberships WHERE course_id=? AND role='student' "
-                            "AND status='active'", (c["id"],)).fetchone()["n"]
-        if used >= c["student_seats"]:
-            raise HTTPException(409, "This course is full. Ask your instructor to add seats.")
-        _set_membership(conn, c["id"], user["id"], "student")
+        return _join_student(conn, c, user)
+
+
+def _join_student(conn, c, user: dict) -> dict:
+    existing = conn.execute("SELECT role, status FROM memberships WHERE course_id=? AND user_id=?",
+                            (c["id"], user["id"])).fetchone()
+    if existing and existing["status"] == "active":
+        return {"course_id": c["id"], "role": existing["role"], "already": True}
+    if existing and existing["status"] == "blocked":
+        raise HTTPException(403, "You can't rejoin this course. Contact your instructor.")
+    if not _email_allowed(user["email"], c["email_domain"]):
+        raise HTTPException(403, f"This course only accepts @{c['email_domain']} email addresses. "
+                                 "Sign up with your school email to join.")
+    lock_row(conn, "courses", c["id"])  # two students joining at once can't both take the last seat
+    used = conn.execute("SELECT COUNT(*) AS n FROM memberships WHERE course_id=? AND role='student' "
+                        "AND status='active'", (c["id"],)).fetchone()["n"]
+    if used >= c["student_seats"]:
+        raise HTTPException(409, "This course is full. Ask your instructor to add seats.")
+    _set_membership(conn, c["id"], user["id"], "student")
     return {"course_id": c["id"], "role": "student"}
+
+
+def enroll_in_default_course(user: dict) -> None:
+    """Demo: a student account with no course yet joins DEFAULT_COURSE_ID, with the same checks as a code."""
+    if not config.DEFAULT_COURSE_ID or user.get("account_type") != "student":
+        return
+    with db() as conn:
+        if conn.execute("SELECT 1 FROM memberships WHERE user_id=?", (user["id"],)).fetchone():
+            return  # already in, removed from, or blocked in a course: leave it alone
+        c = conn.execute("SELECT * FROM courses WHERE id=?", (config.DEFAULT_COURSE_ID,)).fetchone()
+        if not c or c["status"] != "active":
+            return
+        try:
+            _join_student(conn, c, user)
+        except HTTPException:
+            pass  # full or wrong email domain: they can still join with a code
 
 
 # ---- guidelines -------------------------------------------------------------------------------------

@@ -191,3 +191,54 @@ def test_course_member_cannot_change_account_type(app):
     join(stu, q1("SELECT student_code FROM courses WHERE id=?", course)["student_code"])
     assert stu.put("/api/me/account-type", json={"account_type": "instructor"}).status_code == 409
     assert stu.get("/api/me").json()["account_type"] == "student"
+
+
+_auto = iter(range(10_000))
+
+
+def _signup(app, account_type: str) -> TestClient:
+    c = TestClient(app)
+    r = c.post("/api/auth/signup", json={"email": email(f"auto{next(_auto)}_{account_type}"), "password": "password123",
+                                         "name": "Auto", "account_type": account_type})
+    assert r.status_code == 200, r.text
+    c.headers["Authorization"] = f"Bearer {r.json()['token']}"
+    return c
+
+
+def test_new_students_join_the_default_course(app, monkeypatch):
+    owner = new_user(app, "Owner")
+    cid = create_course(owner)
+    monkeypatch.setattr(config, "DEFAULT_COURSE_ID", cid)
+
+    stu = _signup(app, "student")
+    assert [(x["id"], x["role"]) for x in stu.get("/api/me").json()["courses"]] == [(cid, "student")]
+    assert [(x["id"], x["role"]) for x in _signup(app, "instructor").get("/api/me").json()["courses"]] == []
+
+    # A removed student isn't put back on their next sign-in.
+    assert owner.post(f"/api/courses/{cid}/members/{stu.get('/api/me').json()['id']}",
+                      json={"action": "remove"}).status_code == 200
+    assert stu.get("/api/me").json()["courses"] == []
+
+
+def test_default_course_respects_seats_and_status(app, monkeypatch):
+    owner = new_user(app, "Owner")
+    cid = create_course(owner, student_seats=1)
+    monkeypatch.setattr(config, "DEFAULT_COURSE_ID", cid)
+    assert len(_signup(app, "student").get("/api/me").json()["courses"]) == 1
+    assert _signup(app, "student").get("/api/me").json()["courses"] == []  # full: they can still use a code
+
+    pending = create_course(owner, activate=False)
+    monkeypatch.setattr(config, "DEFAULT_COURSE_ID", pending)
+    assert _signup(app, "student").get("/api/me").json()["courses"] == []
+
+
+def test_google_instructor_is_not_enrolled_in_the_default_course(app, supabase, monkeypatch):
+    owner = TestClient(app)
+    owner.headers["Authorization"] = f"Bearer {_token(supabase, sub='5c1b3f2a-0000-4000-8000-0000000000ba')}"
+    assert owner.put("/api/me/account-type", json={"account_type": "instructor"}).status_code == 200
+    monkeypatch.setattr(config, "DEFAULT_COURSE_ID", create_course(owner))
+    c = TestClient(app)
+    c.headers["Authorization"] = f"Bearer {_token(supabase, sub='5c1b3f2a-0000-4000-8000-0000000000bb')}"
+    # The app sends the role picked before the Google redirect first, so no student enrollment happens.
+    r = c.put("/api/me/account-type", json={"account_type": "instructor"})
+    assert r.status_code == 200 and r.json()["courses"] == []

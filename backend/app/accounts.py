@@ -153,6 +153,8 @@ def set_account_type(body: AccountTypeIn, user: dict = Depends(current_user)):
 
 @router.get("/api/me")
 def me(user: dict = Depends(current_user)):
+    from .courses import enroll_in_default_course  # courses imports this module
+    enroll_in_default_course(user)
     with db() as conn:
         rows = conn.execute(
             "SELECT c.id, c.name, c.status, m.role FROM memberships m JOIN courses c ON c.id=m.course_id "
