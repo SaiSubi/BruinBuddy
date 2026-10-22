@@ -14,7 +14,8 @@ from . import config
 
 TABLES = ["users", "courses", "memberships", "staff_codes", "documents", "solution_links", "chunks", "guidelines",
           "pauses", "chats", "messages", "illustrations", "memories", "usage_log", "stripe_events",
-          "assignments", "assignment_submissions", "assignment_messages"]
+          "assignments", "assignment_submissions", "assignment_messages",
+          "qa_sources", "qa_pairs", "qa_threads", "qa_messages"]
 V0_CONVERSATION_TABLES = ["users", "chats", "messages", "memories"]  # replaced in v1; archived as v0_*
 
 SCHEMA = """
@@ -99,7 +100,27 @@ CREATE TABLE IF NOT EXISTS assignment_submissions(
 CREATE TABLE IF NOT EXISTS assignment_messages(
   id {PK}, submission_id INTEGER NOT NULL REFERENCES assignment_submissions(id),
   checkpoint_index INTEGER NOT NULL, role TEXT NOT NULL CHECK(role IN ('user','assistant')),
-  content TEXT NOT NULL, event_type TEXT NOT NULL DEFAULT 'chat', created_at DOUBLE PRECISION NOT NULL)
+  content TEXT NOT NULL, event_type TEXT NOT NULL DEFAULT 'chat', created_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS qa_sources(
+  id {PK}, course_id INTEGER NOT NULL REFERENCES courses(id), title TEXT NOT NULL, file_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'processing', status_detail TEXT, pairs_found INTEGER NOT NULL DEFAULT 0,
+  uploaded_by INTEGER NOT NULL REFERENCES users(id), created_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS qa_pairs(
+  id {PK}, course_id INTEGER NOT NULL REFERENCES courses(id), source_id INTEGER REFERENCES qa_sources(id),
+  thread_id INTEGER, question TEXT NOT NULL, answer TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved')), faq INTEGER NOT NULL DEFAULT 0,
+  created_by INTEGER REFERENCES users(id), created_at DOUBLE PRECISION NOT NULL, updated_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS qa_threads(
+  id {PK}, course_id INTEGER NOT NULL REFERENCES courses(id), user_id INTEGER NOT NULL REFERENCES users(id),
+  title TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'other',
+  status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','ai_answered','escalated','staff_answered','resolved')),
+  escalated INTEGER NOT NULL DEFAULT 0, is_preview INTEGER NOT NULL DEFAULT 0, escalated_at DOUBLE PRECISION,
+  resolved_at DOUBLE PRECISION, created_at DOUBLE PRECISION NOT NULL, updated_at DOUBLE PRECISION NOT NULL);
+CREATE TABLE IF NOT EXISTS qa_messages(
+  id {PK}, thread_id INTEGER NOT NULL REFERENCES qa_threads(id),
+  role TEXT NOT NULL CHECK(role IN ('student','ai','staff','system')), author_id INTEGER REFERENCES users(id),
+  content TEXT NOT NULL, citations TEXT NOT NULL DEFAULT '[]', not_covered INTEGER NOT NULL DEFAULT 0,
+  leak_blocked INTEGER NOT NULL DEFAULT 0, created_at DOUBLE PRECISION NOT NULL)
 """
 
 # Columns added to tables that v0 databases already have (added in place, idempotently).
@@ -114,7 +135,8 @@ ADDED_COLUMNS = {
         "created_at": "DOUBLE PRECISION", "updated_at": "DOUBLE PRECISION",
     },
     "usage_log": {"course_id": "INTEGER", "user_id": "INTEGER", "chat_id": "INTEGER", "total_tokens": "INTEGER"},
-    "courses": {"index_version": "INTEGER NOT NULL DEFAULT 0"},  # bumped when chunk embeddings are filled in
+    "courses": {"index_version": "INTEGER NOT NULL DEFAULT 0",  # bumped when chunk embeddings are filled in
+                "qa_rules": "TEXT NOT NULL DEFAULT '{}'"},  # Q&A assistant: answer/escalate per category, instructions
     "chunks": {"embedding": "BYTEA" if config.DATABASE_URL else "BLOB", "embed_model": "TEXT"},  # float32 vector
 }
 
@@ -135,7 +157,12 @@ CREATE INDEX IF NOT EXISTS ix_usage_ts ON usage_log(ts);
 CREATE INDEX IF NOT EXISTS ix_assignments_course ON assignments(course_id);
 CREATE INDEX IF NOT EXISTS ix_asub_course_user ON assignment_submissions(course_id, user_id);
 CREATE INDEX IF NOT EXISTS ix_amsg_submission ON assignment_messages(submission_id, id);
-CREATE INDEX IF NOT EXISTS ix_amsg_created ON assignment_messages(created_at)
+CREATE INDEX IF NOT EXISTS ix_amsg_created ON assignment_messages(created_at);
+CREATE INDEX IF NOT EXISTS ix_qa_pairs_course ON qa_pairs(course_id, status);
+CREATE INDEX IF NOT EXISTS ix_qa_threads_course ON qa_threads(course_id, escalated, updated_at);
+CREATE INDEX IF NOT EXISTS ix_qa_threads_user ON qa_threads(course_id, user_id);
+CREATE INDEX IF NOT EXISTS ix_qa_messages_thread ON qa_messages(thread_id, id);
+CREATE INDEX IF NOT EXISTS ix_qa_messages_created ON qa_messages(created_at)
 """
 
 IS_PG = bool(config.DATABASE_URL)

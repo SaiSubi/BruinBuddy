@@ -1698,3 +1698,28 @@ form.inline input { min-width: 0; }
   .ga-left { position: static; max-height: none; }
   .ga-thread { max-height: none; }
 }
+
+/* AI teaching assistant Q&A (QnA.jsx, staff/QnA.jsx) */
+.narrow-wide { max-width: 880px; }
+.qna-ask { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 20px; }
+.qna-ask textarea, .qna-save textarea, .qna-pair textarea { width: 100%; }
+.qna-faq { padding: 10px 14px; margin-bottom: 8px; }
+.qna-faq summary { cursor: pointer; font-weight: 600; }
+.qna-log { padding: 16px; margin: 12px 0; }
+.qna-system { border-left: 3px solid var(--line); padding: 4px 10px; margin: 0 0 16px; }
+.msg.qna-staff .bubble { background: var(--good-bg); border-left: 3px solid var(--good-ink); }
+.qna-sources { margin-top: 6px; font-size: 0.88rem; }
+.qna-sources summary { cursor: pointer; color: var(--muted); }
+.qna-sources ol { padding-left: 20px; }
+.qna-sources .srctext { white-space: pre-wrap; max-height: 180px; overflow-y: auto; }
+.qna-actions { margin: 8px 0; }
+.qna-composer { max-width: none; padding-left: 0; padding-right: 0; }
+.qna-views { margin-bottom: 14px; }
+.qna-inbox { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.qna-inbox-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.qna-inbox-list .pick.active { border-color: var(--accent); background: var(--tutor); }
+.qna-save, .qna-pair { margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+.qna-pair.pending { border-left: 3px solid var(--warn-line); }
+@media (max-width: 900px) {
+  .qna-inbox { grid-template-columns: 1fr; }
+}

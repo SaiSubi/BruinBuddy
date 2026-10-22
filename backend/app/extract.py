@@ -1,6 +1,9 @@
 """Text extraction and chunking, shared by uploads (materials.py) and the 18.05 seed (ingest.py)."""
+import html
+import io
 import re
 import unicodedata
+import zipfile
 
 CHUNK_TARGET = 1400  # characters, roughly 350 tokens
 CHUNK_MIN = 200
@@ -67,12 +70,34 @@ def _text_parts(text: str) -> list[str]:
     return parts
 
 
+DOCX_MAX_XML = 50 * 1024 * 1024  # uncompressed document.xml; refuses zip bombs
+
+
+def docx_text(data: bytes) -> str:
+    """Paragraph text of a Word .docx (a zip of XML), read with regexes rather than an XML parser."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            info = z.getinfo("word/document.xml")
+            if info.file_size > DOCX_MAX_XML:
+                raise NoText()
+            xml = z.read(info).decode("utf-8", errors="replace")
+    except (zipfile.BadZipFile, KeyError):
+        raise NoText()
+    paras = []
+    for p in re.findall(r"<w:p[ >].*?</w:p>", xml, re.S):
+        p = re.sub(r"<w:(?:tab|br)\b[^>]*/>", " ", p)
+        paras.append(html.unescape("".join(re.findall(r"<w:t(?: [^>]*)?>([^<]*)</w:t>", p))))
+    return "\n\n".join(t for t in paras if t.strip())
+
+
 def extract_pages(data: bytes, file_name: str) -> list[tuple[int, str]]:
-    """Return [(page_number, text)] for a PDF, .txt or .md file. Raises NoText if nothing usable is found."""
+    """Return [(page_number, text)] for a PDF, .docx, .txt or .md file. Raises NoText if nothing usable is found."""
     if file_name.lower().endswith(".pdf"):
         import pymupdf  # imported lazily: only needed when a PDF is processed
         with pymupdf.open(stream=data, filetype="pdf") as doc:
             pages = [(i, page.get_text("text")) for i, page in enumerate(doc, start=1)]
+    elif file_name.lower().endswith(".docx"):
+        pages = list(enumerate(_text_parts(docx_text(data)), start=1))
     else:
         text = data.decode("utf-8", errors="replace").replace("\r\n", "\n")
         pages = list(enumerate(_text_parts(text), start=1))
