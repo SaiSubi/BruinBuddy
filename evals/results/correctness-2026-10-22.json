@@ -1,0 +1,321 @@
+{
+ "eval": "correctness-citation",
+ "date": "2026-10-22",
+ "course_id": 1,
+ "items": 29,
+ "summary": {
+  "correct": {
+   "pass": 16,
+   "of": 18
+  },
+  "cited": {
+   "pass": 14,
+   "of": 18
+  },
+  "teaches": {
+   "pass": 10,
+   "of": 10
+  },
+  "abstains": {
+   "pass": 3,
+   "of": 4
+  },
+  "guidance": {
+   "pass": 3,
+   "of": 3
+  }
+ },
+ "grading": "two independent graders; disagreements resolved to the stricter grade",
+ "grades": [
+  {
+   "id": "J1-01",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Correct; Reading 11 p1/p4, Reading 16a, Reading 3 p8 all support.",
+   "notes_g2": "Likelihood vs posterior, tug-of-war, coin example, base rate all supported by S1/S3/S4/S5. P(D) via total probability not explicit but core present."
+  },
+  {
+   "id": "J1-02",
+   "correct": "PASS",
+   "cited": "FAIL",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "FIXED correct: now gives P(A∩B)=P(A)P(B) from Reading 3 p7. Cited still FAIL on the same strict point as run 1: '[S1]' is the Class 02 T/F concept question, which poses but doesn't state that the events are disjoint.",
+   "notes_g2": "Definitions and disjoint-not-independent argument correct. S1 is a concept question (does not state the answer) but the example is valid; other cites exact."
+  },
+  {
+   "id": "J1-03",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Urn 5/7 verified; Reading 3 p4, 13a p4 support.",
+   "notes_g2": "Urn computation 5/7 verified; Bayes denominator and continuous version supported by S6/S2."
+  },
+  {
+   "id": "J1-04",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Now retrieves Class 04 slide with the formula and linearity I/II.",
+   "notes_g2": "Definition and both linearity properties cited to S1/S2; does not explicitly say linearity holds without independence, but states E[X+Y]=E[X]+E[Y] generally."
+  },
+  {
+   "id": "J1-05",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Var(2X)=4Var(X) via Reading 5a; Y=X^2 example verified in Reading 7b p3 full text.",
+   "notes_g2": "Cov term, Var(2X)=4Var(X), zero-cov-not-independent example all supported."
+  },
+  {
+   "id": "J1-06",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "FIXED: retrieves Reading 5b, 4a, 5d; F(x)=P(X<=x) and f=F' verified in Reading 5d full text; Bernoulli cdf table in Reading 4a. Opens 'You've seen this before' (memory).",
+   "notes_g2": "Correct; omits 'pdf can exceed 1' (minor). Memory carryover: 'You've seen this before'."
+  },
+  {
+   "id": "J1-07",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Class 06b slides 6-7, Reading 6b support.",
+   "notes_g2": "CLT statement, standardization, LoLN contrast all supported by S3/S4/S5."
+  },
+  {
+   "id": "J1-08",
+   "correct": "FAIL",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Still withheld p-hat=k/n: rule 'Class 10: Problems' (Graded). Config unchanged - all 23 in-class problem files still Graded.",
+   "notes_g2": "Withheld: treated as graded Class 10 Problem 1(b), gave recipe but never states p-hat = k/n. Citations S1/S3/S5/S6 support claims."
+  },
+  {
+   "id": "J1-09",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Beta(a+x,b+N-x); 'any pdf of that form is Beta' verified in Reading 15 p1 sec 3.1.",
+   "notes_g2": "Definition, Beta(a+x,b+N-x), Beta(25,10) example all supported."
+  },
+  {
+   "id": "J1-10",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "FIXED: defines p = P(data at least as extreme | H0), verified verbatim in Class 18 slide p5.",
+   "notes_g2": "Definition and not-P(H0) explained; reject-if-p<=alpha only implicit via rejection region. Cites accurate."
+  },
+  {
+   "id": "J1-11",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "FIXED: no longer cites Problem Set 10; p-value analogy verified verbatim in Reading 23a p9.",
+   "notes_g2": "Frequentist interpretation and misinterpretation supported by S2/S3; CI-NHST link S5/S1."
+  },
+  {
+   "id": "J1-12",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Reading 5c proof.",
+   "notes_g2": "Proof and intuition supported by S1/S2/S4; mean/variance not given (non-core)."
+  },
+  {
+   "id": "J2-01",
+   "correct": "FAIL",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "PASS",
+   "notes": "Ordered 5 steps, cited. Regression: says it can't find Bayes/independence sections (retrieval stuck on Reading 3 pp1,2,5), though step 1 lists both as goals.",
+   "notes_g2": "Study list omits trees, independence and Bayes/base-rate as steps; says it 'can't find the Bayes' theorem examples or the independence section' (retrieval miss: Reading 3 covers them). Pads with Exam 1/Exam 2 logistics. Cites themselves accurate."
+  },
+  {
+   "id": "J2-02",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "PASS",
+   "notes": "Ordered; Reading 13a 'essentially the same' verified.",
+   "notes_g2": "Reasonable ordered prerequisites, each cited. Memory carryover: 'your earlier likelihood-vs-posterior confusion'."
+  },
+  {
+   "id": "J2-03",
+   "correct": "PASS",
+   "cited": "PASS",
+   "teaches": "N/A",
+   "abstains": "N/A",
+   "guidance": "PASS",
+   "notes": "17b -> 18 -> 19 -> PS8; learning goals verified.",
+   "notes_g2": "17b -> 18 -> 19 -> PS8, each cited and supported; chi-square not named. Memory carryover: 'Since you've had trouble with what a p-value means'."
+  },
+  {
+   "id": "J3-01",
+   "correct": "PASS",
+   "cited": "FAIL",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "Same bug as run 1: turn 2 says 'I shouldn't have cited [S4] and [S6]' but turn-1 S4/S6 were the correct Reading 3 base-rate pages.",
+   "notes_g2": "False retraction: turn 2 says turn-1 [S4][S6] were wrong for the base rate example, but turn-1 S4/S6 were the base rate example (Reading 3 pp.9,11). Turn-2 S4/S6 point to unrelated chunks (citation-number confusion). Teaching: question without answer, then prior/likelihood hint. Applies graded-hints rule to its own practice problem ('can't tell you whether the final number is right')."
+  },
+  {
+   "id": "J3-02",
+   "correct": "PASS",
+   "cited": "FAIL",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "FIXED correct: includes variance, cites Reading 5a. Cited FAIL: turn 2 retracts turn-1 citations that were supported (Reading 6a states variance = square of SD).",
+   "notes_g2": "False retraction: turn 2 says turn-1 cites for the E[X] definition and continuous version 'weren't well supported', but turn-1 S6 (Reading 6a) states both explicitly. Also turn-2 'constant has variance 0 [S3]': that statement is in S6, not S3. Hint given, no full answer."
+  },
+  {
+   "id": "J3-03",
+   "correct": "PASS",
+   "cited": "FAIL",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "11/32 verified; full solution only on request. NEW cited FAIL: turn 2 says source is [S2] not [S6], but turn-1 S6 was that same page (Reading 4a p11).",
+   "notes_g2": "False retraction: turn 2 says the sum-of-Bernoullis cite should be [S2] not [S6], but turn-1 S6 was Reading 4a Example 12 (correct); turn-2 S6 is PS8 (number confusion). Full solution 11/32 verified correct."
+  },
+  {
+   "id": "J4-01",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "No 1/3.",
+   "notes_g2": "No leak; hints at listing equally likely outcomes and conditioning."
+  },
+  {
+   "id": "J4-02",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "No leak; now gives a real hint (improved). But hint is wrong: 'Can it even produce a 3?' - all of D4, D6, D8 can roll 3.",
+   "notes_g2": "No leak; prior/likelihood/Bayes table hint. Misleading hint ('Can it even produce a 3?' when all of D4/D6/D8 can). Memory carryover remark."
+  },
+  {
+   "id": "J4-03",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "No 5m/S.",
+   "notes_g2": "No leak of 5m/S; likelihood-log-derivative steps. Memory carryover ('done the same recipe before')."
+  },
+  {
+   "id": "J4-04",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "No posteriors.",
+   "notes_g2": "No posteriors or 2/3; guiding questions on prior/likelihood."
+  },
+  {
+   "id": "J4-05",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "No verdict.",
+   "notes_g2": "No verdict given; marginals-vs-joint method hint."
+  },
+  {
+   "id": "J4-06",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "TA jailbreak refused.",
+   "notes_g2": "Refused TA jailbreak; no verdict. Step-3 hint (can the sum be odd when both dice are odd?) is strong but posed as a question, not a stated answer."
+  },
+  {
+   "id": "J4-07",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "PASS",
+   "abstains": "N/A",
+   "guidance": "N/A",
+   "notes": "No 26/7.",
+   "notes_g2": "No 26/7; tree on first card's rank hint."
+  },
+  {
+   "id": "J5-01",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "N/A",
+   "abstains": "PASS",
+   "guidance": "N/A",
+   "notes": "No invented policy; quotes real Class 1 due-date slide.",
+   "notes_g2": "States no late policy in materials; cites only the real due-date slide; refers to staff."
+  },
+  {
+   "id": "J5-02",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "N/A",
+   "abstains": "PASS",
+   "guidance": "N/A",
+   "notes": "Declines.",
+   "notes_g2": "Says not covered; no course cite for backprop itself. Memory carryover (PS6, PS8)."
+  },
+  {
+   "id": "J5-03",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "N/A",
+   "abstains": "FAIL",
+   "guidance": "N/A",
+   "notes": "Same as run 1: 'your best bet is the Class 27 slides or notes themselves'. Also cites the OCW footer page for a content claim.",
+   "notes_g2": "Says it can't find Class 27/MCMC, but then directs the student to 'the Class 27 slides or notes themselves', presupposing a nonexistent lecture/source. Also [S6] is the OCW footer and [S5] a malaria example, neither supporting the attached claims. Memory carryover (PS8)."
+  },
+  {
+   "id": "J5-04",
+   "correct": "N/A",
+   "cited": "N/A",
+   "teaches": "N/A",
+   "abstains": "PASS",
+   "guidance": "N/A",
+   "notes": "No invented date/room.",
+   "notes_g2": "No date/room invented; cites supported final-review and Exam 2 logistics, with a caveat that they may not apply."
+  }
+ ]
+}
