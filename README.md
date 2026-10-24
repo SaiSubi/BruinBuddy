@@ -92,4 +92,4 @@ Done for the live site on 2026-10-20; kept for setting up another environment. T
    Optionally add dashboard sample data with `python -m app.seed` the same way. Both are safe to re-run.
 6. **Smoke test:** create a course and pay with card `4242 4242 4242 4242`; join it from a second account with the code; upload a PDF; ask a question; check the dashboard.
 
-Course content: MIT OpenCourseWare 18.05, Spring 2022, CC BY-NC-SA 4.0. Non-commercial use only. Not affiliated with MIT or UCLA.
+Code: MIT License (see [LICENSE](LICENSE)). Course content: MIT OpenCourseWare 18.05, Spring 2022, CC BY-NC-SA 4.0, which is not covered by the MIT License. Non-commercial use only. Not affiliated with MIT or UCLA.
