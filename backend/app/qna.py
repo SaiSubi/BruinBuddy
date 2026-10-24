@@ -295,10 +295,18 @@ def _qa_index(course_id: int) -> Index:
 
 
 def _sources(course_id: int, kb: knowledge.CourseKnowledge, query: str, attr: dict) -> dict[int, Chunk]:
-    hits = [c for s, c in _qa_index(course_id).search(query, QA_TOP_K) if s >= QA_MIN_SCORE]
-    if kb.has_material:
-        qvec = query_vector(query, attr) if kb.index.dense else None
-        hits += kb.index.retrieve(query, qvec, MATERIAL_TOP_K)  # public chunks only
+    with tracing.Step("retrieval", attr, query, as_type="retriever") as step:
+        past = [(s, c) for s, c in _qa_index(course_id).search(query, QA_TOP_K) if s >= QA_MIN_SCORE]
+        hits, qvec, material = [c for _, c in past], None, []
+        if kb.has_material:
+            qvec = query_vector(query, step.attr) if kb.index.dense else None
+            material = kb.index.retrieve(query, qvec, MATERIAL_TOP_K)  # public chunks only
+            hits += material
+        if step.on:
+            step.end({"query": query,
+                      "chunks": [{"chunk_id": c.id, "title": c.title, "kind": "qa", "bm25": round(s, 2)} for s, c in past]
+                      + kb.index.explain(query, qvec, material)},
+                     hybrid=qvec is not None, past_qa=len(past))
     return dict(enumerate(hits, start=1))
 
 

@@ -30,6 +30,8 @@ LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "").strip()  # optional t
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "").strip()
 LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://us.cloud.langfuse.com").strip()
 LANGFUSE_SAMPLE_RATE = float(os.getenv("LANGFUSE_SAMPLE_RATE", "1.0"))  # share of answers traced (free-tier volume)
+# The deployed git commit (set by the deploy workflow); traces carry it so changes can be compared before and after
+APP_RELEASE = (os.getenv("APP_RELEASE") or os.getenv("FLY_IMAGE_REF") or "").strip()[:64] or None
 
 TOP_K = 6
 MIN_RETRIEVAL_SCORE = 3.0  # BM25 is not calibrated: this only drops near-empty matches; the tutor judges relevance

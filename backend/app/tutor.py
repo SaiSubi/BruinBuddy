@@ -271,9 +271,15 @@ def _run_turn(kb: CourseKnowledge, t: Turn, message: str, trace: tracing.Trace) 
         rule = kb.rule(problem_doc)
         mode = rule["mode"] if rule else None
 
-        query = _rewrite(history, message, attr)
-        qvec = embeddings.query_vector(query, attr) if kb.index.dense else None
-        sources = dict(enumerate(_retrieve(kb, t.chat, query, problem_doc, " ".join(prior_user[-2:]), qvec), start=1))
+        with tracing.Step("retrieval", attr, message, as_type="retriever") as step:
+            query = _rewrite(history, message, step.attr)
+            qvec = embeddings.query_vector(query, step.attr) if kb.index.dense else None
+            sources = dict(enumerate(_retrieve(kb, t.chat, query, problem_doc, " ".join(prior_user[-2:]), qvec),
+                                     start=1))
+            if step.on:
+                step.end({"query": query, "chunks": kb.index.explain(query, qvec, list(sources.values()))},
+                         rewritten=query != message, hybrid=qvec is not None, chat_kind=t.chat["kind"],
+                         problem_doc=problem_doc)
 
         verdict, solution_text = None, []
         if mode in ("graded", "practice"):

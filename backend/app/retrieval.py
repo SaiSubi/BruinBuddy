@@ -52,6 +52,7 @@ class Index:
     def __init__(self, chunks: list[Chunk], vectors: list[np.ndarray | None] | None = None) -> None:
         self.chunks = chunks
         self.by_id = {c.id: c for c in chunks}
+        self.pos = {c.id: i for i, c in enumerate(chunks)}
         self.tok = [tokens((c.title + " ") * 3 + c.text) for c in chunks]
         self.dl = [len(t) for t in self.tok]
         self.avgdl = (sum(self.dl) / len(self.dl)) if self.dl else 1.0
@@ -74,8 +75,7 @@ class Index:
     def dense(self) -> bool:
         return bool(self.has_vec.any())
 
-    def search(self, query: str, k: int = 6, *, exclude_docs: set[str] | frozenset = frozenset(),
-               only_docs: set[str] | None = None) -> list[tuple[float, Chunk]]:
+    def _bm25(self, query: str) -> dict[int, float]:
         scores: dict[int, float] = defaultdict(float)
         for term in set(tokens(query)):
             plist = self.post.get(term)
@@ -85,8 +85,12 @@ class Index:
             for i, tf in plist:
                 norm = tf + self.k1 * (1 - self.b + self.b * self.dl[i] / self.avgdl)
                 scores[i] += idf * tf * (self.k1 + 1) / norm
+        return scores
+
+    def search(self, query: str, k: int = 6, *, exclude_docs: set[str] | frozenset = frozenset(),
+               only_docs: set[str] | None = None) -> list[tuple[float, Chunk]]:
         out = []
-        for i, s in sorted(scores.items(), key=lambda kv: -kv[1]):
+        for i, s in sorted(self._bm25(query).items(), key=lambda kv: -kv[1]):
             c = self.chunks[i]
             if c.doc_id in exclude_docs or (only_docs is not None and c.doc_id not in only_docs):
                 continue
@@ -132,6 +136,26 @@ class Index:
                 score[c.id] += 1 / (config.RRF_K + rank + 1)
                 by_id[c.id] = c
         return [by_id[i] for i in sorted(score, key=lambda i: -score[i])[:k]]
+
+    def explain(self, query: str, qvec: np.ndarray | None, chunks: list[Chunk]) -> list[dict]:
+        """How each returned chunk scored, for tracing: BM25 and cosine similarity, and its rank in each list
+        (1 = best, over the whole course; None = no match). Reads only; ranking is decided in `retrieve`."""
+        bm25 = self._bm25(query)
+        lex_rank = {i: r for r, i in enumerate(sorted(bm25, key=lambda i: -bm25[i]), start=1)}
+        sims = None
+        if qvec is not None and self.dense and len(qvec) == self.dim:
+            sims = np.where(self.has_vec, self.vecs @ qvec, -np.inf)
+            dense_rank = {int(i): r for r, i in enumerate(np.argsort(-sims), start=1)}
+        out = []
+        for c in chunks:
+            i = self.pos.get(c.id)
+            row = {"chunk_id": c.id, "title": c.title, "page": c.page, "kind": c.kind}
+            if i is not None:
+                row.update(bm25=round(bm25[i], 2) if i in bm25 else None, bm25_rank=lex_rank.get(i))
+                if sims is not None and np.isfinite(sims[i]):
+                    row.update(cosine=round(float(sims[i]), 3), cosine_rank=dense_rank[i])
+            out.append(row)
+        return out
 
     def first_chunks(self, doc_id: str, k: int) -> list[Chunk]:
         """The opening chunks of one document (used when a query matches nothing in a focused material)."""
