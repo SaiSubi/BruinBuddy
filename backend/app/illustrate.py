@@ -6,11 +6,11 @@ import html
 import json
 import re
 
-from . import config, llm, tracing
+from . import config, embeddings, llm, tracing
 from .db import db, now
 from .knowledge import CourseKnowledge
 from .retrieval import solution_chunks_for
-from .tutor import _llm_leak, _retrieve
+from .tutor import _llm_leak, _retrieve, _rewrite
 
 SKILLS = (
     "anatomy_isometric",
@@ -1466,12 +1466,21 @@ def _generate_illustration(kb: CourseKnowledge, course: dict, chat: dict, user_i
     rule = kb.rule(problem_doc)
     mode = rule["mode"] if rule else None
 
-    # Retrieve only student-visible (public) course chunks
+    # Retrieve only student-visible (public) course chunks, the same way a tutor turn does: a short follow-up
+    # ("why?") is rewritten into a standalone query, then BM25 and embeddings are fused
+    if prompt and prompt.strip():
+        before = history
+    else:
+        last_user = max((i for i, m in enumerate(history) if m["role"] == "user"), default=len(history))
+        before = history[:last_user]
     with tracing.Step("retrieval", attr, latest_text, as_type="retriever") as step:
-        chunks = _retrieve(kb, chat, latest_text, problem_doc, " ".join(user_msgs[-2:]))
+        query = _rewrite([{"role": m["role"], "content": m["content"]} for m in before], latest_text, step.attr)
+        qvec = embeddings.query_vector(query, step.attr) if kb.index.dense else None
+        chunks = _retrieve(kb, chat, query, problem_doc, " ".join(user_msgs[-2:]), qvec)
         if step.on:
-            step.end({"query": latest_text, "chunks": kb.index.explain(latest_text, None, chunks)},
-                     hybrid=False, chat_kind=chat["kind"], problem_doc=problem_doc)
+            step.end({"query": query, "chunks": kb.index.explain(query, qvec, chunks)},
+                     rewritten=query != latest_text, hybrid=qvec is not None, chat_kind=chat["kind"],
+                     problem_doc=problem_doc)
     materials_text = "\n\n".join(f"[S{i}] {c.title}, p. {c.page}\n{c.text[:450]}" for i, c in enumerate(chunks, start=1))
 
     # Stage 1: Route to the right skill
