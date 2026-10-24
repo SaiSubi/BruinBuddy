@@ -12,6 +12,7 @@
   6. **Citations:** Source links minted for students always use `public` scope.
 - **Concept Illustration Engine (`illustrate.py`):**
   - Routes concepts across `anatomy_isometric` (`wheresryan22/anatomy`), `manim_3b1b` (`adithya-s-k/manim_skill`), `explainer_diagram`, and `explainer_storyboard` (`iart-ai/explainer-video-skills`).
+  - Retrieves like a tutor turn: a short follow-up is rewritten with `tutor._rewrite` (from the messages before the last user message, or the whole chat when the student typed a focus prompt), then hybrid `tutor._retrieve` with the query embedding. (It used to be BM25 on the raw last message, so "why?" found nothing; regression test in `test_illustrate.py`.)
   - Uses only `public` chunks, passes explicit `attr` on `illustrate_route` and `illustrate_gen` calls, and runs `kb.guard.leaks` + `_llm_leak` on Graded problem sets, sanitizing to a conceptual walkthrough if any solution overlap is detected.
 - **LLM Attribution & Cost Control (`llm.py`):**
   - Every `llm` call requires explicit `attr={"course_id": ..., "user_id": ..., "chat_id": ...}` (logged to `usage_log` for allowance enforcement). Never use `contextvars` because streaming turns cross thread boundaries.

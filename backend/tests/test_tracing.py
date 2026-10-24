@@ -208,7 +208,7 @@ def test_qna_and_illustration_retrieval_steps(app, lf):
     s.post(f"/api/chats/{chat}/illustrate", json={})
     ill_root = next(o for o in lf.obs if o.kind == "span" and o.name == "illustration")
     ill_step = next(o for o in lf.obs if o.name == "retrieval" and o.trace_id == ill_root.trace_id)
-    assert ill_step.fields["metadata"]["hybrid"] is False and ill_step.fields["output"]["chunks"]
+    assert ill_step.fields["metadata"]["hybrid"] is True and ill_step.fields["output"]["chunks"]
 
 
 def test_explain_reports_scores_and_ranks():

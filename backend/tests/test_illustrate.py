@@ -174,3 +174,32 @@ def test_illustrate_blocks_graded_solution_leak(app, monkeypatch):
     assert "three eighths" not in body["artifact_html"].lower()
     assert "HHT HTH THH" not in body["artifact_html"]
     assert "Concept Intuition" in body["title"]
+
+
+def test_illustration_after_a_follow_up_uses_the_rewritten_query_and_embeddings(app, monkeypatch):
+    """Regression: illustrations used to search with the raw last message ("why?") and BM25 only."""
+    from app import llm
+
+    owner = new_user(app, "Prof")
+    course = setup_course(owner)
+    student = student_in(app, course, "Student")
+    chat_id = new_chat(student, course["id"])
+    ask(student, chat_id, "Why does Bayes theorem need a prior?")
+    ask(student, chat_id, "why?")
+    real = llm._mock_complete
+    rewrites = []
+
+    def fake(purpose, messages, attr):
+        if purpose == "rewrite":
+            rewrites.append(messages[-1]["content"])
+            return "why does Bayes theorem need a prior"
+        return real(purpose, messages, attr)
+
+    monkeypatch.setattr(llm, "_mock_complete", fake)
+    r = student.post(f"/api/chats/{chat_id}/illustrate", json={})
+    assert r.status_code == 200, r.text
+    assert rewrites and "LATEST MESSAGE: why?" in rewrites[-1] and "Bayes theorem need a prior" in rewrites[-1]
+    gen = [c for c in llm.MOCK_CALLS if c["purpose"] == "illustrate_gen"][-1]
+    assert "Lecture 3 - Bayes" in gen["messages"][1]["content"].split("COURSE MATERIALS:")[1]
+    embedded = q1("SELECT COUNT(*) AS n FROM usage_log WHERE purpose='embed_query' AND chat_id=?", chat_id)
+    assert embedded["n"] >= 3  # two tutor turns and the illustration

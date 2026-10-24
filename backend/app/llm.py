@@ -266,7 +266,7 @@ def _mock_complete(purpose: str, messages: list[dict], attr: dict | None) -> str
             return "(mock tutor) Here's a nudge: re-read the problem statement. What does it give you?"
         return "(mock tutor) Not quite yet. What does the problem tell you, and what is it asking for?"
     if purpose == "illustrate_route":
-        low = last.lower()
+        low = last.split("COURSE MATERIALS:")[0].lower()  # route on the conversation, not on what retrieval found
         if any(w in low for w in ("remotion", "motion graphics", "kinetic", "spring", "metric", "counter")):
             skill = "remotion_motion"
         elif any(w in low for w in ("galton", "urn", "machine", "apparatus", "coin", "dice", "isometric")):
