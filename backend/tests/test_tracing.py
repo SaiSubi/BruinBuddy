@@ -170,3 +170,55 @@ def test_leak_blocked_illustration_is_tagged(app, lf, monkeypatch):
     outcome = next(o for o in lf.obs if o.name == "outcome" and o.trace_id == root.trace_id)
     assert {"leak-blocked", "mode:graded"} <= set(outcome.trace["tags"])
     assert all(SOLUTION_PHRASE not in json.dumps(o.fields.get("input"), default=str) for o in lf.obs)
+
+
+def test_retrieval_is_a_step_with_scores(app, lf, monkeypatch):
+    from app import llm
+    real = llm._mock_complete
+    monkeypatch.setattr(llm, "_mock_complete", lambda purpose, messages, attr: "why does Bayes theorem need a prior"
+                        if purpose == "rewrite" else real(purpose, messages, attr))
+    owner = new_user(app)
+    c = setup_course(owner)
+    s = student_in(app, c)
+    chat = new_chat(s, c["id"])
+    ask(s, chat, "Why does Bayes theorem need a prior?")
+    ask(s, chat, "why?")  # short follow-up: rewritten into a standalone query
+    root = [o for o in lf.obs if o.name == "tutor_turn"][-1]
+    step = next(o for o in lf.obs if o.name == "retrieval" and o.trace_id == root.trace_id)
+    assert step.kind == "retriever" and step.fields["parent"] == root.id and step.ended
+    assert step.fields["input"] == "why?" and step.fields["metadata"]["rewritten"] is True
+    out = step.fields["output"]
+    assert out["query"] != "why?" and out["chunks"]
+    assert [ch["chunk_id"] for ch in out["chunks"]] == [r["chunk_id"] for r in root.fields["metadata"]["retrieved"]]
+    assert any(ch.get("bm25") for ch in out["chunks"]) and all("bm25_rank" in ch for ch in out["chunks"])
+    rewrite = next(o for o in lf.obs if o.name == "rewrite" and o.trace_id == root.trace_id)
+    assert rewrite.fields["parent"] == step.id  # the rewrite call nests under retrieval
+
+
+def test_qna_and_illustration_retrieval_steps(app, lf):
+    owner = new_user(app)
+    c = setup_course(owner)
+    s = student_in(app, c)
+    s.post(f"/api/courses/{c['id']}/qna", json={"question": "What does Bayes theorem say about the prior?"})
+    qa_root = next(o for o in lf.obs if o.kind == "span" and o.name == "qna_answer")
+    qa_step = next(o for o in lf.obs if o.name == "retrieval" and o.trace_id == qa_root.trace_id)
+    assert qa_step.fields["output"]["chunks"] and "past_qa" in qa_step.fields["metadata"]
+    chat = new_chat(s, c["id"])
+    ask(s, chat, "Can you explain Bayes theorem and conditional probability?")
+    s.post(f"/api/chats/{chat}/illustrate", json={})
+    ill_root = next(o for o in lf.obs if o.kind == "span" and o.name == "illustration")
+    ill_step = next(o for o in lf.obs if o.name == "retrieval" and o.trace_id == ill_root.trace_id)
+    assert ill_step.fields["metadata"]["hybrid"] is False and ill_step.fields["output"]["chunks"]
+
+
+def test_explain_reports_scores_and_ranks():
+    import numpy as np
+    from app.retrieval import Chunk, Index
+    chunks = [Chunk(1, "d1", "Bayes", "notes", 1, "bayes theorem prior posterior"),
+              Chunk(2, "d2", "Variance", "notes", 1, "variance spread mean")]
+    v1, v2 = np.array([1.0, 0.0], dtype=np.float32), np.array([0.0, 1.0], dtype=np.float32)
+    idx = Index(chunks, [v1, v2])
+    rows = idx.explain("bayes prior", v1, chunks)
+    assert rows[0]["bm25_rank"] == 1 and rows[0]["bm25"] > 0 and rows[0]["cosine"] == 1.0 and rows[0]["cosine_rank"] == 1
+    assert rows[1]["bm25"] is None and rows[1]["bm25_rank"] is None and rows[1]["cosine_rank"] == 2
+    assert "cosine" not in idx.explain("bayes", None, chunks)[0]

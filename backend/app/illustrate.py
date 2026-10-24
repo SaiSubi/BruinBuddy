@@ -1467,7 +1467,11 @@ def _generate_illustration(kb: CourseKnowledge, course: dict, chat: dict, user_i
     mode = rule["mode"] if rule else None
 
     # Retrieve only student-visible (public) course chunks
-    chunks = _retrieve(kb, chat, latest_text, problem_doc, " ".join(user_msgs[-2:]))
+    with tracing.Step("retrieval", attr, latest_text, as_type="retriever") as step:
+        chunks = _retrieve(kb, chat, latest_text, problem_doc, " ".join(user_msgs[-2:]))
+        if step.on:
+            step.end({"query": latest_text, "chunks": kb.index.explain(latest_text, None, chunks)},
+                     hybrid=False, chat_kind=chat["kind"], problem_doc=problem_doc)
     materials_text = "\n\n".join(f"[S{i}] {c.title}, p. {c.page}\n{c.text[:450]}" for i, c in enumerate(chunks, start=1))
 
     # Stage 1: Route to the right skill

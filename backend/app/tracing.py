@@ -30,6 +30,7 @@ def client() -> Any:
             from langfuse import Langfuse, propagate_attributes
             _client = Langfuse(public_key=config.LANGFUSE_PUBLIC_KEY, secret_key=config.LANGFUSE_SECRET_KEY,
                                host=config.LANGFUSE_HOST, sample_rate=config.LANGFUSE_SAMPLE_RATE,
+                               release=config.APP_RELEASE,
                                environment="production" if config.PRODUCTION else "development")
             _propagate = _propagate or propagate_attributes
         except Exception:
@@ -83,6 +84,50 @@ class Trace:
                 with _trace_attributes(self.attr["trace_name"], self.attr, tags):
                     span.create_event(name="outcome", metadata=metadata)
             span.end()
+        except Exception:
+            pass
+
+
+class Step:
+    """A stage inside an answer, such as retrieval. Model calls made with `.attr` nest under it. A no-op outside a
+    traced answer; check `.on` before computing anything only the trace needs."""
+
+    def __init__(self, name: str, attr: dict, input: Any, as_type: str = "span") -> None:
+        self.attr, self._obs = dict(attr), None
+        lf = client()
+        if not lf or not attr.get("trace_id"):
+            return
+        try:
+            with _trace_attributes(attr["trace_name"], attr):
+                self._obs = lf.start_observation(name=name, as_type=as_type, input=input,
+                                                 trace_context={"trace_id": attr["trace_id"],
+                                                                "parent_span_id": attr["span_id"]})
+            self.attr["span_id"] = self._obs.id
+        except Exception:
+            self._obs = None
+
+    @property
+    def on(self) -> bool:
+        return self._obs is not None
+
+    def __enter__(self) -> "Step":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        if self._obs and exc_type:
+            try:
+                self._obs.update(level="ERROR", status_message=exc_type.__name__)
+            except Exception:
+                pass
+        self.end()
+
+    def end(self, output: Any = None, **metadata: Any) -> None:
+        obs, self._obs = self._obs, None
+        if not obs:
+            return
+        try:
+            obs.update(output=output, metadata=metadata or None)
+            obs.end()
         except Exception:
             pass
 
